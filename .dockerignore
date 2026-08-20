@@ -1,0 +1,36 @@
+# Derleme çıktıları — bunlar imaja SIZMAMALI.
+# Host'taki obj/ klasörü Windows yollarına göre üretilmiş project.assets.json
+# içerir; imaja kopyalanınca container içindeki restore sonucunu ezer ve
+# "dotnet publish --no-restore" NETSDK1064 ile paket bulunamadı hatası verir.
+**/bin/
+**/obj/
+artifacts/
+
+# Node / Next.js
+**/node_modules/
+**/.next/
+**/out/
+
+# Sürüm kontrolü ve araçlar
+.git/
+.github/
+.vs/
+.idea/
+.vscode/
+
+# Ortam dosyaları — sır içerir
+**/.env
+**/.env.*
+**/appsettings.Development.json
+**/appsettings.Production.json
+
+# Testler imaja gerekmiyor
+tests/
+
+# Dokümantasyon ve altyapı betikleri
+docs/
+infra/
+*.md
+docker-compose*.yml
+Dockerfile
+.dockerignore

@@ -1,0 +1,98 @@
+name: cevik
+
+# Gizli değerler bu dosyada TUTULMAZ; yanındaki .env dosyasından okunur.
+# Kurulum: .env.example dosyasını .env adıyla kopyalayıp doldurun.
+# ${DEGISKEN:?...} sözdizimi, değişken tanımsızsa compose'u açıklayıcı bir
+# hatayla durdurur — boş parolayla sessizce ayağa kalkmasındansa iyidir.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: cevik-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cevik
+      POSTGRES_USER: cevik
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env dosyasinda POSTGRES_PASSWORD tanimlayin}
+      LANG: tr_TR.utf8
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_verileri:/var/lib/postgresql/data
+      - ./infra/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cevik -d cevik"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: cevik-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_verileri:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: cevik-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EPOSTA:-admin@cevik.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PAROLA:?.env dosyasinda PGADMIN_PAROLA tanimlayin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cevik-api
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      # ASP.NET Core yapılandırma anahtarları: bölüm ayracı "__"
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=cevik;Username=cevik;Password=${POSTGRES_PASSWORD:?.env dosyasinda POSTGRES_PASSWORD tanimlayin}"
+      ConnectionStrings__Redis: "redis:6379"
+      # Jwt:Key en az 32 karakter olmalı — kısa anahtarda uygulama açılışta durur.
+      Jwt__Key: ${JWT_KEY:?.env dosyasinda JWT_KEY tanimlayin (en az 32 karakter)}
+      Jwt__Issuer: "CevikApi"
+      Jwt__Audience: "CevikWeb"
+      Jwt__GecerlilikDakika: "120"
+      Ticari__KdvOrani: "20"
+      Ticari__AnaParaBirimi: "TRY"
+      Ticari__UcretsizKargoEsigi: "1000"
+      Ticari__KargoUcreti: "50"
+      Cors__IzinliKokenler__0: "http://localhost:3000"
+      Yonetici__Eposta: ${YONETICI_EPOSTA:-admin@cevik.local}
+      Yonetici__Parola: ${YONETICI_PAROLA:?.env dosyasinda YONETICI_PAROLA tanimlayin}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/saglik || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+
+volumes:
+  postgres_verileri:
+  redis_verileri:

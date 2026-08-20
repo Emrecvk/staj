@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Cevik Elektronik">
+  <title>Cevik Elektronik</title>
+  <!-- Govde: entegre devre (IC) silueti -->
+  <rect x="12" y="12" width="96" height="96" rx="22" fill="#0F2740"/>
+
+  <!-- Bacaklar (pin) -->
+  <g fill="#00B4D8">
+    <rect x="2"   y="34" width="11" height="8" rx="3"/>
+    <rect x="2"   y="54" width="11" height="8" rx="3"/>
+    <rect x="2"   y="74" width="11" height="8" rx="3"/>
+    <rect x="107" y="34" width="11" height="8" rx="3"/>
+    <rect x="107" y="54" width="11" height="8" rx="3"/>
+    <rect x="107" y="74" width="11" height="8" rx="3"/>
+  </g>
+
+  <!-- C halkasi -->
+  <path d="M 76.71 38.08 A 26 26 0 1 0 76.71 77.92"
+        fill="none" stroke="#00B4D8" stroke-width="11" stroke-linecap="round"/>
+
+  <!-- Cedilla (C'nin kuyrugu) -->
+  <path d="M 62 83 C 62 92 63 97 55 99"
+        fill="none" stroke="#00B4D8" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Cevikligi anlatan ileri chevron -->
+  <path d="M 57 48 L 68 58 L 57 68"
+        fill="none" stroke="#00B4D8" stroke-width="7.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

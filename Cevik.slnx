@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Cevik.Alan/Cevik.Alan.csproj" />
+    <Project Path="src/Cevik.Altyapi/Cevik.Altyapi.csproj" />
+    <Project Path="src/Cevik.Api/Cevik.Api.csproj" />
+    <Project Path="src/Cevik.Uygulama/Cevik.Uygulama.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Cevik.BirimTestleri/Cevik.BirimTestleri.csproj" />
+    <Project Path="tests/Cevik.EntegrasyonTestleri/Cevik.EntegrasyonTestleri.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,55 @@
+@host = http://localhost:5109
+
+### Saglik kontrolu
+GET {{host}}/saglik
+
+### Kategori agaci
+GET {{host}}/api/katalog/kategoriler/agac
+
+### Urun listeleme + faceted filtre
+GET {{host}}/api/katalog/urunler?kategoriId=5&sayfaNo=1&sayfaBoyutu=25
+
+### Urun kodu ile arama (trigram)
+GET {{host}}/api/katalog/urunler?aramaMetni=STM32F
+
+### Urun detay
+GET {{host}}/api/katalog/urunler/1
+
+### Giris
+POST {{host}}/api/kimlik/giris
+Content-Type: application/json
+
+{
+  "eposta": "admin@cevik.local",
+  "sifre": "<.env dosyasindaki YONETICI_PAROLA degeri>"
+}
+
+### Kayit
+POST {{host}}/api/kimlik/kayit
+Content-Type: application/json
+
+{
+  "ad": "Test",
+  "soyad": "Kullanici",
+  "eposta": "test@ornek.com",
+  "telefon": "05551234567",
+  "sifre": "Sifre12345"
+}
+
+### Sepete ekle (misafir)
+POST {{host}}/api/sepet
+Content-Type: application/json
+X-Session-Key: misafir-oturum-1
+
+{
+  "urunAmbalajId": 1,
+  "miktar": 10
+}
+
+### Sepeti getir
+GET {{host}}/api/sepet
+X-Session-Key: misafir-oturum-1
+
+### Yonetim: bekleyen firmalar (Admin token gerekir)
+GET {{host}}/api/yonetim/firmalar/bekleyen
+Authorization: Bearer {{token}}

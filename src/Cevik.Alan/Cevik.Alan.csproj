@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Alan (Domain) katmani: saf C#. Bilerek HICBIR paket bagimliligi yok.
+       Entity'ler, enum'lar ve domain kurallari (MOQ/MPQ, siparis durum makinesi)
+       burada yasar; EF Core'u bile tanimaz. -->
+</Project>
