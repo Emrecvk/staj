@@ -5,6 +5,7 @@ using Cevik.Altyapi.Veritabani;
 using Cevik.Uygulama.Katalog.Arayuzler;
 using Cevik.Uygulama.Katalog.Dto;
 using Cevik.Uygulama.Ortak;
+using Cevik.Alan.Ortak;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 
@@ -359,6 +360,7 @@ public class KatalogServisi : IKatalogServisi
             .Include(u => u.Dokumanlar)
             .Include(u => u.Gorseller)
             .Include(u => u.UrunAmbalajlari).ThenInclude(a => a.FiyatKademeleri)
+            .Include(u => u.IliskiliUrunler).ThenInclude(i => i.Iliskili)
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == id);
 
@@ -410,8 +412,8 @@ public class KatalogServisi : IKatalogServisi
                 Moq = ambalaj.Moq,
                 Mpq = ambalaj.Mpq,
                 KatlamaMiktari = ambalaj.KatlamaMiktari,
-                StokMiktari = ambalaj.StokMiktari,
-                GelecekStokMiktari = ambalaj.GelecekStokMiktari,
+                StokMiktari = (int)ambalaj.StokMiktari,
+                GelecekStokMiktari = (int)ambalaj.GelecekStokMiktari,
                 GelecekStokTarihi = ambalaj.GelecekStokTarihi?.ToString("yyyy-MM-dd")
             };
 
@@ -429,6 +431,192 @@ public class KatalogServisi : IKatalogServisi
             dto.AmbalajlarVeFiyatlar.Add(ambalajDto);
         }
 
+        // Iliskili urunleri DTO'ya map et
+        foreach (var iliski in urun.IliskiliUrunler.OrderBy(i => i.Sira))
+        {
+            var ozet = new IliskiliUrunOzetDto
+            {
+                Id = iliski.Iliskili.Id,
+                UreticiUrunKodu = iliski.Iliskili.UreticiUrunKodu,
+                KisaAciklama = iliski.Iliskili.KisaAciklama,
+                AnaGorselUrl = iliski.Iliskili.AnaGorselUrl
+            };
+
+            switch (iliski.IliskiTipi)
+            {
+                case IliskiTipi.Muadil: dto.Muadiller.Add(ozet); break;
+                case IliskiTipi.Benzer: dto.BenzerUrunler.Add(ozet); break;
+                case IliskiTipi.Parametrik: dto.ParametrikUrunler.Add(ozet); break;
+                case IliskiTipi.BirlikteKullanilan: dto.BirlikteKullanilanlar.Add(ozet); break;
+            }
+        }
+
         return dto;
+    }
+
+    public async Task IliskiliUrunEkleAsync(long urunId, long iliskiliUrunId, short tip, int sira = 0)
+    {
+        if (urunId == iliskiliUrunId)
+            throw new IsKuraliIhlaliException("Urun kendisine iliskilendirilemez.");
+
+        var iliskiTipi = (IliskiTipi)tip;
+
+        var mevcut = await _context.IliskiliUrunler
+            .AnyAsync(i => i.UrunId == urunId && i.IliskiliUrunId == iliskiliUrunId && i.IliskiTipi == iliskiTipi);
+
+        if (!mevcut)
+        {
+            _context.IliskiliUrunler.Add(new IliskiliUrun
+            {
+                UrunId = urunId,
+                IliskiliUrunId = iliskiliUrunId,
+                IliskiTipi = iliskiTipi,
+                Sira = sira
+            });
+        }
+
+        if (iliskiTipi == IliskiTipi.Muadil)
+        {
+            var ciftYonlu = await _context.IliskiliUrunler
+                .AnyAsync(i => i.UrunId == iliskiliUrunId && i.IliskiliUrunId == urunId && i.IliskiTipi == iliskiTipi);
+
+            if (!ciftYonlu)
+            {
+                _context.IliskiliUrunler.Add(new IliskiliUrun
+                {
+                    UrunId = iliskiliUrunId,
+                    IliskiliUrunId = urunId,
+                    IliskiTipi = iliskiTipi,
+                    Sira = sira
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task IliskiliUrunSilAsync(long urunId, long iliskiliUrunId, short tip)
+    {
+        var iliskiTipi = (IliskiTipi)tip;
+
+        var iliski = await _context.IliskiliUrunler
+            .FirstOrDefaultAsync(i => i.UrunId == urunId && i.IliskiliUrunId == iliskiliUrunId && i.IliskiTipi == iliskiTipi);
+
+        if (iliski != null)
+            _context.IliskiliUrunler.Remove(iliski);
+
+        if (iliskiTipi == IliskiTipi.Muadil)
+        {
+            var ters = await _context.IliskiliUrunler
+                .FirstOrDefaultAsync(i => i.UrunId == iliskiliUrunId && i.IliskiliUrunId == urunId && i.IliskiTipi == iliskiTipi);
+
+            if (ters != null)
+                _context.IliskiliUrunler.Remove(ters);
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<KarsilastirmaSonucDto> KarsilastirmaListesiGetirAsync(long? kullaniciId, string? oturumAnahtari)
+    {
+        var sorgu = _context.Karsilastirmalar
+            .Include(k => k.Urun).ThenInclude(u => u.Uretici)
+            .Include(k => k.Urun).ThenInclude(u => u.OzellikDegerleri).ThenInclude(o => o.OzellikTanim)
+            .Include(k => k.Urun).ThenInclude(u => u.UrunAmbalajlari).ThenInclude(a => a.FiyatKademeleri)
+            .AsNoTracking();
+
+        if (kullaniciId.HasValue)
+            sorgu = sorgu.Where(k => k.KullaniciId == kullaniciId.Value);
+        else if (!string.IsNullOrWhiteSpace(oturumAnahtari))
+            sorgu = sorgu.Where(k => k.OturumAnahtari == oturumAnahtari);
+        else
+            return new KarsilastirmaSonucDto(); // İkisi de yoksa boş dön.
+
+        var kayitlar = await sorgu.OrderBy(k => k.EklenmeTarihi).ToListAsync();
+
+        var sonuc = new KarsilastirmaSonucDto();
+        
+        // Ortak özellikleri topla (sadece her üründe bulunan veya bazı ürünlerde olanları birleştir)
+        var butunOzellikler = new Dictionary<string, KarsilastirmaOzellikDto>();
+
+        foreach (var k in kayitlar)
+        {
+            var urun = k.Urun;
+            var enUcuzFiyat = urun.UrunAmbalajlari
+                .SelectMany(a => a.FiyatKademeleri)
+                .Where(f => f.MusteriGrubuId == null) // Sadece genel fiyatları dikkate al (örnek)
+                .Select(f => (decimal?)f.BirimFiyat)
+                .Min();
+
+            sonuc.Urunler.Add(new KarsilastirmaUrunDto
+            {
+                UrunId = urun.Id,
+                UreticiUrunKodu = urun.UreticiUrunKodu,
+                UreticiAd = urun.Uretici.Ad,
+                AnaGorselUrl = urun.AnaGorselUrl,
+                EnUcuzFiyat = enUcuzFiyat
+            });
+
+            foreach (var ozellik in urun.OzellikDegerleri)
+            {
+                var kod = ozellik.OzellikTanim.Kod;
+                if (!butunOzellikler.TryGetValue(kod, out var ozellikDto))
+                {
+                    ozellikDto = new KarsilastirmaOzellikDto
+                    {
+                        OzellikKodu = kod,
+                        OzellikAd = ozellik.OzellikTanim.AdTr
+                    };
+                    butunOzellikler[kod] = ozellikDto;
+                }
+                
+                ozellikDto.Degerler[urun.Id] = ozellik.DegerMetin ?? string.Empty;
+            }
+        }
+
+        sonuc.OrtakOzellikler = butunOzellikler.Values.OrderBy(o => o.OzellikAd).ToList();
+
+        return sonuc;
+    }
+
+    public async Task KarsilastirmayaEkleAsync(long? kullaniciId, string? oturumAnahtari, long urunId)
+    {
+        if (kullaniciId is null && string.IsNullOrWhiteSpace(oturumAnahtari))
+            throw new IsKuraliIhlaliException("Kullanici veya oturum anahtari gereklidir.");
+
+        var mevcutMu = await _context.Karsilastirmalar
+            .AnyAsync(k => k.UrunId == urunId && 
+                          (kullaniciId != null ? k.KullaniciId == kullaniciId : k.OturumAnahtari == oturumAnahtari));
+
+        if (!mevcutMu)
+        {
+            var sinir = await _context.Karsilastirmalar
+                .CountAsync(k => (kullaniciId != null ? k.KullaniciId == kullaniciId : k.OturumAnahtari == oturumAnahtari));
+
+            if (sinir >= 10)
+                throw new IsKuraliIhlaliException("Karşılaştırma listesine en fazla 10 ürün eklenebilir.");
+
+            _context.Karsilastirmalar.Add(new Cevik.Alan.Kimlik.Karsilastirma
+            {
+                UrunId = urunId,
+                KullaniciId = kullaniciId,
+                OturumAnahtari = kullaniciId == null ? oturumAnahtari : null
+            });
+
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task KarsilastirmadanCikarAsync(long? kullaniciId, string? oturumAnahtari, long urunId)
+    {
+        var kayit = await _context.Karsilastirmalar
+            .FirstOrDefaultAsync(k => k.UrunId == urunId && 
+                                     (kullaniciId != null ? k.KullaniciId == kullaniciId : k.OturumAnahtari == oturumAnahtari));
+
+        if (kayit != null)
+        {
+            _context.Karsilastirmalar.Remove(kayit);
+            await _context.SaveChangesAsync();
+        }
     }
 }

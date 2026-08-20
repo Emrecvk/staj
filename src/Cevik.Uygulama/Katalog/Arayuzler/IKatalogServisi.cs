@@ -17,4 +17,11 @@ public interface IKatalogServisi
     Task<UrunAramaSonucDto> UrunleriListeleAsync(UrunAramaFiltreDto filtre);
     
     Task<UrunDetayDto?> UrunDetayGetirAsync(long id);
+
+    Task IliskiliUrunEkleAsync(long urunId, long iliskiliUrunId, short tip, int sira = 0);
+    Task IliskiliUrunSilAsync(long urunId, long iliskiliUrunId, short tip);
+
+    Task<KarsilastirmaSonucDto> KarsilastirmaListesiGetirAsync(long? kullaniciId, string? oturumAnahtari);
+    Task KarsilastirmayaEkleAsync(long? kullaniciId, string? oturumAnahtari, long urunId);
+    Task KarsilastirmadanCikarAsync(long? kullaniciId, string? oturumAnahtari, long urunId);
 }
