@@ -21,4 +21,10 @@ public class UrunAramaFiltreDto
     
     /// <summary>Örn: "fiyat_artan", "fiyat_azalan", "yeni"</summary>
     public string Siralama { get; set; } = "varsayilan";
+
+    /// <summary>tr / en. Geçersiz değer TR'ye düşer.</summary>
+    public string? Dil { get; set; }
+
+    /// <summary>TRY / USD / EUR. Geçersiz değer USD'ye düşer.</summary>
+    public string? ParaBirimi { get; set; }
 }

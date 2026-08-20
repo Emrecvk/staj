@@ -6,9 +6,9 @@ namespace Cevik.Uygulama.Katalog.Arayuzler;
 
 public interface IKatalogServisi
 {
-    Task<List<KategoriAgacDto>> KategoriAgaciniGetirAsync();
+    Task<List<KategoriAgacDto>> KategoriAgaciniGetirAsync(string? dil = null);
     
-    Task<KategoriDetayDto?> KategoriDetayGetirAsync(string slug);
+    Task<KategoriDetayDto?> KategoriDetayGetirAsync(string slug, string? dil = null);
     
     /// <summary>
     /// Hem ürün listesini, hem de sol menüdeki faceted filtre gruplarını döner.
@@ -16,7 +16,7 @@ public interface IKatalogServisi
     /// </summary>
     Task<UrunAramaSonucDto> UrunleriListeleAsync(UrunAramaFiltreDto filtre);
     
-    Task<UrunDetayDto?> UrunDetayGetirAsync(long id);
+    Task<UrunDetayDto?> UrunDetayGetirAsync(long id, string? dil = null, string? paraBirimi = null);
 
     Task IliskiliUrunEkleAsync(long urunId, long iliskiliUrunId, short tip, int sira = 0);
     Task IliskiliUrunSilAsync(long urunId, long iliskiliUrunId, short tip);
