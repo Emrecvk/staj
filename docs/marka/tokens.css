@@ -1,0 +1,103 @@
+/* =========================================================================
+   ÇEVİK Elektronik — Tasarım Token'ları
+   Tek kaynak (single source of truth). Frontend bu dosyayı import eder,
+   hiçbir bileşende çıplak hex kodu yazılmaz.
+   ========================================================================= */
+
+:root {
+  /* ---------- Marka: Lacivert (ana) ---------- */
+  --cvk-lacivert-900: #071523;
+  --cvk-lacivert-800: #0B1B2B;   /* gövde metni */
+  --cvk-lacivert-700: #0F2740;   /* ANA MARKA RENGİ — header, footer */
+  --cvk-lacivert-600: #16385A;
+  --cvk-lacivert-500: #1E4A75;
+
+  /* ---------- Marka: Camgöbeği (vurgu) ---------- */
+  --cvk-camgobegi-700: #00728C;  /* beyaz zeminde METİN/LİNK için tek güvenli ton */
+  --cvk-camgobegi-600: #0090AE;  /* kenarlık, ikon, büyük metin */
+  --cvk-camgobegi-500: #00B4D8;  /* VURGU RENGİ — dolgu, buton zemini, koyu zeminde metin */
+  --cvk-camgobegi-400: #38C9E6;
+  --cvk-camgobegi-300: #7BDCF0;
+  --cvk-camgobegi-100: #D6F4FB;  /* seçili filtre chip'i zemini */
+
+  /* ---------- Nötr ---------- */
+  --cvk-gri-50:  #F6F8FA;        /* sayfa zemini */
+  --cvk-gri-100: #EDF1F5;
+  --cvk-gri-200: #DDE4EB;        /* kenarlık */
+  --cvk-gri-300: #C4CEDA;
+  --cvk-gri-400: #93A3B5;        /* pasif metin */
+  --cvk-gri-500: #6B7C90;
+  --cvk-gri-600: #5A6B7D;        /* ikincil metin */
+  --cvk-gri-700: #3D4C5C;
+  --cvk-gri-800: #26313D;
+  --cvk-gri-900: #0B1B2B;
+  --cvk-beyaz:   #FFFFFF;
+
+  /* ---------- Semantik: durum ---------- */
+  --cvk-basari-500: #16A34A;     /* Stokta var */
+  --cvk-basari-100: #DCFCE7;
+  --cvk-uyari-500:  #F59E0B;     /* Gelecek stok / NRND */
+  --cvk-uyari-100:  #FEF3C7;
+  --cvk-hata-500:   #DC2626;     /* Stok yok */
+  --cvk-hata-100:   #FEE2E2;
+  --cvk-turuncu-500:#EA580C;     /* Ömrü sonu (EOL) */
+  --cvk-turuncu-100:#FFEDD5;
+
+  /* ---------- Semantik: rol eşlemesi ---------- */
+  --cvk-zemin:            var(--cvk-gri-50);
+  --cvk-yuzey:            var(--cvk-beyaz);
+  --cvk-kenarlik:         var(--cvk-gri-200);
+  --cvk-metin:            var(--cvk-lacivert-800);
+  --cvk-metin-ikincil:    var(--cvk-gri-600);
+  --cvk-metin-pasif:      var(--cvk-gri-400);
+  --cvk-link:             var(--cvk-camgobegi-700);
+  --cvk-odak-halkasi:     var(--cvk-camgobegi-500);
+
+  /* ---------- Ürün durumu (urun_durumu enum karşılığı) ---------- */
+  --cvk-durum-aktif:      var(--cvk-basari-500);
+  --cvk-durum-nrnd:       var(--cvk-uyari-500);
+  --cvk-durum-eol:        var(--cvk-turuncu-500);
+  --cvk-durum-obsolete:   var(--cvk-gri-400);
+
+  /* ---------- Tipografi ---------- */
+  --cvk-font-govde: Inter, "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --cvk-font-kod:   "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+
+  --cvk-metin-xs:   0.75rem;   /* 12px — tablo dipnotu */
+  --cvk-metin-sm:   0.875rem;  /* 14px — filtre etiketi, tablo */
+  --cvk-metin-md:   1rem;      /* 16px — gövde */
+  --cvk-metin-lg:   1.125rem;  /* 18px */
+  --cvk-metin-xl:   1.5rem;    /* 24px — bölüm başlığı */
+  --cvk-metin-2xl:  2rem;      /* 32px — sayfa başlığı */
+
+  /* ---------- Boşluk (4px tabanlı) ---------- */
+  --cvk-bosluk-1: 0.25rem;
+  --cvk-bosluk-2: 0.5rem;
+  --cvk-bosluk-3: 0.75rem;
+  --cvk-bosluk-4: 1rem;
+  --cvk-bosluk-6: 1.5rem;
+  --cvk-bosluk-8: 2rem;
+  --cvk-bosluk-12: 3rem;
+
+  /* ---------- Köşe ve gölge ---------- */
+  --cvk-yaricap-sm: 4px;
+  --cvk-yaricap-md: 8px;
+  --cvk-yaricap-lg: 12px;
+  --cvk-yaricap-tam: 999px;
+
+  --cvk-golge-sm: 0 1px 2px rgba(11, 27, 43, 0.06);
+  --cvk-golge-md: 0 2px 8px rgba(11, 27, 43, 0.08);
+  --cvk-golge-lg: 0 8px 24px rgba(11, 27, 43, 0.12);
+}
+
+/*  ⚠️ ERİŞİLEBİLİRLİK — ölçülmüş kontrast oranları (WCAG 2.1)
+    ------------------------------------------------------------------
+    #0F2740 lacivert  / beyaz  = 15.2:1   ✅ AAA  — her boyutta metin
+    #00728C camgöbeği / beyaz  =  5.6:1   ✅ AA   — normal metin, LİNK
+    #0090AE camgöbeği / beyaz  =  3.8:1   ⚠️ sadece büyük metin + kenarlık/ikon
+    #00B4D8 camgöbeği / beyaz  =  2.5:1   ❌ METİN OLARAK KULLANMA
+    #00B4D8 camgöbeği / #0F2740 = 6.2:1   ✅ AA   — koyu zeminde metin serbest
+
+    Kural: --cvk-camgobegi-500 bir DOLGU rengidir (buton zemini, rozet, çizgi).
+    Beyaz üstünde yazı gerektiğinde daima --cvk-link (700) kullan.
+*/

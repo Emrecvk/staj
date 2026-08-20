@@ -1,0 +1,281 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Cevik.Alan.Ortak;
+using Cevik.Uygulama.Kimlik.Dto;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+
+namespace Cevik.EntegrasyonTestleri;
+
+/// <summary>
+/// Bildirilen güvenlik açıklarının kapandığını kanıtlayan testler.
+/// Her test, daha önce gerçekten sömürülebilen bir davranışı hedefler.
+/// </summary>
+[Collection("Api")]
+public class GuvenlikTestleri
+{
+    private readonly CevikUygulamaFabrikasi _fabrika;
+    private readonly HttpClient _istemci;
+
+    private static readonly JsonSerializerOptions JsonAyarlari = new(JsonSerializerDefaults.Web);
+
+    public GuvenlikTestleri(CevikUygulamaFabrikasi fabrika)
+    {
+        _fabrika = fabrika;
+        _istemci = fabrika.CreateClient();
+    }
+
+    // -----------------------------------------------------------------------
+    // Yetkilendirme
+    // -----------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("GET", "/api/yonetim/firmalar/bekleyen")]
+    [InlineData("GET", "/api/yonetim/siparisler")]
+    [InlineData("GET", "/api/yonetim/blog")]
+    [InlineData("GET", "/api/yonetim/urun")]
+    [InlineData("GET", "/api/yonetim/kategori")]
+    [InlineData("GET", "/api/yonetim/uretici")]
+    [InlineData("GET", "/api/yonetim/ozellik")]
+    public async Task YonetimUclari_TokensizErisimde_401Doner(string metot, string yol)
+    {
+        var yanit = await _istemci.SendAsync(new HttpRequestMessage(new HttpMethod(metot), yol));
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
+            $"{yol} kimliksiz çağrılabilmemeli");
+    }
+
+    [Fact]
+    public async Task YonetimUclari_MusteriTokeniyle_403Doner()
+    {
+        var token = await MusteriTokeniAlAsync("musteri.yetki@test.com");
+
+        using var istek = new HttpRequestMessage(HttpMethod.Get, "/api/yonetim/siparisler");
+        istek.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var yanit = await _istemci.SendAsync(istek);
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "müşteri rolü yönetim uçlarına erişememeli");
+    }
+
+    [Fact]
+    public async Task AdminTokeni_YonetimUcunaErisir()
+    {
+        var token = await AdminTokeniAlAsync();
+
+        using var istek = new HttpRequestMessage(HttpMethod.Get, "/api/yonetim/siparisler");
+        istek.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var yanit = await _istemci.SendAsync(istek);
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    // -----------------------------------------------------------------------
+    // Rol yükseltme arka kapısı
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task YoneticiEpostasiylaKayit_AdminYetkisiVermez()
+    {
+        // Eski davranış: admin e-postasıyla kayıt olan herkes Admin rolü alıyordu.
+        // Aynı adres zaten seed'li olduğu için kayıt reddedilmeli; reddedilmese
+        // bile rol Musteri kalmalı.
+        var yanit = await _istemci.PostAsJsonAsync("/api/kimlik/kayit", new
+        {
+            ad = "Sahte",
+            soyad = "Yonetici",
+            eposta = CevikUygulamaFabrikasi.YoneticiEpostasi,
+            telefon = "05550000000",
+            sifre = "Sahte12345"
+        });
+
+        yanit.StatusCode.Should().NotBe(HttpStatusCode.OK,
+            "zaten var olan e-posta ile ikinci kayıt açılmamalı");
+
+        var adminSayisi = await _fabrika.Veritabaniyla(db => db.Kullanicilar
+            .CountAsync(k => k.Rol == KullaniciRolu.Admin));
+
+        adminSayisi.Should().Be(1, "sistemde yalnızca seed'lenen tek yönetici olmalı");
+    }
+
+    [Fact]
+    public async Task YeniKayit_HerZamanMusteriRolunuAlir()
+    {
+        var eposta = $"rol.testi.{Guid.NewGuid():N}@test.com";
+
+        var yanit = await _istemci.PostAsJsonAsync("/api/kimlik/kayit", new
+        {
+            ad = "Rol", soyad = "Testi", eposta,
+            telefon = "05551112233", sifre = "Sifre12345"
+        });
+
+        yanit.EnsureSuccessStatusCode();
+
+        var rol = await _fabrika.Veritabaniyla(db => db.Kullanicilar
+            .Where(k => k.Eposta == eposta)
+            .Select(k => k.Rol)
+            .FirstAsync());
+
+        rol.Should().Be(KullaniciRolu.Musteri);
+    }
+
+    // -----------------------------------------------------------------------
+    // Parola saklama
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Parola_DuzMetinVeyaTuzsuzHashOlarakSaklanmaz()
+    {
+        var eposta = $"hash.testi.{Guid.NewGuid():N}@test.com";
+        const string parola = "Sifre12345";
+
+        (await _istemci.PostAsJsonAsync("/api/kimlik/kayit", new
+        {
+            ad = "Hash", soyad = "Testi", eposta,
+            telefon = "05551112233", sifre = parola
+        })).EnsureSuccessStatusCode();
+
+        var hash = await _fabrika.Veritabaniyla(db => db.Kullanicilar
+            .Where(k => k.Eposta == eposta)
+            .Select(k => k.SifreHash)
+            .FirstAsync());
+
+        hash.Should().NotBe(parola, "parola düz metin saklanmamalı");
+
+        // Tuzsuz SHA-256 çıktısı 64 karakterlik hex olur; ASP.NET Identity
+        // PasswordHasher ise tuz+iterasyon içeren, çok daha uzun base64 üretir.
+        hash.Length.Should().BeGreaterThan(64, "tuzsuz SHA-256 kullanılmamalı");
+
+        // Aynı parolayla ikinci kullanıcı FARKLI hash almalı (tuz kanıtı).
+        var ikinciEposta = $"hash.testi2.{Guid.NewGuid():N}@test.com";
+        (await _istemci.PostAsJsonAsync("/api/kimlik/kayit", new
+        {
+            ad = "Hash", soyad = "Testi2", eposta = ikinciEposta,
+            telefon = "05551112233", sifre = parola
+        })).EnsureSuccessStatusCode();
+
+        var ikinciHash = await _fabrika.Veritabaniyla(db => db.Kullanicilar
+            .Where(k => k.Eposta == ikinciEposta)
+            .Select(k => k.SifreHash)
+            .FirstAsync());
+
+        ikinciHash.Should().NotBe(hash, "aynı parola farklı tuzla farklı hash üretmeli");
+    }
+
+    // -----------------------------------------------------------------------
+    // JWT
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task UretilenToken_ApiTarafindanKabulEdilir()
+    {
+        // Eski hata: token üreten servis ile doğrulayan middleware farklı
+        // issuer/audience varsayılanına düşüyordu; her giriş "başarılı" görünüp
+        // token hiçbir korumalı uçta çalışmıyordu.
+        var token = await MusteriTokeniAlAsync($"jwt.testi.{Guid.NewGuid():N}@test.com");
+
+        using var istek = new HttpRequestMessage(HttpMethod.Get, "/api/profil/adresler");
+        istek.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var yanit = await _istemci.SendAsync(istek);
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.OK,
+            "kendi ürettiğimiz token korumalı uçta kabul edilmeli");
+    }
+
+    [Fact]
+    public async Task BozukToken_401Doner()
+    {
+        using var istek = new HttpRequestMessage(HttpMethod.Get, "/api/profil/adresler");
+        istek.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "gecersiz.token.degeri");
+
+        (await _istemci.SendAsync(istek)).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task YanlisParola_TokenVermez()
+    {
+        var eposta = $"parola.testi.{Guid.NewGuid():N}@test.com";
+
+        (await _istemci.PostAsJsonAsync("/api/kimlik/kayit", new
+        {
+            ad = "Parola", soyad = "Testi", eposta,
+            telefon = "05551112233", sifre = "Dogru12345"
+        })).EnsureSuccessStatusCode();
+
+        var yanit = await _istemci.PostAsJsonAsync("/api/kimlik/giris", new
+        {
+            eposta, sifre = "Yanlis12345"
+        });
+
+        yanit.StatusCode.Should().NotBe(HttpStatusCode.OK);
+    }
+
+    // -----------------------------------------------------------------------
+    // Firma onayı
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task FirmaBasvurusu_OnayOncesindeYetkiVermez()
+    {
+        var eposta = $"firma.testi.{Guid.NewGuid():N}@test.com";
+        var token = await MusteriTokeniAlAsync(eposta);
+
+        using var istek = new HttpRequestMessage(HttpMethod.Post, "/api/kimlik/firma-basvurusu")
+        {
+            Content = JsonContent.Create(new
+            {
+                firmaAdi = "Test Elektronik A.Ş.",
+                vergiDairesi = "Kadıköy",
+                vergiNo = "1234567890"
+            })
+        };
+        istek.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        (await _istemci.SendAsync(istek)).EnsureSuccessStatusCode();
+
+        var kullanici = await _fabrika.Veritabaniyla(db => db.Kullanicilar
+            .Where(k => k.Eposta == eposta)
+            .Select(k => new { k.FirmaYetkilisiMi, k.Rol, k.FirmaId })
+            .FirstAsync());
+
+        kullanici.FirmaId.Should().NotBeNull("başvuru firma kaydı oluşturmalı");
+        kullanici.FirmaYetkilisiMi.Should().BeFalse("yetki ancak admin onayından sonra verilir");
+        kullanici.Rol.Should().Be(KullaniciRolu.Musteri);
+    }
+
+    // -----------------------------------------------------------------------
+    // Yardımcılar
+    // -----------------------------------------------------------------------
+
+    private async Task<string> MusteriTokeniAlAsync(string eposta)
+    {
+        const string parola = "Sifre12345";
+
+        // Kayıt zaten varsa hata yut, doğrudan girişe geç.
+        await _istemci.PostAsJsonAsync("/api/kimlik/kayit", new
+        {
+            ad = "Test", soyad = "Musteri", eposta,
+            telefon = "05551112233", sifre = parola
+        });
+
+        return await TokenAlAsync(eposta, parola);
+    }
+
+    private Task<string> AdminTokeniAlAsync() =>
+        TokenAlAsync(CevikUygulamaFabrikasi.YoneticiEpostasi, CevikUygulamaFabrikasi.YoneticiParolasi);
+
+    private async Task<string> TokenAlAsync(string eposta, string parola)
+    {
+        var yanit = await _istemci.PostAsJsonAsync("/api/kimlik/giris", new { eposta, sifre = parola });
+        yanit.EnsureSuccessStatusCode();
+
+        var token = await yanit.Content.ReadFromJsonAsync<TokenDto>(JsonAyarlari);
+        token!.AccessToken.Should().NotBeNullOrWhiteSpace();
+        return token.AccessToken;
+    }
+}
