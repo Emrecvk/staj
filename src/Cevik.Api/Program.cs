@@ -60,23 +60,37 @@ builder.Services.AddValidatorsFromAssemblyContaining<Cevik.Uygulama.Kimlik.Valid
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CEVIK Elektronik API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "CEVIK Elektronik API",
+        Version = "v1",
+        Description = "Elektronik komponent katalogu, parametrik filtre, sepet, siparis ve teklif API'si. "
+                    + "Korumali uclari denemek icin once /api/Kimlik/giris ile token alin, "
+                    + "ardindan sagdaki Authorize dugmesini kullanin."
+    });
 
-    // Swagger arayuzunden korumali uclari deneyebilmek icin Bearer destegi
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // JWT Bearer yetkilendirmesi — Swagger arayuzunde "Authorize" dugmesini acar.
+    //
+    // Bilerek ApiKey semasi kullaniliyor (Http/bearer degil): boylece kutuya
+    // token'in tamami "Bearer eyJ..." bicminde yapistirilir. Http/bearer
+    // semasinda Swagger UI on eki kendisi ekler ve "Bearer " yazan kullanicinin
+    // istegi "Bearer Bearer eyJ..." olarak gidip 401 alir.
+    // Not: BearerFormat yalnizca http/bearer semasinda serilestirilir,
+    // apiKey semasinda yok sayilir — bu yuzden bilerek set edilmiyor.
+    c.AddSecurityDefinition(GuvenlikSemasi, new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
+        Type = SecuritySchemeType.ApiKey,
         In = ParameterLocation.Header,
-        Description = "JWT token degerini Bearer on eki OLMADAN yapistirin."
+        Scheme = "Bearer",
+        Description = "Token'i 'Bearer ' on ekiyle birlikte girin.\n\nOrnek: Bearer eyJhbGciOiJIUzI1NiIs..."
     });
+
     // Swashbuckle 10 + Microsoft.OpenApi 2.x: gereksinim, dokumani alan bir
     // fabrika ile verilir ve sema referansi ayri bir tiptir.
     c.AddSecurityRequirement(dokuman => new OpenApiSecurityRequirement
     {
-        { new OpenApiSecuritySchemeReference("Bearer", dokuman), new List<string>() }
+        { new OpenApiSecuritySchemeReference(GuvenlikSemasi, dokuman), new List<string>() }
     });
 });
 
@@ -230,4 +244,8 @@ app.MapGet("/saglik", () => Results.Ok(new { durum = "ayakta", zaman = DateTimeO
 app.Run();
 
 /// <summary>Entegrasyon testlerinin WebApplicationFactory ile baglanabilmesi icin.</summary>
-public partial class Program;
+public partial class Program
+{
+    /// <summary>Swagger guvenlik semasinin adi — tanim ve gereksinim ayni degeri kullanmali.</summary>
+    public const string GuvenlikSemasi = "Bearer";
+}
