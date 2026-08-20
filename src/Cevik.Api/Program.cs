@@ -191,6 +191,7 @@ builder.Services.AddScoped<ISepetServisi, SepetServisi>();
 builder.Services.AddScoped<ISiparisServisi, SiparisServisi>();
 builder.Services.AddScoped<IDovizKuruServisi, Cevik.Altyapi.Fiyatlama.Servisler.DovizKuruServisi>();
 builder.Services.AddScoped<ITeklifServisi, TeklifServisi>();
+builder.Services.AddScoped<ITeklifYonetimServisi, Cevik.Altyapi.Teklif.Servisler.TeklifYonetimServisi>();
 builder.Services.AddScoped<IYonetimServisi, YonetimServisi>();
 
 // Health Checks

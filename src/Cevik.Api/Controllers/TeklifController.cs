@@ -37,6 +37,13 @@ public class TeklifController : ControllerBase
         return Ok(teklifler);
     }
 
+    [HttpGet("{id:long}")]
+    public async Task<IActionResult> Detay(long id)
+    {
+        var teklif = await _teklifServisi.TeklifDetayGetirAsync(GetUserId(), id);
+        return teklif == null ? NotFound() : Ok(teklif);
+    }
+
     [HttpPost]
     public async Task<IActionResult> TeklifOlustur(TeklifOlusturDto dto)
     {
@@ -46,5 +53,26 @@ public class TeklifController : ControllerBase
         var sonuc = await _teklifServisi.TeklifTalebiOlusturAsync(GetUserId(), GetSessionKey(), dto);
         if (sonuc == null) return BadRequest("Teklif oluşturulamadı. Sepetinizi kontrol edin.");
         return Ok(sonuc);
+    }
+
+    [HttpPost("{id:long}/kabul")]
+    public async Task<IActionResult> KabulEt(long id)
+    {
+        await _teklifServisi.DurumDegistirMusteriAsync(GetUserId(), id, kabul: true);
+        return Ok();
+    }
+
+    [HttpPost("{id:long}/red")]
+    public async Task<IActionResult> Reddet(long id)
+    {
+        await _teklifServisi.DurumDegistirMusteriAsync(GetUserId(), id, kabul: false);
+        return Ok();
+    }
+
+    [HttpPost("{id:long}/siparis")]
+    public async Task<IActionResult> SipariseDonustur(long id)
+    {
+        await _teklifServisi.SipariseDonusturAsync(GetUserId(), id);
+        return Ok();
     }
 }
