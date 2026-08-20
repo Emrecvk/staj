@@ -8,6 +8,8 @@ using Cevik.Altyapi.Yonetim.Servisler;
 using Cevik.Uygulama.Katalog.Arayuzler;
 using Cevik.Uygulama.Kimlik.Arayuzler;
 using Cevik.Uygulama.Ortak;
+using Cevik.Uygulama.Ortak.Arayuzler;
+using Cevik.Altyapi.Ortak.Servisler;
 using Cevik.Uygulama.Siparis.Arayuzler;
 using Cevik.Uygulama.Teklif.Arayuzler;
 using Cevik.Uygulama.Yonetim.Arayuzler;
@@ -170,6 +172,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 
 builder.Services.AddScoped<CevikDataSeeder>();
+builder.Services.AddScoped<IEpostaServisi, SahteEpostaServisi>();
 builder.Services.AddScoped<IKatalogServisi, KatalogServisi>();
 builder.Services.AddScoped<IKimlikServisi, KimlikServisi>();
 builder.Services.AddScoped<IProfilServisi, ProfilServisi>();

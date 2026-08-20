@@ -19,11 +19,13 @@ public class KimlikServisi : IKimlikServisi
     private readonly CevikDbContext _context;
     private readonly JwtAyarlari _jwt;
     private readonly PasswordHasher<Kullanici> _parolaHesaplayici = new();
+    private readonly Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi _epostaServisi;
 
-    public KimlikServisi(CevikDbContext context, IOptions<JwtAyarlari> jwt)
+    public KimlikServisi(CevikDbContext context, IOptions<JwtAyarlari> jwt, Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi epostaServisi)
     {
         _context = context;
         _jwt = jwt.Value;
+        _epostaServisi = epostaServisi;
     }
 
     public async Task<TokenDto?> GirisYapAsync(KullaniciGirisDto dto)
@@ -132,17 +134,18 @@ public class KimlikServisi : IKimlikServisi
         return true;
     }
 
-    public async Task<string?> SifreSifirlamaTalebiOlusturAsync(SifreSifirlamaTalebiDto dto)
+    public async Task<bool> SifreSifirlamaTalebiOlusturAsync(SifreSifirlamaTalebiDto dto)
     {
         var kullanici = await _context.Kullanicilar.FirstOrDefaultAsync(x => x.Eposta == dto.Eposta);
-        if (kullanici == null) return null;
+        if (kullanici == null) return true; // Enumeration engelleme
 
         var token = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
         kullanici.SifreSifirlamaTokenHash = HashYarat(token);
         kullanici.SifreSifirlamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddHours(24);
         
         await _context.SaveChangesAsync();
-        return token;
+        await _epostaServisi.EpostaGonderAsync(kullanici.Eposta, "Şifre Sıfırlama Talebi", $"Şifre sıfırlama kodunuz: {token}");
+        return true;
     }
 
     public async Task<bool> SifreSifirlaAsync(SifreSifirlaDto dto)
@@ -174,17 +177,18 @@ public class KimlikServisi : IKimlikServisi
         return true;
     }
 
-    public async Task<string?> EpostaDogrulamaTalebiOlusturAsync(long kullaniciId)
+    public async Task<bool> EpostaDogrulamaTalebiOlusturAsync(long kullaniciId)
     {
         var kullanici = await _context.Kullanicilar.FindAsync(kullaniciId);
-        if (kullanici == null || kullanici.EpostaDogrulandiMi) return null;
+        if (kullanici == null || kullanici.EpostaDogrulandiMi) return false;
 
         var token = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
         kullanici.EpostaDogrulamaTokenHash = HashYarat(token);
         kullanici.EpostaDogrulamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddHours(24);
         
         await _context.SaveChangesAsync();
-        return token;
+        await _epostaServisi.EpostaGonderAsync(kullanici.Eposta, "E-Posta Doğrulama", $"E-posta doğrulama kodunuz: {token}");
+        return true;
     }
 
     public async Task<bool> EpostaDogrulaAsync(EpostaDogrulaDto dto)
@@ -252,6 +256,20 @@ public class KimlikServisi : IKimlikServisi
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task IptalEdilmisVeSuresiDolanTokenlariTemizleAsync()
+    {
+        var simdikiZaman = DateTimeOffset.UtcNow;
+        var silinecekler = await _context.KullaniciRefreshTokens
+            .Where(t => t.IptalEdildiMi || t.SonaErmeTarihi < simdikiZaman)
+            .ToListAsync();
+
+        if (silinecekler.Any())
+        {
+            _context.KullaniciRefreshTokens.RemoveRange(silinecekler);
+            await _context.SaveChangesAsync();
+        }
     }
 
     private TokenDto TokenUret(Kullanici kullanici)
