@@ -15,9 +15,12 @@ public class TeklifKalemi : VarlikTabaniUzun
     public string? SerbestUrunKodu { get; set; }
 
     public int Miktar { get; set; }
+    public int? TeklifEdilenMiktar { get; set; }
 
     public decimal? HedefBirimFiyat { get; set; }
     public decimal? TeklifEdilenBirimFiyat { get; set; }
+    public string? ParaBirimi { get; set; }
     
     public int? TeklifEdilenTeslimSuresiGun { get; set; }
+    public string? SatisTemsilcisiNotu { get; set; }
 }

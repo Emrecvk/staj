@@ -88,10 +88,12 @@ public enum TeklifDurumu : short
 {
     Yeni = 1,
     Inceleniyor = 2,
-    TeklifVerildi = 3,
-    Kabul = 4,
-    Red = 5,
-    SuresiDoldu = 6
+    Fiyatlandirildi = 3,
+    MusteriOnayiBekliyor = 4,
+    KabulEdildi = 5,
+    Reddedildi = 6,
+    SuresiDoldu = 7,
+    SipariseDonusturuldu = 8
 }
 
 public enum FirmaOnayDurumu : short
