@@ -12,9 +12,11 @@ public interface IKimlikServisi
     Task<TokenDto?> TokenYenileAsync(TokenYenileDto dto);
     Task<bool> CikisYapAsync(string refreshToken);
     
-    Task<string?> SifreSifirlamaTalebiOlusturAsync(SifreSifirlamaTalebiDto dto);
+    Task<bool> SifreSifirlamaTalebiOlusturAsync(SifreSifirlamaTalebiDto dto);
     Task<bool> SifreSifirlaAsync(SifreSifirlaDto dto);
     
-    Task<string?> EpostaDogrulamaTalebiOlusturAsync(long kullaniciId);
+    Task<bool> EpostaDogrulamaTalebiOlusturAsync(long kullaniciId);
     Task<bool> EpostaDogrulaAsync(EpostaDogrulaDto dto);
+    
+    Task IptalEdilmisVeSuresiDolanTokenlariTemizleAsync();
 }

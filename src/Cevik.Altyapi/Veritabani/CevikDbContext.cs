@@ -86,6 +86,13 @@ public class CevikDbContext : DbContext
             .Property(u => u.Version)
             .IsRowVersion();
 
+        modelBuilder.Entity<KullaniciRefreshToken>(entity =>
+        {
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.HasIndex(x => x.AileId);
+            entity.Property(x => x.Version).IsRowVersion();
+        });
+
         SoftDeleteFiltreleriniUygula(modelBuilder);
         BagimliVarlikFiltreleriniUygula(modelBuilder);
     }

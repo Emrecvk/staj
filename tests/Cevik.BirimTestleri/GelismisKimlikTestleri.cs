@@ -10,10 +10,11 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
+using Moq;
 
 namespace Cevik.BirimTestleri;
 
-public class GelismişKimlikTestleri
+public class GelismisKimlikTestleri
 {
     private DbContextOptions<CevikDbContext> GetDbOptions(string dbName)
     {
@@ -39,7 +40,7 @@ public class GelismişKimlikTestleri
         var options = GetDbOptions("TokenYenile_Db");
         using var context = new CevikDbContext(options);
         var jwtOptions = GetJwtOptions();
-        var servis = new KimlikServisi(context, jwtOptions);
+        var servis = new KimlikServisi(context, jwtOptions, new Mock<Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi>().Object);
 
         var dto = new KullaniciKayitDto { Ad = "Ali", Soyad = "Veli", Eposta = "ali@test.com", Sifre = "Sifre123", Telefon = "123" };
         await servis.KayitOlAsync(dto);
@@ -59,7 +60,7 @@ public class GelismişKimlikTestleri
         var options = GetDbOptions("TokenReuse_Db");
         using var context = new CevikDbContext(options);
         var jwtOptions = GetJwtOptions();
-        var servis = new KimlikServisi(context, jwtOptions);
+        var servis = new KimlikServisi(context, jwtOptions, new Mock<Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi>().Object);
 
         await servis.KayitOlAsync(new KullaniciKayitDto { Ad = "A", Soyad = "B", Eposta = "a@b.com", Sifre = "123", Telefon = "1" });
         var giris = await servis.GirisYapAsync(new KullaniciGirisDto { Eposta = "a@b.com", Sifre = "123" });
@@ -83,7 +84,7 @@ public class GelismişKimlikTestleri
         var options = GetDbOptions("Cikis_Db");
         using var context = new CevikDbContext(options);
         var jwtOptions = GetJwtOptions();
-        var servis = new KimlikServisi(context, jwtOptions);
+        var servis = new KimlikServisi(context, jwtOptions, new Mock<Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi>().Object);
 
         await servis.KayitOlAsync(new KullaniciKayitDto { Ad = "C", Soyad = "D", Eposta = "c@d.com", Sifre = "123", Telefon = "1" });
         var giris = await servis.GirisYapAsync(new KullaniciGirisDto { Eposta = "c@d.com", Sifre = "123" });
@@ -101,15 +102,24 @@ public class GelismişKimlikTestleri
         var options = GetDbOptions("SifreSifirla_Db");
         using var context = new CevikDbContext(options);
         var jwtOptions = GetJwtOptions();
-        var servis = new KimlikServisi(context, jwtOptions);
+        
+        string capturedToken = "";
+        var mockEmail = new Mock<Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi>();
+        mockEmail.Setup(x => x.EpostaGonderAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Callback<string, string, string>((to, subj, body) => {
+                capturedToken = body.Replace("Şifre sıfırlama kodunuz: ", "");
+            });
+            
+        var servis = new KimlikServisi(context, jwtOptions, mockEmail.Object);
 
         await servis.KayitOlAsync(new KullaniciKayitDto { Ad = "E", Soyad = "F", Eposta = "e@f.com", Sifre = "123", Telefon = "1" });
         var giris = await servis.GirisYapAsync(new KullaniciGirisDto { Eposta = "e@f.com", Sifre = "123" });
 
-        var token = await servis.SifreSifirlamaTalebiOlusturAsync(new SifreSifirlamaTalebiDto { Eposta = "e@f.com" });
-        token.Should().NotBeNull();
+        var talep = await servis.SifreSifirlamaTalebiOlusturAsync(new SifreSifirlamaTalebiDto { Eposta = "e@f.com" });
+        talep.Should().BeTrue();
+        capturedToken.Should().NotBeNullOrEmpty();
 
-        var sonuc = await servis.SifreSifirlaAsync(new SifreSifirlaDto { Eposta = "e@f.com", Token = token!, YeniSifre = "Yeni123" });
+        var sonuc = await servis.SifreSifirlaAsync(new SifreSifirlaDto { Eposta = "e@f.com", Token = capturedToken, YeniSifre = "Yeni123" });
         sonuc.Should().BeTrue();
 
         // Eski şifreyle giriş başarısız olmalı

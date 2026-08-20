@@ -25,8 +25,7 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
     public const string YoneticiEpostasi = "admin@cevik.test";
     public const string YoneticiParolasi = "Test.Admin.2026";
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("cevik_test")
         .WithUsername("cevik")
         .WithPassword("test_parolasi")

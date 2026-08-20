@@ -81,15 +81,7 @@ public class KimlikController : ControllerBase
     [HttpPost("sifre-sifirlama-talebi")]
     public async Task<IActionResult> SifreSifirlamaTalebi(SifreSifirlamaTalebiDto dto)
     {
-        var token = await _kimlikServisi.SifreSifirlamaTalebiOlusturAsync(dto);
-        
-        // Gerçekte e-posta gönderilir, güvenlik gereği kullanıcıya var olup olmadığı söylenmez.
-        if (token != null)
-        {
-            // Dev ortamı için token'ı header'da veya response'da dönebiliriz. (Staj projesi için)
-            return Ok(new { Mesaj = "Şifre sıfırlama e-postası gönderildi.", DevToken = token });
-        }
-        
+        await _kimlikServisi.SifreSifirlamaTalebiOlusturAsync(dto);
         return Ok(new { Mesaj = "Şifre sıfırlama e-postası gönderildi." });
     }
 
@@ -112,10 +104,10 @@ public class KimlikController : ControllerBase
         if (idClaim == null || !long.TryParse(idClaim.Value, out long userId))
             return Unauthorized();
             
-        var token = await _kimlikServisi.EpostaDogrulamaTalebiOlusturAsync(userId);
+        var sonuc = await _kimlikServisi.EpostaDogrulamaTalebiOlusturAsync(userId);
         
-        if (token != null)
-            return Ok(new { Mesaj = "Doğrulama e-postası gönderildi.", DevToken = token });
+        if (sonuc)
+            return Ok(new { Mesaj = "Do�rulama e-postas� g�nderildi." });
             
         return BadRequest(new { Mesaj = "Zaten doğrulanmış veya hata oluştu." });
     }
@@ -130,3 +122,4 @@ public class KimlikController : ControllerBase
         return Ok(new { Mesaj = "E-posta adresiniz başarıyla doğrulandı." });
     }
 }
+
