@@ -28,4 +28,13 @@ public class Kullanici : VarlikTabaniUzun
 
     public bool EpostaDogrulandiMi { get; set; }
     public DateTimeOffset? SonGirisTarihi { get; set; }
+
+    // Gelişmiş Kimlik Doğrulama Alanları
+    public string? SifreSifirlamaTokenHash { get; set; }
+    public DateTimeOffset? SifreSifirlamaGecerlilikSuresi { get; set; }
+    
+    public string? EpostaDogrulamaTokenHash { get; set; }
+    public DateTimeOffset? EpostaDogrulamaGecerlilikSuresi { get; set; }
+    
+    public ICollection<KullaniciRefreshToken> RefreshTokens { get; set; } = new List<KullaniciRefreshToken>();
 }

@@ -33,8 +33,6 @@ public class KimlikServisi : IKimlikServisi
 
         if (kullanici is null)
         {
-            // Kullanıcı yoksa da hash doğrulaması yapıyoruz: aksi hâlde yanıt süresi
-            // "bu e-posta kayıtlı mı" sorusunu ele verir (kullanıcı sayımı saldırısı).
             _parolaHesaplayici.VerifyHashedPassword(null!, SahteHash, dto.Sifre);
             return null;
         }
@@ -43,16 +41,168 @@ public class KimlikServisi : IKimlikServisi
         if (sonuc == PasswordVerificationResult.Failed)
             return null;
 
-        // Hash algoritması güncellendiyse parolayı sessizce yeni formata taşı.
         if (sonuc == PasswordVerificationResult.SuccessRehashNeeded)
         {
             kullanici.SifreHash = _parolaHesaplayici.HashPassword(null!, dto.Sifre);
         }
 
         kullanici.SonGirisTarihi = DateTimeOffset.UtcNow;
+        
+        var tokenDto = TokenUret(kullanici);
+        
+        // Refresh token oluştur
+        var refreshToken = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+        var refreshTokenHash = HashYarat(refreshToken);
+        
+        var yeniRefreshToken = new KullaniciRefreshToken
+        {
+            KullaniciId = kullanici.Id,
+            TokenHash = refreshTokenHash,
+            SonaErmeTarihi = DateTimeOffset.UtcNow.AddDays(7)
+        };
+        _context.KullaniciRefreshTokens.Add(yeniRefreshToken);
+        
+        await _context.SaveChangesAsync();
+        
+        tokenDto.RefreshToken = refreshToken;
+        return tokenDto;
+    }
+
+    public async Task<TokenDto?> TokenYenileAsync(TokenYenileDto dto)
+    {
+        var tokenHash = HashYarat(dto.RefreshToken);
+        var mevcutToken = await _context.KullaniciRefreshTokens
+            .Include(x => x.Kullanici)
+            .FirstOrDefaultAsync(x => x.TokenHash == tokenHash);
+
+        if (mevcutToken == null)
+            return null;
+
+        if (mevcutToken.IptalEdildiMi || mevcutToken.KullanildiMi)
+        {
+            // Token çalınmış olabilir - ailedeki tüm tokenları iptal et
+            var aileTokens = await _context.KullaniciRefreshTokens
+                .Where(x => x.KullaniciId == mevcutToken.KullaniciId && !x.IptalEdildiMi)
+                .ToListAsync();
+                
+            foreach (var t in aileTokens)
+            {
+                t.IptalEdildiMi = true;
+                t.IptalNedeni = "Şüpheli token yeniden kullanımı";
+            }
+            await _context.SaveChangesAsync();
+            return null;
+        }
+
+        if (mevcutToken.SonaErmeTarihi <= DateTimeOffset.UtcNow)
+            return null;
+
+        var yeniRefreshToken = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+        var yeniRefreshTokenHash = HashYarat(yeniRefreshToken);
+
+        mevcutToken.YerineGecenTokenHash = yeniRefreshTokenHash;
+        
+        var yeniTokenEntity = new KullaniciRefreshToken
+        {
+            KullaniciId = mevcutToken.KullaniciId,
+            TokenHash = yeniRefreshTokenHash,
+            SonaErmeTarihi = DateTimeOffset.UtcNow.AddDays(7)
+        };
+        
+        _context.KullaniciRefreshTokens.Add(yeniTokenEntity);
         await _context.SaveChangesAsync();
 
-        return TokenUret(kullanici);
+        var tokenDto = TokenUret(mevcutToken.Kullanici);
+        tokenDto.RefreshToken = yeniRefreshToken;
+        return tokenDto;
+    }
+
+    public async Task<bool> CikisYapAsync(string refreshToken)
+    {
+        var tokenHash = HashYarat(refreshToken);
+        var mevcutToken = await _context.KullaniciRefreshTokens
+            .FirstOrDefaultAsync(x => x.TokenHash == tokenHash);
+
+        if (mevcutToken == null || mevcutToken.IptalEdildiMi || mevcutToken.KullanildiMi)
+            return false;
+
+        mevcutToken.IptalEdildiMi = true;
+        mevcutToken.IptalNedeni = "Kullanıcı çıkışı";
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<string?> SifreSifirlamaTalebiOlusturAsync(SifreSifirlamaTalebiDto dto)
+    {
+        var kullanici = await _context.Kullanicilar.FirstOrDefaultAsync(x => x.Eposta == dto.Eposta);
+        if (kullanici == null) return null;
+
+        var token = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        kullanici.SifreSifirlamaTokenHash = HashYarat(token);
+        kullanici.SifreSifirlamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddHours(24);
+        
+        await _context.SaveChangesAsync();
+        return token;
+    }
+
+    public async Task<bool> SifreSifirlaAsync(SifreSifirlaDto dto)
+    {
+        var kullanici = await _context.Kullanicilar.FirstOrDefaultAsync(x => x.Eposta == dto.Eposta);
+        if (kullanici == null || string.IsNullOrEmpty(kullanici.SifreSifirlamaTokenHash)) return false;
+
+        if (kullanici.SifreSifirlamaGecerlilikSuresi <= DateTimeOffset.UtcNow) return false;
+
+        var tokenHash = HashYarat(dto.Token);
+        if (kullanici.SifreSifirlamaTokenHash != tokenHash) return false;
+
+        kullanici.SifreHash = _parolaHesaplayici.HashPassword(null!, dto.YeniSifre);
+        kullanici.SifreSifirlamaTokenHash = null;
+        kullanici.SifreSifirlamaGecerlilikSuresi = null;
+        
+        // Şifre sıfırlandığı için tüm mevcut oturumları (refresh tokenları) iptal edelim
+        var aktifTokens = await _context.KullaniciRefreshTokens
+            .Where(x => x.KullaniciId == kullanici.Id && !x.IptalEdildiMi && string.IsNullOrEmpty(x.YerineGecenTokenHash))
+            .ToListAsync();
+            
+        foreach(var t in aktifTokens)
+        {
+            t.IptalEdildiMi = true;
+            t.IptalNedeni = "Şifre sıfırlama";
+        }
+        
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<string?> EpostaDogrulamaTalebiOlusturAsync(long kullaniciId)
+    {
+        var kullanici = await _context.Kullanicilar.FindAsync(kullaniciId);
+        if (kullanici == null || kullanici.EpostaDogrulandiMi) return null;
+
+        var token = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        kullanici.EpostaDogrulamaTokenHash = HashYarat(token);
+        kullanici.EpostaDogrulamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddHours(24);
+        
+        await _context.SaveChangesAsync();
+        return token;
+    }
+
+    public async Task<bool> EpostaDogrulaAsync(EpostaDogrulaDto dto)
+    {
+        var kullanici = await _context.Kullanicilar.FirstOrDefaultAsync(x => x.Eposta == dto.Eposta);
+        if (kullanici == null || string.IsNullOrEmpty(kullanici.EpostaDogrulamaTokenHash)) return false;
+
+        if (kullanici.EpostaDogrulamaGecerlilikSuresi <= DateTimeOffset.UtcNow) return false;
+
+        var tokenHash = HashYarat(dto.Token);
+        if (kullanici.EpostaDogrulamaTokenHash != tokenHash) return false;
+
+        kullanici.EpostaDogrulandiMi = true;
+        kullanici.EpostaDogrulamaTokenHash = null;
+        kullanici.EpostaDogrulamaGecerlilikSuresi = null;
+        
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> KayitOlAsync(KullaniciKayitDto dto)
@@ -69,8 +219,6 @@ public class KimlikServisi : IKimlikServisi
             Eposta = eposta,
             Telefon = dto.Telefon,
             SifreHash = _parolaHesaplayici.HashPassword(null!, dto.Sifre),
-            // Kayıt akışı HER ZAMAN en düşük yetkiyi verir. Yükseltme ayrı bir
-            // admin işlemidir; e-posta adresine bakarak rol atanmaz.
             Rol = KullaniciRolu.Musteri
         };
 
@@ -85,7 +233,6 @@ public class KimlikServisi : IKimlikServisi
         var kullanici = await _context.Kullanicilar.FindAsync(kullaniciId);
         if (kullanici is null) return false;
 
-        // Aynı kullanıcı ikinci kez başvuramaz.
         if (kullanici.FirmaId is not null) return false;
 
         var firma = new Firma
@@ -101,7 +248,6 @@ public class KimlikServisi : IKimlikServisi
         await _context.SaveChangesAsync();
 
         kullanici.FirmaId = firma.Id;
-        // Yetki, admin firmayı ONAYLAYINCA verilir — başvuru anında değil.
         kullanici.FirmaYetkilisiMi = false;
         await _context.SaveChangesAsync();
 
@@ -115,7 +261,6 @@ public class KimlikServisi : IKimlikServisi
             new(ClaimTypes.NameIdentifier, kullanici.Id.ToString()),
             new(ClaimTypes.Email, kullanici.Eposta),
             new(ClaimTypes.Name, $"{kullanici.Ad} {kullanici.Soyad}"),
-            // Rol talebi veritabanındaki alandan gelir.
             new(ClaimTypes.Role, kullanici.Rol.ToString()),
             new("FirmaYetkilisi", kullanici.FirmaYetkilisiMi ? "true" : "false")
         };
@@ -138,13 +283,21 @@ public class KimlikServisi : IKimlikServisi
         return new TokenDto
         {
             AccessToken = tokenHandler.WriteToken(token),
+            RefreshToken = "", // Bu değer GirisYapAsync/TokenYenileAsync içinde atanacak
             KullaniciAdi = $"{kullanici.Ad} {kullanici.Soyad}",
             FirmaMi = kullanici.FirmaId.HasValue,
             FirmaId = kullanici.FirmaId
         };
     }
 
-    /// <summary>Zamanlama saldırısına karşı kullanılan, hiçbir parolayla eşleşmeyen sabit hash.</summary>
+    private static string HashYarat(string token)
+    {
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(token);
+        var hash = sha.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
+    }
+
     private static readonly string SahteHash =
         new PasswordHasher<Kullanici>().HashPassword(null!, "eslesmeyen-sabit-parola");
 }
