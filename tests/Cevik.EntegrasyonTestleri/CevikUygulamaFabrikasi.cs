@@ -60,6 +60,13 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
         });
     }
 
+    protected override void ConfigureClient(HttpClient client)
+    {
+        base.ConfigureClient(client);
+        var randomIp = $"10.0.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}";
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", randomIp);
+    }
+
     Task IAsyncLifetime.InitializeAsync() => _postgres.StartAsync();
 
     // WebApplicationFactory.DisposeAsync ValueTask döndürdüğü için
