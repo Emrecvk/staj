@@ -186,5 +186,9 @@ public class KategoriYonetimController : ControllerBase
     /// InstanceName ön ekini kendisi eklediği için gerçekte
     /// "Cevik_Cevik_kategori_agaci" siliniyor ve önbellek hiç boşalmıyordu.
     /// </summary>
-    private Task OnbellegiTemizleAsync() => _cache.RemoveAsync(OnbellekAnahtarlari.KategoriAgaci);
+    private async Task OnbellegiTemizleAsync()
+    {
+        foreach (var anahtar in OnbellekAnahtarlari.KategoriAgaciAnahtarlari)
+            await _cache.RemoveAsync(anahtar);
+    }
 }

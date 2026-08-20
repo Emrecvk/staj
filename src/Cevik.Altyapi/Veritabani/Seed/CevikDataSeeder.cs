@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bogus;
+using Cevik.Alan.Icerik;
 using Cevik.Alan.Fiyatlama;
 using Cevik.Alan.Katalog;
 using Cevik.Alan.Kimlik;
@@ -40,6 +41,7 @@ public class CevikDataSeeder
     {
         await YoneticiHesabiOlusturAsync();
         await DovizKurlariniEkleAsync();
+        await OrnekIcerikEkleAsync();
 
         if (await _context.Kategoriler.AnyAsync())
         {
@@ -115,6 +117,109 @@ public class CevikDataSeeder
         _context.DovizKurlari.AddRange(
             new DovizKuru { Tarih = bugun, ParaBirimi = "USD", Alis = 41.20m, Satis = 41.45m },
             new DovizKuru { Tarih = bugun, ParaBirimi = "EUR", Alis = 48.10m, Satis = 48.40m });
+
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Public CMS uçlarının test edilebilmesi için yayınlanmış ve taslak içerik.
+    /// Katalog dolu olsa bile bir kez çalışır.
+    /// </summary>
+    private async Task OrnekIcerikEkleAsync()
+    {
+        if (await _context.BlogYazilari.AnyAsync()) return;
+
+        var simdi = DateTimeOffset.UtcNow;
+
+        _context.BlogYazilari.AddRange(
+            new BlogYazisi
+            {
+                Baslik = "RoHS uyumluluğu rehberi",
+                Slug = "rohs-uyumlulugu-rehberi",
+                Ozet = "Elektronik komponentlerde RoHS belgesinin anlamı.",
+                IcerikHtml = "<p>RoHS, belirli zararlı maddelerin kullanımını kısıtlar.</p>",
+                Kategori = "Rehber",
+                YayinTarihi = simdi.AddDays(-3)
+            },
+            new BlogYazisi
+            {
+                Baslik = "Taslak yazı",
+                Slug = "taslak-yazi",
+                Ozet = "Henüz yayınlanmamış içerik.",
+                IcerikHtml = "<p>Bu yazı public uçta görünmemeli.</p>",
+                Kategori = "Taslak",
+                YayinTarihi = null
+            });
+
+        _context.Duyurular.AddRange(
+            new Duyuru
+            {
+                Baslik = "Kargo kampanyası",
+                Icerik = "Belirli tutarın üzerindeki siparişlerde kargo ücretsizdir.",
+                Sira = 1,
+                BaslangicTarihi = simdi.AddDays(-1),
+                BitisTarihi = simdi.AddDays(30)
+            },
+            new Duyuru
+            {
+                Baslik = "Süresi dolmuş duyuru",
+                Icerik = "Bu duyuru public listede olmamalı.",
+                Sira = 99,
+                BaslangicTarihi = simdi.AddDays(-30),
+                BitisTarihi = simdi.AddDays(-1)
+            });
+
+        _context.Bannerlar.AddRange(
+            new Banner
+            {
+                Konum = "anasayfa-ust",
+                GorselUrl = "/gorseller/banner/anasayfa.svg",
+                LinkUrl = "/kampanyalar",
+                Sira = 1,
+                Aktif = true
+            },
+            new Banner
+            {
+                Konum = "anasayfa-ust",
+                GorselUrl = "/gorseller/banner/pasif.svg",
+                Sira = 2,
+                Aktif = false
+            });
+
+        _context.Sayfalar.AddRange(
+            new Sayfa
+            {
+                Slug = "hakkimizda",
+                BaslikTr = "Hakkımızda",
+                BaslikEn = "About Us",
+                IcerikHtmlTr = "<p>ÇEVİK Elektronik komponent tedarikçisidir.</p>",
+                IcerikHtmlEn = "<p>CEVIK Electronics is a component distributor.</p>",
+                SeoBaslik = "Hakkımızda | ÇEVİK",
+                YayindaMi = true
+            },
+            new Sayfa
+            {
+                Slug = "taslak-sayfa",
+                BaslikTr = "Taslak",
+                BaslikEn = "Draft",
+                IcerikHtmlTr = "<p>Yayında değil.</p>",
+                IcerikHtmlEn = "<p>Not published.</p>",
+                YayindaMi = false
+            });
+
+        _context.SikSorulanSorular.AddRange(
+            new SikSorulanSoru
+            {
+                Soru = "Kargo ücreti nasıl hesaplanır?",
+                Cevap = "Belirlenen eşiğin altındaki siparişlere sabit kargo ücreti eklenir.",
+                Sira = 1
+            },
+            new SikSorulanSoru
+            {
+                Soru = "Fiyatlar hangi para birimindedir?",
+                Cevap = "Katalog fiyatları USD'dir; TRY ve EUR dönüşümü güncel kura göredir.",
+                Sira = 2
+            });
 
         await _context.SaveChangesAsync();
     }
@@ -314,6 +419,10 @@ public class CevikDataSeeder
                     DetayliAciklamaTr = f.Random.Bool(0.7f)
                         ? $"{uretici.Ad} üretimi, {sablon.AdTr} kategorisinde yer alan komponent. " +
                           "Endüstriyel uygulamalarda yaygın olarak kullanılır. RoHS uyumludur."
+                        : null,
+                    DetayliAciklamaEn = f.Random.Bool(0.7f)
+                        ? $"{uretici.Ad} component in the {sablon.AdEn} category. " +
+                          "Widely used in industrial applications. RoHS compliant."
                         : null,
                     AnaGorselUrl = $"/gorseller/komponent/{sablon.Slug}.svg",
                     GorselTemsiliMi = true, // Sentetik katalog: tüm görseller temsilidir

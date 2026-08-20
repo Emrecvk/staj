@@ -5,6 +5,7 @@ using Cevik.Altyapi.Veritabani;
 using Cevik.Uygulama.Katalog.Arayuzler;
 using Cevik.Uygulama.Katalog.Dto;
 using Cevik.Uygulama.Ortak;
+using Cevik.Uygulama.Siparis.Arayuzler;
 using Cevik.Alan.Ortak;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -15,22 +16,25 @@ public class KatalogServisi : IKatalogServisi
 {
     private readonly CevikDbContext _context;
     private readonly IDistributedCache _cache;
+    private readonly IDovizKuruServisi _dovizKuruServisi;
 
-    public KatalogServisi(CevikDbContext context, IDistributedCache cache)
+    public KatalogServisi(CevikDbContext context, IDistributedCache cache, IDovizKuruServisi dovizKuruServisi)
     {
         _context = context;
         _cache = cache;
+        _dovizKuruServisi = dovizKuruServisi;
     }
 
     // -----------------------------------------------------------------------
     // Kategori
     // -----------------------------------------------------------------------
 
-    public async Task<List<KategoriAgacDto>> KategoriAgaciniGetirAsync()
+    public async Task<List<KategoriAgacDto>> KategoriAgaciniGetirAsync(string? dil = null)
     {
-        // Anahtar sabiti OnbellekAnahtarlari'ndan gelir. Elle yazıldığında
-        // temizleme tarafı farklı bir anahtar siliyordu ve önbellek hiç boşalmıyordu.
-        var onbellektekiler = await _cache.GetStringAsync(OnbellekAnahtarlari.KategoriAgaci);
+        var dilKodu = DilKodu.Coz(dil);
+        var anahtar = OnbellekAnahtarlari.KategoriAgaciDil(dilKodu);
+
+        var onbellektekiler = await _cache.GetStringAsync(anahtar);
         if (!string.IsNullOrEmpty(onbellektekiler))
         {
             var cozulmus = JsonSerializer.Deserialize<List<KategoriAgacDto>>(onbellektekiler);
@@ -44,8 +48,6 @@ public class KatalogServisi : IKatalogServisi
             .ThenBy(k => k.AdTr)
             .ToListAsync();
 
-        // Tek geçişte id -> çocuklar sözlüğü kur; her düğüm için listeyi
-        // baştan taramak 300+ kategoride O(n²) oluyordu.
         var cocuklar = tumKategoriler
             .Where(k => k.UstKategoriId is not null)
             .GroupBy(k => k.UstKategoriId!.Value)
@@ -53,24 +55,24 @@ public class KatalogServisi : IKatalogServisi
 
         var sonuc = tumKategoriler
             .Where(k => k.UstKategoriId is null)
-            .Select(k => AgacOlustur(k, cocuklar))
+            .Select(k => AgacOlustur(k, cocuklar, dilKodu))
             .ToList();
 
         await _cache.SetStringAsync(
-            OnbellekAnahtarlari.KategoriAgaci,
+            anahtar,
             JsonSerializer.Serialize(sonuc),
             new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24) });
 
         return sonuc;
     }
 
-    private static KategoriAgacDto AgacOlustur(Kategori kategori, Dictionary<int, List<Kategori>> cocuklar)
+    private static KategoriAgacDto AgacOlustur(Kategori kategori, Dictionary<int, List<Kategori>> cocuklar, string dil)
     {
         var dto = new KategoriAgacDto
         {
             Id = kategori.Id,
-            Ad = kategori.AdTr,
-            Slug = kategori.SlugTr,
+            Ad = KategoriAdi(kategori, dil),
+            Slug = KategoriSlug(kategori, dil),
             IkonUrl = kategori.IkonUrl,
             YaprakMi = kategori.YaprakMi,
             Sira = kategori.Sira
@@ -79,14 +81,15 @@ public class KatalogServisi : IKatalogServisi
         if (cocuklar.TryGetValue(kategori.Id, out var altlar))
         {
             foreach (var alt in altlar)
-                dto.AltKategoriler.Add(AgacOlustur(alt, cocuklar));
+                dto.AltKategoriler.Add(AgacOlustur(alt, cocuklar, dil));
         }
 
         return dto;
     }
 
-    public async Task<KategoriDetayDto?> KategoriDetayGetirAsync(string slug)
+    public async Task<KategoriDetayDto?> KategoriDetayGetirAsync(string slug, string? dil = null)
     {
+        var dilKodu = DilKodu.Coz(dil);
         var kategori = await _context.Kategoriler
             .AsNoTracking()
             .FirstOrDefaultAsync(k => k.SlugTr == slug || k.SlugEn == slug);
@@ -96,8 +99,8 @@ public class KatalogServisi : IKatalogServisi
         return new KategoriDetayDto
         {
             Id = kategori.Id,
-            Ad = kategori.AdTr,
-            Slug = kategori.SlugTr,
+            Ad = KategoriAdi(kategori, dilKodu),
+            Slug = KategoriSlug(kategori, dilKodu),
             SeoBaslik = kategori.SeoBaslik,
             SeoAciklama = kategori.SeoAciklama,
             SeoIcerikHtml = kategori.SeoIcerikHtml,
@@ -128,6 +131,9 @@ public class KatalogServisi : IKatalogServisi
 
         var sirali = SiralamaUygula(listeSorgusu, filtre.Siralama);
 
+        var hedefPara = ParaBirimiKodu.Coz(filtre.ParaBirimi);
+        var dilKodu = DilKodu.Coz(filtre.Dil);
+
         var urunler = await sirali
             .Skip((sayfaNo - 1) * sayfaBoyutu)
             .Take(sayfaBoyutu)
@@ -141,7 +147,6 @@ public class KatalogServisi : IKatalogServisi
                 u.GorselTemsiliMi,
                 u.KampanyaliMi,
                 ToplamStok = u.UrunAmbalajlari.Sum(a => (int?)a.StokMiktari) ?? 0,
-                // En düşük kademe fiyatı = "başlangıç fiyatı" (kart üzerinde gösterilen).
                 EnDusukFiyat = u.UrunAmbalajlari
                     .SelectMany(a => a.FiyatKademeleri)
                     .OrderBy(f => f.BirimFiyat)
@@ -155,6 +160,26 @@ public class KatalogServisi : IKatalogServisi
             })
             .ToListAsync();
 
+        var kurOnbellegi = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        var kayitlar = new List<UrunOzetDto>(urunler.Count);
+        foreach (var u in urunler)
+        {
+            var kaynak = u.ParaBirimi ?? ParaBirimiKodu.Usd;
+            kayitlar.Add(new UrunOzetDto
+            {
+                Id = u.Id,
+                UreticiUrunKodu = u.UreticiUrunKodu,
+                UreticiAd = u.UreticiAd,
+                KisaAciklama = u.KisaAciklama,
+                AnaGorselUrl = u.AnaGorselUrl,
+                GorselTemsiliMi = u.GorselTemsiliMi,
+                KampanyaliMi = u.KampanyaliMi,
+                ToplamStok = u.ToplamStok,
+                BaslangicFiyati = await FiyatiDonusturAsync(u.EnDusukFiyat ?? 0m, kaynak, hedefPara, kurOnbellegi),
+                ParaBirimi = hedefPara
+            });
+        }
+
         var sonuc = new UrunAramaSonucDto
         {
             Urunler = new PagedResultDto<UrunOzetDto>
@@ -162,24 +187,12 @@ public class KatalogServisi : IKatalogServisi
                 SayfaNo = sayfaNo,
                 SayfaBoyutu = sayfaBoyutu,
                 ToplamKayit = toplamKayit,
-                Kayitlar = urunler.Select(u => new UrunOzetDto
-                {
-                    Id = u.Id,
-                    UreticiUrunKodu = u.UreticiUrunKodu,
-                    UreticiAd = u.UreticiAd,
-                    KisaAciklama = u.KisaAciklama,
-                    AnaGorselUrl = u.AnaGorselUrl,
-                    GorselTemsiliMi = u.GorselTemsiliMi,
-                    KampanyaliMi = u.KampanyaliMi,
-                    ToplamStok = u.ToplamStok,
-                    BaslangicFiyati = u.EnDusukFiyat ?? 0m,
-                    ParaBirimi = u.ParaBirimi ?? "USD"
-                }).ToList()
+                Kayitlar = kayitlar
             }
         };
 
         if (filtre.KategoriId.HasValue)
-            sonuc.Filtreler = await FacetleriHesaplaAsync(temelSorgu, filtre, kategoriIdleri);
+            sonuc.Filtreler = await FacetleriHesaplaAsync(temelSorgu, filtre, kategoriIdleri, dilKodu);
 
         return sonuc;
     }
@@ -288,7 +301,8 @@ public class KatalogServisi : IKatalogServisi
     private async Task<List<FacetGrupDto>> FacetleriHesaplaAsync(
         IQueryable<Urun> temelSorgu,
         UrunAramaFiltreDto filtre,
-        List<int>? kategoriIdleri)
+        List<int>? kategoriIdleri,
+        string dil)
     {
         // Bu kategoride hangi filtreler gösterilecek? Doğrudan KategoriOzellikleri'nden.
         var tanimlar = await _context.KategoriOzellikleri
@@ -300,6 +314,7 @@ public class KatalogServisi : IKatalogServisi
                 ko.OzellikTanimId,
                 ko.OzellikTanim.Kod,
                 ko.OzellikTanim.AdTr,
+                ko.OzellikTanim.AdEn,
                 ko.OzellikTanim.Birim,
                 ko.OzellikTanim.GosterimTipi,
                 ko.Sira
@@ -334,7 +349,9 @@ public class KatalogServisi : IKatalogServisi
             gruplar.Add(new FacetGrupDto
             {
                 Kod = tanim.Kod,
-                Ad = tanim.AdTr,
+                Ad = DilKodu.IngilizceMi(dil)
+                    ? (string.IsNullOrWhiteSpace(tanim.AdEn) ? tanim.AdTr : tanim.AdEn)
+                    : tanim.AdTr,
                 Birim = tanim.Birim,
                 GosterimTipi = (short)tanim.GosterimTipi,
                 Secenekler = secenekler.Select(s => new FacetSecenekDto
@@ -353,8 +370,11 @@ public class KatalogServisi : IKatalogServisi
     // Ürün detay
     // -----------------------------------------------------------------------
 
-    public async Task<UrunDetayDto?> UrunDetayGetirAsync(long id)
+    public async Task<UrunDetayDto?> UrunDetayGetirAsync(long id, string? dil = null, string? paraBirimi = null)
     {
+        var dilKodu = DilKodu.Coz(dil);
+        var hedefPara = ParaBirimiKodu.Coz(paraBirimi);
+
         var urun = await _context.Urunler
             .Include(u => u.Uretici)
             .Include(u => u.Dokumanlar)
@@ -372,7 +392,9 @@ public class KatalogServisi : IKatalogServisi
             UreticiUrunKodu = urun.UreticiUrunKodu,
             UreticiAd = urun.Uretici.Ad,
             KisaAciklama = urun.KisaAciklama,
-            DetayliAciklama = urun.DetayliAciklamaTr,
+            DetayliAciklama = DilKodu.IngilizceMi(dilKodu)
+                ? (urun.DetayliAciklamaEn ?? urun.DetayliAciklamaTr)
+                : urun.DetayliAciklamaTr,
             GorselUrlleri = urun.Gorseller.OrderBy(g => g.Sira).Select(g => g.Url).ToList(),
             GorselTemsiliMi = urun.GorselTemsiliMi,
             UrunDurumu = urun.UrunDurumu.ToString(),
@@ -380,7 +402,9 @@ public class KatalogServisi : IKatalogServisi
             MontajTipi = urun.MontajTipi.ToString(),
             UreticiTeslimSuresi = urun.UreticiTeslimSuresiHaftaMin is null
                 ? null
-                : $"{urun.UreticiTeslimSuresiHaftaMin}-{urun.UreticiTeslimSuresiHaftaMax} Hafta"
+                : DilKodu.IngilizceMi(dilKodu)
+                    ? $"{urun.UreticiTeslimSuresiHaftaMin}-{urun.UreticiTeslimSuresiHaftaMax} weeks"
+                    : $"{urun.UreticiTeslimSuresiHaftaMin}-{urun.UreticiTeslimSuresiHaftaMax} Hafta"
         };
 
         if (!string.IsNullOrEmpty(urun.AnaGorselUrl) && !dto.GorselUrlleri.Contains(urun.AnaGorselUrl))
@@ -403,6 +427,8 @@ public class KatalogServisi : IKatalogServisi
         foreach (var dokuman in urun.Dokumanlar)
             dto.Dokumanlar.Add(new DokumanDto { Baslik = dokuman.Baslik, Url = dokuman.Url, Tip = (short)dokuman.Tip });
 
+        var kurOnbellegi = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var ambalaj in urun.UrunAmbalajlari.OrderByDescending(a => a.VarsayilanMi).ThenBy(a => a.Ad))
         {
             var ambalajDto = new AmbalajFiyatDto
@@ -423,8 +449,8 @@ public class KatalogServisi : IKatalogServisi
                 {
                     MinMiktar = kademe.MinMiktar,
                     MaxMiktar = kademe.MaxMiktar,
-                    BirimFiyat = kademe.BirimFiyat,
-                    ParaBirimi = kademe.ParaBirimi
+                    BirimFiyat = await FiyatiDonusturAsync(kademe.BirimFiyat, kademe.ParaBirimi, hedefPara, kurOnbellegi),
+                    ParaBirimi = hedefPara
                 });
             }
 
@@ -618,5 +644,37 @@ public class KatalogServisi : IKatalogServisi
             _context.Karsilastirmalar.Remove(kayit);
             await _context.SaveChangesAsync();
         }
+    }
+
+    private static string KategoriAdi(Kategori kategori, string dil) =>
+        DilKodu.IngilizceMi(dil)
+            ? (string.IsNullOrWhiteSpace(kategori.AdEn) ? kategori.AdTr : kategori.AdEn)
+            : kategori.AdTr;
+
+    private static string KategoriSlug(Kategori kategori, string dil) =>
+        DilKodu.IngilizceMi(dil)
+            ? (string.IsNullOrWhiteSpace(kategori.SlugEn) ? kategori.SlugTr : kategori.SlugEn)
+            : kategori.SlugTr;
+
+    private async Task<decimal> FiyatiDonusturAsync(
+        decimal tutar,
+        string kaynakParaBirimi,
+        string hedefParaBirimi,
+        Dictionary<string, decimal> kurOnbellegi)
+    {
+        var kaynak = string.IsNullOrWhiteSpace(kaynakParaBirimi)
+            ? ParaBirimiKodu.Usd
+            : kaynakParaBirimi.ToUpperInvariant();
+
+        if (kaynak == hedefParaBirimi)
+            return ParaHesabi.Yuvarla(tutar);
+
+        if (!kurOnbellegi.TryGetValue(kaynak, out var kur))
+        {
+            kur = await _dovizKuruServisi.KurGetirAsync(kaynak, hedefParaBirimi);
+            kurOnbellegi[kaynak] = kur;
+        }
+
+        return ParaHesabi.Donustur(tutar, kur);
     }
 }

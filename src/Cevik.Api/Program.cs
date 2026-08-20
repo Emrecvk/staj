@@ -1,3 +1,4 @@
+using Cevik.Altyapi.Icerik.Servisler;
 using Cevik.Altyapi.Katalog.Servisler;
 using Cevik.Altyapi.Kimlik.Servisler;
 using Cevik.Altyapi.Siparis.Servisler;
@@ -5,6 +6,7 @@ using Cevik.Altyapi.Teklif.Servisler;
 using Cevik.Altyapi.Veritabani;
 using Cevik.Altyapi.Veritabani.Seed;
 using Cevik.Altyapi.Yonetim.Servisler;
+using Cevik.Uygulama.Icerik.Arayuzler;
 using Cevik.Uygulama.Katalog.Arayuzler;
 using Cevik.Uygulama.Kimlik.Arayuzler;
 using Cevik.Uygulama.Ortak;
@@ -182,6 +184,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddScoped<CevikDataSeeder>();
 builder.Services.AddScoped<IEpostaServisi, SahteEpostaServisi>();
 builder.Services.AddScoped<IKatalogServisi, KatalogServisi>();
+builder.Services.AddScoped<IPublicIcerikServisi, PublicIcerikServisi>();
 builder.Services.AddScoped<IKimlikServisi, KimlikServisi>();
 builder.Services.AddScoped<IProfilServisi, ProfilServisi>();
 builder.Services.AddScoped<ISepetServisi, SepetServisi>();

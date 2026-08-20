@@ -17,16 +17,16 @@ public class KatalogController : ControllerBase
     }
 
     [HttpGet("kategoriler/agac")]
-    public async Task<IActionResult> KategoriAgaciniGetir()
+    public async Task<IActionResult> KategoriAgaciniGetir([FromQuery] string? dil)
     {
-        var sonuc = await _katalogServisi.KategoriAgaciniGetirAsync();
+        var sonuc = await _katalogServisi.KategoriAgaciniGetirAsync(dil);
         return Ok(sonuc);
     }
 
     [HttpGet("kategoriler/{slug}")]
-    public async Task<IActionResult> KategoriDetay(string slug)
+    public async Task<IActionResult> KategoriDetay(string slug, [FromQuery] string? dil)
     {
-        var sonuc = await _katalogServisi.KategoriDetayGetirAsync(slug);
+        var sonuc = await _katalogServisi.KategoriDetayGetirAsync(slug, dil);
         if (sonuc == null) return NotFound();
         return Ok(sonuc);
     }
@@ -39,9 +39,9 @@ public class KatalogController : ControllerBase
     }
 
     [HttpGet("urunler/{id}")]
-    public async Task<IActionResult> UrunDetay(long id)
+    public async Task<IActionResult> UrunDetay(long id, [FromQuery] string? dil, [FromQuery] string? paraBirimi)
     {
-        var sonuc = await _katalogServisi.UrunDetayGetirAsync(id);
+        var sonuc = await _katalogServisi.UrunDetayGetirAsync(id, dil, paraBirimi);
         if (sonuc == null) return NotFound();
         return Ok(sonuc);
     }
