@@ -25,6 +25,7 @@ public class GuvenlikTestleri
     {
         _fabrika = fabrika;
         _istemci = fabrika.CreateClient();
+        _istemci.DefaultRequestHeaders.Add("X-Forwarded-For", $"192.168.1.{Random.Shared.Next(1, 255)}");
     }
 
     // -----------------------------------------------------------------------
@@ -278,4 +279,87 @@ public class GuvenlikTestleri
         token!.AccessToken.Should().NotBeNullOrWhiteSpace();
         return token.AccessToken;
     }
+
+    // -----------------------------------------------------------------------
+    // Oran Sınırlama (Rate Limiting)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task KimlikGiris_OranSinirlamasi_Uygulanir()
+    {
+        var eposta = $"ratelimit.{Guid.NewGuid():N}@test.com";
+        var parola = "YanlisSifre123";
+
+        // Auth politikasının limiti 5 (1 dakikada)
+        for (int i = 0; i < 5; i++)
+        {
+            await _istemci.PostAsJsonAsync("/api/kimlik/giris", new { eposta, sifre = parola });
+        }
+
+        // 6. istekte 429 Too Many Requests dönmeli
+        var yanit = await _istemci.PostAsJsonAsync("/api/kimlik/giris", new { eposta, sifre = parola });
+        
+        yanit.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+    }
+
+    // -----------------------------------------------------------------------
+    // Sağlık Kontrolü (Health Check)
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task SaglikKontrolu_200OkVeHealthyDoner()
+    {
+        var yanit = await _istemci.GetAsync("/saglik");
+        
+        yanit.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var icerik = await yanit.Content.ReadAsStringAsync();
+        icerik.Should().Be("Healthy");
+    }
+
+    // -----------------------------------------------------------------------
+    // CORS
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Cors_GecerliOrigin_KabulEdilir()
+    {
+        using var istek = new HttpRequestMessage(HttpMethod.Options, "/api/kimlik/giris");
+        istek.Headers.Add("Origin", "https://test.cevik.com");
+        istek.Headers.Add("Access-Control-Request-Method", "POST");
+
+        var yanit = await _istemci.SendAsync(istek);
+        
+        yanit.IsSuccessStatusCode.Should().BeTrue();
+        yanit.Headers.Contains("Access-Control-Allow-Origin").Should().BeTrue();
+    }
+
+    // -----------------------------------------------------------------------
+    // Problem Details
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task ProblemDetails_BozukIsteklerde_GecerliDoner()
+    {
+        // 400 Bad Request tetiklemek için geçersiz istek gönderelim
+        var yanit = await _istemci.PostAsJsonAsync("/api/kimlik/kayit", new
+        {
+            eposta = "hatali_format",
+            telefon = "123",
+            sifre = "kisa"
+        });
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        yanit.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+    }
+
+    [Fact]
+    public async Task ProblemDetails_BulunamayanUcta_GecerliDoner()
+    {
+        var yanit = await _istemci.GetAsync("/api/olmayan-uc-adresi-404");
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        yanit.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+    }
 }
+
