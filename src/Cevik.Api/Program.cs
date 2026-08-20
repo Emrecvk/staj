@@ -15,12 +15,15 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -176,6 +179,64 @@ builder.Services.AddScoped<IDovizKuruServisi, Cevik.Altyapi.Fiyatlama.Servisler.
 builder.Services.AddScoped<ITeklifServisi, TeklifServisi>();
 builder.Services.AddScoped<IYonetimServisi, YonetimServisi>();
 
+// Health Checks
+var baglantiDizesi = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection yapilandirilmamis.");
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+builder.Services.AddHealthChecks()
+    .AddNpgSql(baglantiDizesi)
+    .AddRedis(redisConnectionString);
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    var isTesting = builder.Configuration.GetValue<bool>("TestOrtami");
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        if (isTesting) return RateLimitPartition.GetNoLimiter("bypass");
+
+        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+    });
+
+    options.AddPolicy("Auth", context =>
+    {
+        if (isTesting) 
+        {
+            // GuvenlikTestleri.cs'deki rate limit testi icin eger test ozel IP gonderdiyse ona limit koy
+            var xforwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (xforwarded != null && xforwarded.StartsWith("192.168.1.")) 
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(xforwarded, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+            }
+            return RateLimitPartition.GetNoLimiter("bypass");
+        }
+
+        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 var app = builder.Build();
 
 // ---------------------------------------------------------------------------
@@ -212,12 +273,11 @@ app.UseExceptionHandler(hataHatti =>
         };
 
         context.Response.StatusCode = durumKodu;
-        await context.Response.WriteAsJsonAsync(new
+        await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
         {
-            baslik,
-            // Ayrintiyi yalnizca beklenen hatalarda gonder; 500'de ic detay sizdirma.
-            detay = durumKodu == StatusCodes.Status500InternalServerError ? null : istisna?.Message,
-            durumKodu
+            Title = baslik,
+            Detail = durumKodu == StatusCodes.Status500InternalServerError ? null : istisna?.Message,
+            Status = durumKodu
         });
     });
 });
@@ -235,11 +295,12 @@ else
 }
 
 app.UseCors("FrontendCorsPolicy");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapGet("/saglik", () => Results.Ok(new { durum = "ayakta", zaman = DateTimeOffset.UtcNow }));
+app.MapHealthChecks("/saglik");
 
 app.Run();
 

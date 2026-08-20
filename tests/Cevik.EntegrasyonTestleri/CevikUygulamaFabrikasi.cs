@@ -48,6 +48,8 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
                 ["Ticari:AnaParaBirimi"] = "TRY",
                 ["Ticari:UcretsizKargoEsigi"] = "1000",
                 ["Ticari:KargoUcreti"] = "50",
+                ["Cors:IzinliKokenler:0"] = "https://test.cevik.com",
+                ["TestOrtami"] = "true",
                 ["Yonetici:Eposta"] = YoneticiEpostasi,
                 ["Yonetici:Parola"] = YoneticiParolasi
             }));

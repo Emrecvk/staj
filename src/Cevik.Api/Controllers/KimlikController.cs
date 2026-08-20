@@ -4,6 +4,7 @@ using Cevik.Uygulama.Kimlik.Arayuzler;
 using Cevik.Uygulama.Kimlik.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cevik.Api.Controllers;
 
@@ -18,6 +19,7 @@ public class KimlikController : ControllerBase
         _kimlikServisi = kimlikServisi;
     }
 
+    [EnableRateLimiting("Auth")]
     [HttpPost("giris")]
     public async Task<IActionResult> Giris(KullaniciGirisDto dto)
     {
@@ -28,6 +30,7 @@ public class KimlikController : ControllerBase
         return Ok(token);
     }
 
+    [EnableRateLimiting("Auth")]
     [HttpPost("kayit")]
     public async Task<IActionResult> Kayit(KullaniciKayitDto dto)
     {
@@ -53,6 +56,7 @@ public class KimlikController : ControllerBase
         return Ok(new { Mesaj = "Firma başvurunuz başarıyla alındı." });
     }
 
+    [EnableRateLimiting("Auth")]
     [HttpPost("yenile")]
     public async Task<IActionResult> Yenile(TokenYenileDto dto)
     {
@@ -73,6 +77,7 @@ public class KimlikController : ControllerBase
         return Ok(new { Mesaj = "Başarıyla çıkış yapıldı." });
     }
 
+    [EnableRateLimiting("Auth")]
     [HttpPost("sifre-sifirlama-talebi")]
     public async Task<IActionResult> SifreSifirlamaTalebi(SifreSifirlamaTalebiDto dto)
     {
@@ -88,6 +93,7 @@ public class KimlikController : ControllerBase
         return Ok(new { Mesaj = "Şifre sıfırlama e-postası gönderildi." });
     }
 
+    [EnableRateLimiting("Auth")]
     [HttpPost("sifre-sifirla")]
     public async Task<IActionResult> SifreSifirla(SifreSifirlaDto dto)
     {
