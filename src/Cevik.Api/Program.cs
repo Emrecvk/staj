@@ -194,6 +194,16 @@ builder.Services.AddScoped<ITeklifServisi, TeklifServisi>();
 builder.Services.AddScoped<ITeklifYonetimServisi, Cevik.Altyapi.Teklif.Servisler.TeklifYonetimServisi>();
 builder.Services.AddScoped<IYonetimServisi, YonetimServisi>();
 
+// E-Posta / Bildirim
+builder.Services.AddScoped<Cevik.Uygulama.Ortak.Arayuzler.IBildirimServisi, Cevik.Altyapi.Ortak.Servisler.EpostaBildirimServisi>();
+
+// TCMB Döviz Kur
+builder.Services.AddHttpClient<Cevik.Altyapi.Fiyatlama.Servisler.ITcmbIstemcisi, Cevik.Altyapi.Fiyatlama.Servisler.TcmbIstemcisi>();
+builder.Services.AddHostedService<Cevik.Altyapi.Fiyatlama.ArkaPlan.TcmbDovizGuncelleyiciBackgroundService>();
+
+// Stok Bildirim
+builder.Services.AddHostedService<Cevik.Altyapi.Katalog.ArkaPlan.StokBildirimIsleyiciBackgroundService>();
+
 // Health Checks
 var baglantiDizesi = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection yapilandirilmamis.");
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";

@@ -57,6 +57,13 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
         {
             services.RemoveAll<IDistributedCache>();
             services.AddDistributedMemoryCache();
+
+            // Background Job'ların test sürecini tıkamaması için sahte servisler ekliyoruz
+            services.RemoveAll<Cevik.Altyapi.Fiyatlama.Servisler.ITcmbIstemcisi>();
+            services.AddScoped<Cevik.Altyapi.Fiyatlama.Servisler.ITcmbIstemcisi, SahteTcmbIstemcisi>();
+
+            services.RemoveAll<Cevik.Uygulama.Ortak.Arayuzler.IBildirimServisi>();
+            services.AddScoped<Cevik.Uygulama.Ortak.Arayuzler.IBildirimServisi, SahteBildirimServisi>();
         });
     }
 
@@ -89,3 +96,24 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
 /// <summary>Konteyner bir kez ayağa kalksın, tüm test sınıfları paylaşsın.</summary>
 [CollectionDefinition("Api")]
 public class ApiKoleksiyonu : ICollectionFixture<CevikUygulamaFabrikasi>;
+
+public class SahteTcmbIstemcisi : Cevik.Altyapi.Fiyatlama.Servisler.ITcmbIstemcisi
+{
+    public Task<Dictionary<string, (decimal Alis, decimal Satis)>> KurlariGetirAsync()
+    {
+        return Task.FromResult(new Dictionary<string, (decimal Alis, decimal Satis)>
+        {
+            { "USD", (34.1234m, 34.1567m) },
+            { "EUR", (38.1234m, 38.1567m) }
+        });
+    }
+}
+
+public class SahteBildirimServisi : Cevik.Uygulama.Ortak.Arayuzler.IBildirimServisi
+{
+    public Task EpostaGonderAsync(string kime, string konu, string icerik)
+    {
+        // Gönderilmiş gibi davran
+        return Task.CompletedTask;
+    }
+}
