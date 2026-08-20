@@ -26,7 +26,31 @@ public class FirmaBasvuruDto
 public class TokenDto
 {
     public required string AccessToken { get; set; }
+    public required string RefreshToken { get; set; }
     public required string KullaniciAdi { get; set; }
     public bool FirmaMi { get; set; }
     public long? FirmaId { get; set; }
+}
+
+public class TokenYenileDto
+{
+    public required string RefreshToken { get; set; }
+}
+
+public class SifreSifirlamaTalebiDto
+{
+    public required string Eposta { get; set; }
+}
+
+public class SifreSifirlaDto
+{
+    public required string Eposta { get; set; }
+    public required string Token { get; set; }
+    public required string YeniSifre { get; set; }
+}
+
+public class EpostaDogrulaDto
+{
+    public required string Eposta { get; set; }
+    public required string Token { get; set; }
 }

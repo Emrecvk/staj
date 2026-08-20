@@ -41,6 +41,7 @@ public class CevikDbContext : DbContext
     public DbSet<MusteriUrunKodu> MusteriUrunKodlari { get; set; } = null!;
     public DbSet<Favori> Favoriler { get; set; } = null!;
     public DbSet<Karsilastirma> Karsilastirmalar { get; set; } = null!;
+    public DbSet<KullaniciRefreshToken> KullaniciRefreshTokens { get; set; } = null!;
 
     // Sipariş
     public DbSet<Sepet> Sepetler { get; set; } = null!;
