@@ -8,7 +8,6 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.OpenApi" Version="3.10.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
@@ -28,9 +27,23 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
   </ItemGroup>
-  <ItemGroup Label="API">
+  <ItemGroup Label="API / OpenAPI">
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+
+    <!-- Microsoft.OpenApi sürümü Swashbuckle'a BAĞLIDIR, serbestçe yükseltilemez.
+         Swashbuckle.AspNetCore.Swagger 10.2.3, Microsoft.OpenApi 2.7.5'e göre
+         derlenmiştir. Merkezî paket yönetiminde transitive pinning açık olduğu
+         için buradaki değer Swashbuckle'ın kendi isteğini EZER; 3.x yazıldığında
+         Swashbuckle çalışma zamanında 2.x imzasını arar ve swagger.json üretimi
+         MissingMethodException ile HTTP 500 döner:
+           IOpenApiRequestBody.get_Content()
+         Swashbuckle 3.x'e geçene kadar bu pin 2.x bandında kalmalıdır.
+
+         Microsoft.AspNetCore.OpenApi (ASP.NET Core'un yerleşik OpenAPI üreteci)
+         bilerek EKLİ DEĞİL: Microsoft.OpenApi 3.x zorunlu kılıyor ve zaten
+         kullanılmıyor — dokümantasyon Swashbuckle üzerinden üretiliyor.
+         İki OpenAPI yığınını aynı anda tutmak bu çakışmanın kaynağıydı. -->
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
   </ItemGroup>
   <ItemGroup Label="Seed / sahte veri">
     <PackageVersion Include="Bogus" Version="35.6.5" />
