@@ -17,6 +17,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -97,6 +98,13 @@ builder.Services.AddSwaggerGen(c =>
     {
         { new OpenApiSecuritySchemeReference(GuvenlikSemasi, dokuman), new List<string>() }
     });
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 builder.Services.AddCors(options =>
@@ -192,13 +200,9 @@ builder.Services.AddHealthChecks()
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
 {
-    var isTesting = builder.Configuration.GetValue<bool>("TestOrtami");
-
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
-        if (isTesting) return RateLimitPartition.GetNoLimiter("bypass");
-
-        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 100,
@@ -210,24 +214,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("Auth", context =>
     {
-        if (isTesting) 
-        {
-            // GuvenlikTestleri.cs'deki rate limit testi icin eger test ozel IP gonderdiyse ona limit koy
-            var xforwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (xforwarded != null && xforwarded.StartsWith("192.168.1.")) 
-            {
-                return RateLimitPartition.GetFixedWindowLimiter(xforwarded, _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 5,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0
-                });
-            }
-            return RateLimitPartition.GetNoLimiter("bypass");
-        }
-
-        var ip = context.Request.Headers["X-Forwarded-For"].FirstOrDefault() ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 5,
@@ -241,6 +228,8 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // ---------------------------------------------------------------------------
 // Migration + seed
@@ -278,12 +267,17 @@ app.UseExceptionHandler(hataHatti =>
         context.Response.StatusCode = durumKodu;
         await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
         {
+            Status = durumKodu,
             Title = baslik,
-            Detail = durumKodu == StatusCodes.Status500InternalServerError ? null : istisna?.Message,
-            Status = durumKodu
+            Detail = app.Environment.IsDevelopment() ? istisna?.ToString() : null
         });
     });
 });
+
+if (app.Configuration.GetValue<bool>("TestOrtami"))
+{
+    app.MapGet("/api/test-hata", () => { throw new Exception("Cok gizli sistem hatasi: DB SIFRESI=123"); });
+}
 
 if (app.Environment.IsDevelopment())
 {

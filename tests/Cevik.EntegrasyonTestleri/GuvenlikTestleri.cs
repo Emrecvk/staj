@@ -6,6 +6,7 @@ using Cevik.Alan.Ortak;
 using Cevik.Uygulama.Kimlik.Dto;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Cevik.EntegrasyonTestleri;
 
@@ -289,15 +290,19 @@ public class GuvenlikTestleri
     {
         var eposta = $"ratelimit.{Guid.NewGuid():N}@test.com";
         var parola = "YanlisSifre123";
+        
+        var ozelIstemci = _fabrika.CreateClient();
+        ozelIstemci.DefaultRequestHeaders.Remove("X-Forwarded-For");
+        ozelIstemci.DefaultRequestHeaders.Add("X-Forwarded-For", "192.168.99.99");
 
         // Auth politikasının limiti 5 (1 dakikada)
         for (int i = 0; i < 5; i++)
         {
-            await _istemci.PostAsJsonAsync("/api/kimlik/giris", new { eposta, sifre = parola });
+            await ozelIstemci.PostAsJsonAsync("/api/kimlik/giris", new { eposta, sifre = parola });
         }
 
         // 6. istekte 429 Too Many Requests dönmeli
-        var yanit = await _istemci.PostAsJsonAsync("/api/kimlik/giris", new { eposta, sifre = parola });
+        var yanit = await ozelIstemci.PostAsJsonAsync("/api/kimlik/giris", new { eposta, sifre = parola });
         
         yanit.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
     }
@@ -360,6 +365,28 @@ public class GuvenlikTestleri
 
         yanit.StatusCode.Should().Be(HttpStatusCode.NotFound);
         yanit.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
+    }
+
+    [Fact]
+    public async Task ProblemDetails_UretimOrtaminda_HassasVeriSizdirmaz()
+    {
+        // Ozel bir production fabrikasi olustur
+        using var uretimFabrikasi = _fabrika.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Production");
+        });
+
+        var istemci = uretimFabrikasi.CreateClient();
+        var yanit = await istemci.GetAsync("/api/test-hata");
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        
+        var icerik = await yanit.Content.ReadAsStringAsync();
+        icerik.Should().NotContain("Cok gizli sistem hatasi", "Uretim ortaminda istisna detayi veya stack trace sizmamali");
+        
+        var problemDetails = await yanit.Content.ReadFromJsonAsync<JsonElement>();
+        problemDetails.GetProperty("title").GetString().Should().Be("Beklenmeyen bir hata olustu");
+        problemDetails.TryGetProperty("detail", out var detail).Should().BeFalse("Detail alani uretimde hic olmamali veya null olmali");
     }
 }
 
