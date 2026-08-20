@@ -8,6 +8,13 @@ namespace Cevik.Uygulama.Yonetim.Dto;
 /// hatta ilişkili koleksiyonları POST gövdesinden set edebilmesi demekti
 /// (over-posting). DTO ile yalnızca düzenlenmesine izin verilen alanlar açılır.
 /// </summary>
+public class IliskiliUrunEkleDto
+{
+    public long IliskiliUrunId { get; set; }
+    public short Tip { get; set; }
+    public int Sira { get; set; }
+}
+
 public class UrunEkleDto
 {
     public int KategoriId { get; set; }

@@ -13,4 +13,9 @@ public interface IProfilServisi
     Task<List<FavoriDto>> FavorileriGetirAsync(long kullaniciId);
     Task<bool> FavoriEkleAsync(long kullaniciId, FavoriEkleDto dto);
     Task<bool> FavoriSilAsync(long kullaniciId, long urunId);
+
+    Task<List<MusteriUrunKoduDto>> MusteriUrunKodlariniGetirAsync(long kullaniciId);
+    Task<MusteriUrunKoduDto> MusteriUrunKoduEkleAsync(long kullaniciId, MusteriUrunKoduEkleDto dto);
+    Task<bool> MusteriUrunKoduGuncelleAsync(long kullaniciId, long id, MusteriUrunKoduGuncelleDto dto);
+    Task<bool> MusteriUrunKoduSilAsync(long kullaniciId, long id);
 }

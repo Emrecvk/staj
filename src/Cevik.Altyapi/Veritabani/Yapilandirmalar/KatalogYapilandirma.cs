@@ -39,7 +39,7 @@ public class IliskiliUrunYapilandirmasi : IEntityTypeConfiguration<IliskiliUrun>
         builder.HasKey(i => new { i.UrunId, i.IliskiliUrunId, i.IliskiTipi });
 
         builder.HasOne(i => i.Urun)
-               .WithMany()
+               .WithMany(u => u.IliskiliUrunler)
                .HasForeignKey(i => i.UrunId)
                .OnDelete(DeleteBehavior.Restrict);
 

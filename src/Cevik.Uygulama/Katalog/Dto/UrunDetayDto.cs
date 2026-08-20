@@ -23,6 +23,11 @@ public class UrunDetayDto
     public Dictionary<string, string> Ozellikler { get; set; } = new();
     
     public List<AmbalajFiyatDto> AmbalajlarVeFiyatlar { get; set; } = new();
+
+    public List<IliskiliUrunOzetDto> Muadiller { get; set; } = new();
+    public List<IliskiliUrunOzetDto> BenzerUrunler { get; set; } = new();
+    public List<IliskiliUrunOzetDto> ParametrikUrunler { get; set; } = new();
+    public List<IliskiliUrunOzetDto> BirlikteKullanilanlar { get; set; } = new();
 }
 
 public class DokumanDto
@@ -53,4 +58,12 @@ public class FiyatKademesiDto
     public int? MaxMiktar { get; set; }
     public decimal BirimFiyat { get; set; }
     public required string ParaBirimi { get; set; }
+}
+
+public class IliskiliUrunOzetDto
+{
+    public long Id { get; set; }
+    public required string UreticiUrunKodu { get; set; }
+    public required string KisaAciklama { get; set; }
+    public string? AnaGorselUrl { get; set; }
 }

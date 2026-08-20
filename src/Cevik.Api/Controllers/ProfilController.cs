@@ -68,4 +68,34 @@ public class ProfilController : ControllerBase
         if (!sonuc) return NotFound();
         return Ok();
     }
+
+    [HttpGet("musteri-urun-kodlari")]
+    public async Task<IActionResult> MusteriUrunKodlariniGetir()
+    {
+        var kodlar = await _profilServisi.MusteriUrunKodlariniGetirAsync(GetUserId());
+        return Ok(kodlar);
+    }
+
+    [HttpPost("musteri-urun-kodlari")]
+    public async Task<IActionResult> MusteriUrunKoduEkle(MusteriUrunKoduEkleDto dto)
+    {
+        var sonuc = await _profilServisi.MusteriUrunKoduEkleAsync(GetUserId(), dto);
+        return Ok(sonuc);
+    }
+
+    [HttpPut("musteri-urun-kodlari/{id}")]
+    public async Task<IActionResult> MusteriUrunKoduGuncelle(long id, MusteriUrunKoduGuncelleDto dto)
+    {
+        var sonuc = await _profilServisi.MusteriUrunKoduGuncelleAsync(GetUserId(), id, dto);
+        if (!sonuc) return NotFound();
+        return Ok();
+    }
+
+    [HttpDelete("musteri-urun-kodlari/{id}")]
+    public async Task<IActionResult> MusteriUrunKoduSil(long id)
+    {
+        var sonuc = await _profilServisi.MusteriUrunKoduSilAsync(GetUserId(), id);
+        if (!sonuc) return NotFound();
+        return Ok();
+    }
 }

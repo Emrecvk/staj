@@ -236,4 +236,22 @@ public class UrunYonetimController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    // -----------------------------------------------------------------------
+    // İlişkili Ürünler
+    // -----------------------------------------------------------------------
+
+    [HttpPost("{id:long}/iliskili")]
+    public async Task<IActionResult> IliskiliUrunEkle(long id, [FromBody] IliskiliUrunEkleDto dto, [FromServices] Cevik.Uygulama.Katalog.Arayuzler.IKatalogServisi katalogServisi)
+    {
+        await katalogServisi.IliskiliUrunEkleAsync(id, dto.IliskiliUrunId, dto.Tip, dto.Sira);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:long}/iliskili/{iliskiliId:long}/{tip}")]
+    public async Task<IActionResult> IliskiliUrunSil(long id, long iliskiliId, short tip, [FromServices] Cevik.Uygulama.Katalog.Arayuzler.IKatalogServisi katalogServisi)
+    {
+        await katalogServisi.IliskiliUrunSilAsync(id, iliskiliId, tip);
+        return NoContent();
+    }
 }

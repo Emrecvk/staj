@@ -64,4 +64,6 @@ public class Urun : VarlikTabaniUzun
     public ICollection<UrunOzellikDegeri> OzellikDegerleri { get; set; } = [];
     public ICollection<UrunGorseli> Gorseller { get; set; } = [];
     public ICollection<UrunDokumani> Dokumanlar { get; set; } = [];
+    
+    public ICollection<IliskiliUrun> IliskiliUrunler { get; set; } = [];
 }
