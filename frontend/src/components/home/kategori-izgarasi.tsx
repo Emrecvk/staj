@@ -131,7 +131,6 @@ export function KategoriIzgarasi({ categories = [] }: { categories?: Category[] 
   const categoryItems: CategoryCardItem[] = DEFAULT_CATEGORY_FAMILIES.map((fam) => {
     const matched = categories.find(
       (c) =>
-        c.id === fam.id ||
         c.slug === fam.slug ||
         c.ad.toLowerCase().includes(fam.ad.toLowerCase())
     );
@@ -148,7 +147,7 @@ export function KategoriIzgarasi({ categories = [] }: { categories?: Category[] 
             : fam.ornekselAltKategoriler,
       };
     }
-    return fam;
+    return { ...fam, id: 80000 + fam.id };
   });
 
   return (
