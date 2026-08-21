@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { FavoriButonu } from "@/components/favori-karsilastirma-butonlari";
+import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
 import { StokRozeti } from "@/components/ui/rozet";
 import type { ProductSummary } from "@/lib/api";
 
@@ -14,22 +14,6 @@ function fiyatBicimle(deger: number, paraBirimi: string) {
 
 /**
  * Ürün kartı.
- *
- * Üç bilinçli karar:
- *
- * 1. Nabız atan stok noktası kaldırıldı. Bir ızgarada 20+ kart var ve her
- *    birinde sonsuz döngü çalışıyordu. Gerçek sinyal zaten adet; yanıp sönen
- *    nokta bilgi taşımıyor, sadece dikkat çalıyor.
- *
- * 2. Sepet butonu yerine "İncele". Sepete ekleme ambalaj seçimi gerektiriyor
- *    (MOQ, MPQ ve katlama kuralları ambalaj bazında); ızgaradan tek tıkla
- *    eklemek bu kuralı atlamak olurdu. Önceki sürümde buton zaten hiçbir şeye
- *    bağlı değildi.
- *
- * 3. Görsel yerine MPN. Seed verisi /gorseller/... yolunu veriyor ama o
- *    dosyalar mevcut değil. Kırık görsel yerine parça kodunu mono ile
- *    göstermek bu sektörde standart; Digi-Key ve Mouser da fotoğrafı
- *    olmayan parçalarda aynısını yapıyor.
  */
 export function ProductCard({ product }: { product: ProductSummary }) {
   return (
@@ -59,11 +43,25 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           </span>
         )}
 
-        {/* Odaklanınca da görünür: klavye kullanıcısı favoriye erişebilmeli. */}
+        {/* Odaklanınca da görünür: klavye kullanıcısı favori ve karşılaştırmaya erişebilmeli. */}
         <div
-          className="absolute right-2 top-2 opacity-0 transition-opacity
+          className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity
                      duration-[var(--sure-acilir)] focus-within:opacity-100 group-hover:opacity-100"
         >
+          <KarsilastirmaButonu
+            urunId={product.id}
+            product={{
+              id: product.id,
+              ureticiUrunKodu: product.ureticiUrunKodu,
+              ureticiAd: product.ureticiAd,
+              anaGorselUrl: product.anaGorselUrl,
+              baslangicFiyati: product.baslangicFiyati,
+              paraBirimi: product.paraBirimi,
+              toplamStok: product.toplamStok,
+              kategoriId: product.kategoriId,
+              ozellikler: product.ozellikler,
+            }}
+          />
           <FavoriButonu urunId={product.id} />
         </div>
       </div>

@@ -1,22 +1,56 @@
 const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export type Category = { id: number; ad: string; slug: string; ikonUrl: string | null; yaprakMi: boolean; sira: number; altKategoriler: Category[] };
-export type ProductSummary = { id: number; ureticiUrunKodu: string; ureticiAd: string; kisaAciklama: string; anaGorselUrl: string | null; gorselTemsiliMi: boolean; toplamStok: number; baslangicFiyati: number; paraBirimi: string; kampanyaliMi: boolean };
+export type DocumentType = { tip: number; url: string; baslik: string; boyutByte?: number; dil?: string };
+export type PriceTier = { minMiktar: number; maxMiktar: number | null; birimFiyat: number; paraBirimi: string; musteriGrubuId?: number | null };
+export type PackagingOption = { ambalajId: number; ad: string; ambalajTipi?: number; mpq: number; moq: number; katlamaMiktari: number; stokMiktari: number; gelecekStokMiktari: number; gelecekStokTarihi: string | null; fiyatlar: PriceTier[]; varsayilanMi?: boolean };
+export type WarehouseStock = { depoKodu: string; depoAdi: string; stokMiktari: number; teslimSuresiGun: number };
+
+export type ProductSummary = {
+  id: number;
+  ureticiUrunKodu: string;
+  ureticiId?: number;
+  ureticiAd: string;
+  ureticiLogoUrl?: string | null;
+  kategoriId?: number;
+  kategoriYolu?: string[];
+  kisaAciklama: string;
+  detayliAciklama?: string | null;
+  anaGorselUrl: string | null;
+  gorselUrlleri?: string[];
+  gorselTemsiliMi: boolean;
+  toplamStok: number;
+  baslangicFiyati: number;
+  paraBirimi: string;
+  kampanyaliMi: boolean;
+  urunDurumu?: string | null;
+  rohsDurumu?: string | null;
+  montajTipi?: string | null;
+  ureticiTeslimSuresi?: string | null;
+  kilif?: string;
+  dokumanlar?: DocumentType[];
+  ozellikler?: Record<string, string>;
+  ambalajlarVeFiyatlar?: PackagingOption[];
+  depoStoklari?: WarehouseStock[];
+};
+
 export type FacetOption = { deger: string; hamDeger: string; urunSayisi: number };
 export type FacetGroup = { kod: string; ad: string; gosterimTipi: number; secenekler: FacetOption[] };
 export type ProductResult = { urunler: { sayfaNo: number; sayfaBoyutu: number; toplamKayit: number; toplamSayfa: number; kayitlar: ProductSummary[] }; filtreler: FacetGroup[] };
 
-export type DocumentType = { tip: number; url: string; baslik: string };
-export type PriceTier = { minMiktar: number; maxMiktar: number | null; birimFiyat: number; paraBirimi: string };
-export type PackagingOption = { ambalajId: number; ad: string; mpq: number; moq: number; katlamaMiktari: number; stokMiktari: number; gelecekStokMiktari: number; gelecekStokTarihi: string | null; fiyatlar: PriceTier[] };
 export type RelatedProductSummary = { id: number; ureticiUrunKodu: string; kisaAciklama: string; anaGorselUrl: string | null };
 
 export type ProductDetail = {
   id: number;
   ureticiUrunKodu: string;
+  ureticiId: number;
   ureticiAd: string;
+  ureticiLogoUrl?: string | null;
+  kategoriId: number;
+  kategoriYolu?: string[];
   kisaAciklama: string;
   detayliAciklama: string | null;
+  anaGorselUrl: string | null;
   gorselUrlleri: string[];
   gorselTemsiliMi: boolean;
   urunDurumu: string | null;
@@ -26,6 +60,7 @@ export type ProductDetail = {
   dokumanlar: DocumentType[];
   ozellikler: Record<string, string>;
   ambalajlarVeFiyatlar: PackagingOption[];
+  depoStoklari?: WarehouseStock[];
   muadiller: RelatedProductSummary[];
   benzerUrunler: RelatedProductSummary[];
   parametrikUrunler: RelatedProductSummary[];

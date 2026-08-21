@@ -6,19 +6,14 @@ import { Heart, ArrowLeftRight, Loader2 } from "lucide-react";
 import {
   favoriEkle, favoriSil, karsilastirmayaEkle, karsilastirmadanCikar,
 } from "@/lib/katalog-actions";
+import { useComparisonStore, type ComparisonItem } from "@/lib/stores/comparison-store";
+import { notifyFavoritesUpdated } from "@/lib/stores/header-state";
 
 type Boyut = "kucuk" | "buyuk";
 
 /**
  * Favori ve karşılaştırma kontrolleri.
- *
- * Önceki sürümde bu butonlar arayüzde vardı ama hiçbir şeye bağlı değildi
- * (`onClick={(e) => e.preventDefault()}`), lib/api.ts içindeki
- * toggleFavorite/toggleCompare ise "Mock API call" döndürüyordu. Artık
- * gerçek uçlara bağlılar.
- *
- * Favori giriş ister; misafir kullanıcı giriş sayfasına yönlendirilir.
- * Karşılaştırma misafir oturum anahtarıyla da çalışır.
+ * Gerçek sunucu eylemlerine ve reaktif istemci durumlarına bağlıdır.
  */
 export function FavoriButonu({ urunId, baslangicta = false, boyut = "kucuk" }: {
   urunId: number; baslangicta?: boolean; boyut?: Boyut;
@@ -29,7 +24,6 @@ export function FavoriButonu({ urunId, baslangicta = false, boyut = "kucuk" }: {
   const [hata, setHata] = useState<string | null>(null);
 
   const tikla = (olay: React.MouseEvent) => {
-    // Kart bir Link içinde olabilir; tıklama ürüne gitmesin.
     olay.preventDefault();
     olay.stopPropagation();
 
@@ -39,6 +33,7 @@ export function FavoriButonu({ urunId, baslangicta = false, boyut = "kucuk" }: {
       if (sonuc.success) {
         setFavori(!favori);
         setHata(null);
+        notifyFavoritesUpdated();
         return;
       }
 
@@ -61,8 +56,8 @@ export function FavoriButonu({ urunId, baslangicta = false, boyut = "kucuk" }: {
       aria-label={favori ? "Favorilerden çıkar" : "Favorilere ekle"}
       title={hata ?? (favori ? "Favorilerden çıkar" : "Favorilere ekle")}
       className={`rounded-full transition-colors disabled:opacity-50 ${
-        boyut === "buyuk" ? "bg-gray-50 p-2 hover:bg-gray-100" : "bg-white p-1.5 shadow-sm"
-      } ${favori ? "text-red-500" : "text-gray-400 hover:text-red-500"}`}
+        boyut === "buyuk" ? "bg-yuzey-gomulu p-2 hover:bg-yuzey" : "bg-yuzey-kart p-1.5 shadow-sm"
+      } ${favori ? "text-vurgu" : "text-metin-ucuncul hover:text-vurgu"}`}
     >
       {beklemede
         ? <Loader2 size={ikonBoyutu} className="animate-spin" />
@@ -71,10 +66,17 @@ export function FavoriButonu({ urunId, baslangicta = false, boyut = "kucuk" }: {
   );
 }
 
-export function KarsilastirmaButonu({ urunId, baslangicta = false }: {
-  urunId: number; baslangicta?: boolean;
+export function KarsilastirmaButonu({
+  urunId,
+  product,
+  baslangicta = false,
+}: {
+  urunId: number;
+  product?: Partial<ComparisonItem>;
+  baslangicta?: boolean;
 }) {
-  const [listede, setListede] = useState(baslangicta);
+  const { isInComparison, addItem, removeItem } = useComparisonStore();
+  const listede = isInComparison(urunId) || baslangicta;
   const [beklemede, basla] = useTransition();
   const [hata, setHata] = useState<string | null>(null);
 
@@ -83,12 +85,28 @@ export function KarsilastirmaButonu({ urunId, baslangicta = false }: {
     olay.stopPropagation();
 
     basla(async () => {
-      const sonuc = listede
-        ? await karsilastirmadanCikar(urunId)
-        : await karsilastirmayaEkle(urunId);
-
-      if (sonuc.success) { setListede(!listede); setHata(null); }
-      else setHata(sonuc.message ?? "İşlem başarısız.");
+      if (listede) {
+        removeItem(urunId);
+        await karsilastirmadanCikar(urunId);
+      } else {
+        const added = addItem({
+          id: urunId,
+          ureticiUrunKodu: product?.ureticiUrunKodu ?? `URUN-${urunId}`,
+          ureticiAd: product?.ureticiAd ?? "Distribütör",
+          anaGorselUrl: product?.anaGorselUrl ?? null,
+          baslangicFiyati: product?.baslangicFiyati ?? 0,
+          paraBirimi: product?.paraBirimi ?? "USD",
+          toplamStok: product?.toplamStok ?? 100,
+          kategoriId: product?.kategoriId ?? 1,
+          ozellikler: product?.ozellikler,
+        });
+        if (!added) {
+          setHata("En fazla 4 ürün karşılaştırabilirsiniz.");
+          return;
+        }
+        await karsilastirmayaEkle(urunId);
+      }
+      setHata(null);
     });
   };
 
@@ -100,8 +118,8 @@ export function KarsilastirmaButonu({ urunId, baslangicta = false }: {
       aria-pressed={listede}
       aria-label={listede ? "Karşılaştırmadan çıkar" : "Karşılaştırmaya ekle"}
       title={hata ?? (listede ? "Karşılaştırmadan çıkar" : "Karşılaştırmaya ekle")}
-      className={`rounded-full bg-gray-50 p-2 transition-colors hover:bg-gray-100 disabled:opacity-50 ${
-        listede ? "text-brand-cyan" : "text-gray-400 hover:text-brand-cyan"
+      className={`rounded-full bg-yuzey-gomulu p-2 transition-colors hover:bg-yuzey disabled:opacity-50 ${
+        listede ? "text-vurgu bg-vurgu-zemin" : "text-metin-ucuncul hover:text-vurgu"
       }`}
     >
       {beklemede

@@ -21,13 +21,29 @@ export default async function RequestQuotePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-yuzey">
       <SiteHeader categories={categories} />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="flex items-center gap-2 mb-8">
-          <FileText size={28} className="text-brand-navy" />
-          <h1 className="text-3xl font-extrabold text-brand-navy">Teklif İste</h1>
+      <main className="flex-grow container mx-auto px-4 py-8" id="icerik">
+        {/* Breadcrumb & Başlık */}
+        <nav aria-label="Gezinti" className="mb-4 text-xs text-metin-ucuncul flex items-center gap-1.5">
+          <a href="/" className="hover:text-vurgu transition-colors">Ana Sayfa</a>
+          <span>&gt;</span>
+          <a href="/sepet" className="hover:text-vurgu transition-colors">Sepet</a>
+          <span>&gt;</span>
+          <span className="text-metin font-medium">Resmi Teklif Talebi</span>
+        </nav>
+
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-vurgu-zemin text-vurgu">
+            <FileText size={22} />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-marka">Resmi Teklif Talebi (RFQ)</h1>
+            <p className="text-xs sm:text-sm text-metin-ikincil mt-0.5">
+              Sepetinizdeki ürünler için proje bazlı hedef birim fiyat ve talep termin süresi belirleyin.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -36,29 +52,32 @@ export default async function RequestQuotePage() {
           </div>
           
           <div className="w-full lg:w-1/3">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 border-b border-gray-100 pb-4">Teklif Edilecek Ürünler</h3>
+            <div className="bg-yuzey-kart rounded-[var(--radius-kart)] shadow-sm border border-kenar p-6 sticky top-24">
+              <h3 className="text-lg font-bold text-marka mb-4 border-b border-kenar pb-3 flex items-center justify-between">
+                <span>Teklif Edilecek Kalemler</span>
+                <span className="text-xs font-mono text-metin-ucuncul">({cart.kalemler.length})</span>
+              </h3>
               
-              <div className="max-h-[400px] overflow-y-auto custom-scrollbar mb-6 pr-2">
-                <ul className="divide-y divide-gray-100">
-                  {cart.kalemler.map((item) => (
-                    <li key={item.kalemId} className="py-3 flex justify-between">
-                      <div className="flex-1 pr-4">
-                        <p className="text-sm font-bold text-gray-900 line-clamp-1">{item.urunKodu}</p>
-                        <p className="text-xs text-gray-500">{item.miktar} adet talep edildi</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+              <div className="max-h-[380px] overflow-y-auto mb-6 pr-1 divide-y divide-kenar">
+                {cart.kalemler.map((item) => (
+                  <div key={item.kalemId} className="py-3 flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-mono font-bold text-marka truncate">{item.urunKodu}</p>
+                      <p className="text-[11px] text-metin-ucuncul font-mono mt-0.5">
+                        {item.miktar.toLocaleString("tr-TR")} adet talep edildi
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg text-sm text-blue-800">
-                <p className="font-bold mb-1">Teklif Süreci Nasıl İşler?</p>
-                <ol className="list-decimal pl-4 space-y-1 mt-2 text-xs">
-                  <li>Talebiniz uzman satış temsilcilerimize iletilir.</li>
-                  <li>Özel fiyatlandırma çalışması yapılarak teklif oluşturulur.</li>
-                  <li>Teklif onayınıza sunulur. Profilinizden teklifi görüntüleyip onaylayabilirsiniz.</li>
-                  <li>Onayladığınız teklifler siparişe dönüşür.</li>
+              <div className="bg-vurgu-zemin/60 border border-vurgu/20 p-4 rounded-[var(--radius-girdi)] text-xs text-metin">
+                <p className="font-bold text-marka mb-1">Teklif Süreci Nasıl İşler?</p>
+                <ol className="list-decimal pl-4 space-y-1 mt-2 text-metin-ikincil">
+                  <li>Talebiniz kurumsal satış temsilcimize iletilir.</li>
+                  <li>Özel hacim iskontosu çalışılarak teklif oluşturulur.</li>
+                  <li>Teklif onayınıza sunulur; profilinizden inceleyebilirsiniz.</li>
+                  <li>Onayladığınız teklifler anında siparişe dönüşür.</li>
                 </ol>
               </div>
             </div>

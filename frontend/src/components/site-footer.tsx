@@ -1,59 +1,279 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  Lock,
+  Award,
+  ArrowRight,
+  FileCheck,
+} from "lucide-react";
 
 export function SiteFooter() {
   return (
-    <footer className="bg-gray-100 pt-16 pb-8 border-t border-gray-200 mt-auto text-sm">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
-          <div className="lg:col-span-2">
-            <Image 
-              src="/logo-cevik-yatay.svg" 
-              alt="Çevik Elektronik" 
-              width={200} 
-              height={70} 
-              className="h-12 w-auto mb-6 grayscale opacity-80" 
-            />
-            <p className="text-gray-600 max-w-sm leading-relaxed">
-              Elektronik komponent tedarikinde hız, güven ve teknik uzmanlığı bir araya getiriyoruz. 
-              Projeniz için doğru bileşeni en kısa sürede sağlıyoruz.
-            </p>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold text-brand-navy mb-4 uppercase tracking-wider text-xs">Çevik Elektronik</h3>
-            <div className="flex flex-col gap-3">
-              <Link href="/hakkimizda" className="text-gray-600 hover:text-brand-cyan transition-colors">Hakkımızda</Link>
-              <Link href="/iletisim" className="text-gray-600 hover:text-brand-cyan transition-colors">İletişim</Link>
-              <Link href="/blog" className="text-gray-600 hover:text-brand-cyan transition-colors">Teknik içerikler</Link>
+    <footer className="bg-yuzey-gomulu border-t border-kenar text-metin mt-auto text-sm">
+      {/* Upper B2B Value Badges Strip */}
+      <div className="border-b border-kenar bg-yuzey-kart py-6">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
+                <ShieldCheck size={22} />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                  %100 Orijinal Ürün
+                </h4>
+                <p className="text-[11px] text-metin-ikincil">
+                  Doğrudan üretici ve yetkili distribütör garantisi
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold text-brand-navy mb-4 uppercase tracking-wider text-xs">Müşteri Hizmetleri</h3>
-            <div className="flex flex-col gap-3">
-              <Link href="/siparisler" className="text-gray-600 hover:text-brand-cyan transition-colors">Sipariş takibi</Link>
-              <Link href="/teslimat" className="text-gray-600 hover:text-brand-cyan transition-colors">Teslimat ve iade</Link>
-              <Link href="/sss" className="text-gray-600 hover:text-brand-cyan transition-colors">Sık sorulan sorular</Link>
+
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
+                <Lock size={22} />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                  256-Bit SSL Güvenlik
+                </h4>
+                <p className="text-[11px] text-metin-ikincil">
+                  Uçtan uca şifreli güvenli kurumsal ödeme
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold text-brand-navy mb-4 uppercase tracking-wider text-xs">Kurumsal</h3>
-            <div className="flex flex-col gap-3">
-              <Link href="/kayit" className="text-gray-600 hover:text-brand-cyan transition-colors">Firma hesabı</Link>
-              <Link href="/teklif" className="text-gray-600 hover:text-brand-cyan transition-colors">Teklif talebi</Link>
-              <Link href="/sozlesmeler" className="text-gray-600 hover:text-brand-cyan transition-colors">Sözleşmeler</Link>
+
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
+                <Award size={22} />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                  ISO 9001:2015 Belgeli
+                </h4>
+                <p className="text-[11px] text-metin-ikincil">
+                  Uluslararası standartlarda kalite yönetimi
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
+                <FileCheck size={22} />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                  Hızlı B2B Teklif (RFQ)
+                </h4>
+                <p className="text-[11px] text-metin-ikincil">
+                  Aynı gün içinde resmi fiyat ve termin teklifi
+                </p>
+              </div>
             </div>
           </div>
         </div>
-        
-        <div className="pt-8 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4 text-gray-500 text-xs">
-          <span>© 2026 Çevik Elektronik. Tüm hakları saklıdır.</span>
-          <div className="flex items-center gap-4">
-            <span>256-bit SSL Güvenli Alışveriş</span>
-            <span>|</span>
-            <span>%100 Orijinal Ürün</span>
+      </div>
+
+      {/* Main Footer Links Grid */}
+      <div className="container mx-auto px-4 pt-12 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+          {/* Col 1: Corporate Brand & Info */}
+          <div className="lg:col-span-2 space-y-4">
+            <Link href="/" className="inline-block">
+              <Image
+                src="/logo-cevik-yatay.svg"
+                alt="Çevik Elektronik"
+                width={190}
+                height={55}
+                className="h-10 w-auto"
+              />
+            </Link>
+            <p className="text-metin-ikincil text-xs leading-relaxed max-w-sm">
+              Çevik Elektronik, endüstriyel elektronik komponent tedarikinde hız, güven ve teknik
+              uzmanlığı bir araya getirir. Geniş stok gücü, parametrik arama motoru ve adet bazlı
+              kademeli B2B fiyat avantajlarıyla projelerinizi destekler.
+            </p>
+
+            <div className="space-y-2 pt-2 text-xs text-metin-ikincil">
+              <div className="flex items-center gap-2">
+                <Phone size={14} className="text-vurgu shrink-0" />
+                <span className="font-mono font-bold text-metin">0850 304 44 00</span>
+                <span className="text-[11px] text-metin-ucuncul">(Hafta içi 08:30 – 18:00)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail size={14} className="text-vurgu shrink-0" />
+                <a
+                  href="mailto:destek@cevik.com.tr"
+                  className="hover:text-vurgu transition-colors font-mono"
+                >
+                  destek@cevik.com.tr
+                </a>
+              </div>
+              <div className="flex items-start gap-2">
+                <MapPin size={14} className="text-vurgu shrink-0 mt-0.5" />
+                <span>İMES Sanayi Sitesi, Ümraniye / İstanbul</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Col 2: Komponent Kategorileri */}
+          <div>
+            <h3 className="font-bold text-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
+              Komponent Kataloğu
+            </h3>
+            <ul className="space-y-2.5 text-xs text-metin-ikincil">
+              <li>
+                <Link href="/urunler?kategoriId=1" className="hover:text-vurgu transition-colors">
+                  Yarı İletkenler & MCU
+                </Link>
+              </li>
+              <li>
+                <Link href="/urunler?kategoriId=2" className="hover:text-vurgu transition-colors">
+                  Pasif Komponentler & MLCC
+                </Link>
+              </li>
+              <li>
+                <Link href="/urunler?kategoriId=3" className="hover:text-vurgu transition-colors">
+                  Elektromekanik & Röle
+                </Link>
+              </li>
+              <li>
+                <Link href="/urunler?kategoriId=4" className="hover:text-vurgu transition-colors">
+                  Konnektörler & Klemens
+                </Link>
+              </li>
+              <li>
+                <Link href="/urunler?kategoriId=5" className="hover:text-vurgu transition-colors">
+                  Güç Kaynakları & DIN Ray
+                </Link>
+              </li>
+              <li>
+                <Link href="/urunler?kategoriId=6" className="hover:text-vurgu transition-colors">
+                  Sensörler & Dönüştürücüler
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 3: Müşteri Hizmetleri & B2B */}
+          <div>
+            <h3 className="font-bold text-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
+              Müşteri & Hizmetler
+            </h3>
+            <ul className="space-y-2.5 text-xs text-metin-ikincil">
+              <li>
+                <Link href="/profil/siparisler" className="hover:text-vurgu transition-colors">
+                  Sipariş Takibi
+                </Link>
+              </li>
+              <li>
+                <Link href="/bom" className="hover:text-vurgu transition-colors">
+                  BOM Yükleme & Eşleştirme
+                </Link>
+              </li>
+              <li>
+                <Link href="/teklif-iste" className="hover:text-vurgu transition-colors">
+                  Resmi Teklif Talebi (RFQ)
+                </Link>
+              </li>
+              <li>
+                <Link href="/karsilastirma" className="hover:text-vurgu transition-colors">
+                  Ürün Karşılaştırma
+                </Link>
+              </li>
+              <li>
+                <Link href="/teslimat" className="hover:text-vurgu transition-colors">
+                  Teslimat ve İade Şartları
+                </Link>
+              </li>
+              <li>
+                <Link href="/sss" className="hover:text-vurgu transition-colors">
+                  Sıkça Sorulan Sorular
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 4: Kurumsal & E-Bülten */}
+          <div>
+            <h3 className="font-bold text-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
+              Kurumsal & Destek
+            </h3>
+            <ul className="space-y-2.5 text-xs text-metin-ikincil mb-5">
+              <li>
+                <Link href="/hakkimizda" className="hover:text-vurgu transition-colors">
+                  Hakkımızda
+                </Link>
+              </li>
+              <li>
+                <Link href="/kayit/kurumsal" className="hover:text-vurgu transition-colors">
+                  Kurumsal Cari Hesap Başvurusu
+                </Link>
+              </li>
+              <li>
+                <Link href="/iletisim" className="hover:text-vurgu transition-colors">
+                  İletişim & Lokasyonlar
+                </Link>
+              </li>
+              <li>
+                <Link href="/sozlesmeler" className="hover:text-vurgu transition-colors">
+                  Mesafeli Satış Sözleşmesi
+                </Link>
+              </li>
+              <li>
+                <Link href="/kvkk" className="hover:text-vurgu transition-colors">
+                  KVKK ve Gizlilik Politikası
+                </Link>
+              </li>
+            </ul>
+
+            {/* Newsletter Subscription Box */}
+            <div className="p-3 bg-yuzey-kart rounded-[var(--radius-girdi)] border border-kenar space-y-2">
+              <span className="text-[11px] font-bold text-marka uppercase block">
+                Teknik E-Bülten
+              </span>
+              <p className="text-[10px] text-metin-ucuncul">
+                Yeni stoklar ve teknik makalelerden haberdar olun.
+              </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  alert("E-bülten kaydınız başarıyla alındı.");
+                }}
+                className="flex gap-1"
+              >
+                <input
+                  type="email"
+                  placeholder="E-posta adresiniz"
+                  required
+                  className="w-full px-2 py-1 text-xs rounded bg-yuzey border border-kenar outline-none focus:border-vurgu"
+                />
+                <button
+                  type="submit"
+                  aria-label="Kaydol"
+                  className="px-2 py-1 bg-marka text-metin-ters rounded text-xs font-bold hover:bg-marka-hover transition-colors shrink-0"
+                >
+                  <ArrowRight size={12} />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Copyright & Badges */}
+        <div className="pt-6 border-t border-kenar flex flex-col md:flex-row items-center justify-between gap-4 text-metin-ucuncul text-xs">
+          <span>© 2026 Çevik Elektronik San. ve Tic. A.Ş. Tüm hakları saklıdır.</span>
+          <div className="flex items-center gap-4 text-[11px]">
+            <span>256-Bit SSL Güvenli Alışveriş</span>
+            <span>•</span>
+            <span>%100 Orijinal Distribütör Garantisi</span>
+            <span>•</span>
+            <span>RoHS / REACH Uyumluluk</span>
           </div>
         </div>
       </div>

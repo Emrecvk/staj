@@ -95,6 +95,38 @@ export function kademeUlasilabilirMi(kademe: PriceTier, moq: number): boolean {
   return kademe.maxMiktar === null || kademe.maxMiktar >= enAz;
 }
 
+export interface PricingCalculationResult {
+  gecerliBirimFiyat: number;
+  aktifKademe: PriceTier | null;
+  toplamTutar: number;
+  hataMesaji: string | null;
+  uyariMesaji: string | null;
+  yuvarlanmisMiktar: number;
+}
+
+export function hesaplaB2BFiyat(
+  miktar: number,
+  ambalaj: PackagingOption
+): PricingCalculationResult {
+  const dogrulama = miktariDogrula(miktar, ambalaj.moq, ambalaj.katlamaMiktari);
+  const hesaplananMiktar = dogrulama.onerilenMiktar;
+  const aktifKademe = kademeSec(ambalaj.fiyatlar, hesaplananMiktar);
+  const birimFiyat = aktifKademe?.birimFiyat ?? (ambalaj.fiyatlar[0]?.birimFiyat || 0);
+  const toplamTutar = hesaplananMiktar * birimFiyat;
+
+  return {
+    gecerliBirimFiyat: birimFiyat,
+    aktifKademe,
+    toplamTutar,
+    hataMesaji: dogrulama.gecerliMi ? null : dogrulama.hata,
+    uyariMesaji:
+      !dogrulama.gecerliMi && dogrulama.onerilenMiktar !== miktar
+        ? `Miktar ${dogrulama.onerilenMiktar} adede yuvarlandı.`
+        : null,
+    yuvarlanmisMiktar: hesaplananMiktar,
+  };
+}
+
 export function paraBicimle(deger: number, paraBirimi: string, basamak = 4): string {
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",

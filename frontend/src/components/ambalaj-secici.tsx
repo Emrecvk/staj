@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, AlertTriangle, Check } from "lucide-react";
 import { addToCart } from "@/lib/cart-actions";
+import { notifyCartUpdated } from "@/lib/stores/header-state";
 import { bildir } from "@/components/ui/bildirim";
 import { Buton } from "@/components/ui/buton";
 import { Kisaltma } from "@/components/ui/ipucu";
@@ -63,6 +64,7 @@ export function AmbalajSecici({ ambalajlar }: { ambalajlar: PackagingOption[] })
           () => router.push("/sepet"),
           `${etkinMiktar.toLocaleString("tr-TR")} adet · ${secili.ad}`,
         );
+        notifyCartUpdated();
         router.refresh();
       } else {
         bildir.hata("Sepete eklenemedi", sonuc.message);
