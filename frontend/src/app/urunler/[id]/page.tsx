@@ -5,6 +5,7 @@ import { getProduct, getCategories } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
+import { AddToCartForm } from "@/components/add-to-cart-form";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -163,21 +164,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                             </table>
                           </div>
                           
-                          <div className="bg-gray-50 rounded-lg p-4 flex flex-col gap-3">
-                            <div className="flex gap-2">
-                              <input 
-                                type="number" 
-                                min={ambalaj.moq} 
-                                step={ambalaj.katlamaMiktari}
-                                defaultValue={ambalaj.moq}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-cyan text-center font-medium"
-                              />
-                            </div>
-                            <button className="w-full bg-brand-cyan hover:bg-opacity-90 text-white font-bold py-3 rounded-md transition-colors">
-                              Sepete Ekle
-                            </button>
-                            <p className="text-[10px] text-gray-500 text-center">En az {ambalaj.moq} adet, {ambalaj.katlamaMiktari} ve katları eklenebilir.</p>
-                          </div>
+                          <AddToCartForm ambalaj={ambalaj} />
                         </div>
                       </div>
                     ))}
