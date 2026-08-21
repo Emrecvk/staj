@@ -13,6 +13,7 @@ export function SiteHeader({ categories }: { categories: Category[] }) {
             <span className="hidden sm:inline">Hafta içi 08:30–18:00</span>
           </div>
           <div className="flex gap-4 items-center">
+            <Link href="/bom" className="font-semibold text-brand-cyan hover:text-brand-navy transition-colors">BOM Yükle</Link>
             <Link href="/hakkimizda" className="hover:text-brand-cyan transition-colors">Hakkımızda</Link>
             <Link href="/iletisim" className="hover:text-brand-cyan transition-colors">İletişim</Link>
             <span className="font-semibold text-brand-navy">TR · USD</span>
