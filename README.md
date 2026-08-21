@@ -1,78 +1,77 @@
 # Çevik - B2B E-Ticaret ve RFQ Platformu
 
-Bu proje, gelişmiş katalog yönetimi, B2B sipariş süreçleri ve teklif/RFQ modülüne sahip kapsamlı bir .NET API uygulamasıdır.
+Bu proje, gelişmiş katalog yönetimi, B2B sipariş süreçleri ve teklif/RFQ modülüne sahip kapsamlı bir Full Stack E-Ticaret uygulamasıdır. Backend .NET 10 ile, Frontend ise Next.js 15+ ve React 19 ile geliştirilmiştir.
 
-## 🚀 Yerel Kurulum
+## 🚀 Proje Bileşenleri
 
-Yerel ortamda projeyi çalıştırmak için aşağıdaki bileşenlerin sisteminizde kurulu olması gerekmektedir:
-- **.NET 10.0 SDK**
-- **PostgreSQL 17**
-- **Redis**
+- **Backend API**: .NET 10.0 (C# 13), PostgreSQL, Redis, Entity Framework Core, JWT Kimlik Doğrulama
+- **Frontend (Web)**: Next.js (App Router), React, Tailwind CSS, TypeScript
+- **Altyapı**: Docker & Docker Compose (PostgreSQL, Redis, PgAdmin, API Container, Frontend Container)
 
-### Adımlar
+## 🐳 Docker ile Uçtan Uca (Full Stack) Çalıştırma
 
-1. Depoyu klonlayın:
-   ```bash
-   git clone https://github.com/your-username/cevik.git
-   cd cevik
-   ```
+Projeyi production benzeri bir ortamda tüm bileşenleriyle (veritabanı, önbellek, backend ve frontend) tek bir komutla ayağa kaldırabilirsiniz.
 
-2. Gerekli veritabanı ayarlarını ve gizli dizileri yapılandırın. `src/Cevik.Api/appsettings.json` dosyasını kendi ortamınıza göre güncelleyin veya `appsettings.Development.json` oluşturun.
-
-3. EF Core araçları (gerekirse) ile veritabanını güncelleyin:
-   ```bash
-   dotnet ef database update --project src/Cevik.Altyapi --startup-project src/Cevik.Api
-   ```
-   *Not: Proje başlatıldığında otomatik migration ve seeding (örnek veri oluşturma) aktif olarak çalışır.*
-
-4. Projeyi çalıştırın:
-   ```bash
-   dotnet run --project src/Cevik.Api
-   ```
-
-## 🐳 Docker ile Çalıştırma
-
-Projeyi hızlıca test etmek veya production benzeri bir ortamda çalıştırmak için Docker Compose kullanabilirsiniz.
-
-Tüm servisleri (PostgreSQL, Redis ve API) ayağa kaldırmak için:
+Kök dizinde yer alan `docker-compose.yml` dosyasını kullanarak:
 
 ```bash
+# İlk kurulumda örnek environment dosyasını oluşturun (varsa .env.example'ı kopyalayın)
+# .env dosyasındaki POSTGRES_PASSWORD ve JWT_KEY değerlerini doldurun.
+
+# Tüm servisleri ayağa kaldırın:
 docker-compose up -d --build
 ```
 
-Container'lar ayağa kalktıktan sonra API otomatik olarak migration ve seed işlemlerini gerçekleştirecektir.
+Container'lar ayağa kalktığında otomatik gerçekleşecek işlemler:
+1. PostgreSQL ve Redis başlatılır ve `healthcheck` mekanizmalarıyla hazır olmaları beklenir.
+2. Backend API başlatılır, veritabanına bağlanıp otomatik Migration ve Seed (Örnek Veri) işlemlerini tamamlar.
+3. Frontend uygulaması `NEXT_PUBLIC_API_URL` argümanı ile build edilir ve API'ye bağlanacak şekilde çalışmaya başlar.
 
-## 🧪 Testler
+## 📍 Servis Adresleri (Docker Compose)
 
-Proje kapsamlı bir şekilde birim (Unit) ve entegrasyon (Integration) testleri ile korunmaktadır. 
-Entegrasyon testleri bağımlılıkları yalıtmak için **Testcontainers** kütüphanesini kullanır ve gerçek bir PostgreSQL konteyneri ayağa kaldırır.
-
-Tüm testleri çalıştırmak için:
-```bash
-dotnet test
-```
-
-Veya belirli bir test grubunu çalıştırmak için:
-```bash
-dotnet test tests/Cevik.BirimTestleri
-dotnet test tests/Cevik.EntegrasyonTestleri
-```
-
-## 📍 Servis Adresleri
-
-Servisler yerel ortamda veya Docker üzerinde başlatıldığında varsayılan adresleri:
-
+- **Frontend Arayüzü**: [http://localhost:3000](http://localhost:3000) (Kullanıcı arayüzü ve Yönetim paneli)
 - **API Base URL**: `http://localhost:5000`
-- **Swagger Arayüzü**: `http://localhost:5000/swagger`
-- **Health Check**: `http://localhost:5000/saglik`
-- **PostgreSQL DB**: `localhost:5432` (Docker ile başlatıldığında varsayılan olarak `cevik` veritabanı, `cevik` kullanıcısı ve `cevik_gelistirme_parolasi` şifresi geçerlidir.)
-- **Redis**: `localhost:6379`
+- **Swagger Dokümantasyonu**: [http://localhost:5000/swagger](http://localhost:5000/swagger)
+- **Health Check (Backend)**: [http://localhost:5000/saglik](http://localhost:5000/saglik)
+- **PgAdmin (Veritabanı Yönetimi)**: [http://localhost:5050](http://localhost:5050)
 
-## 🔄 CI / CD
+## 💻 Yerel (Local) Geliştirme Ortamı
 
-Depoda GitHub Actions aracılığıyla yapılandırılmış otomatik bir CI süreci bulunmaktadır:
-- Her *push* ve *pull request* işleminde projeyi derler.
-- Birim ve entegrasyon testlerini otomatik çalıştırır.
-- Sonuçları analiz için çıkarır.
-- Docker imajını doğrulamak için `docker build` sürecini test eder.
-- Dependabot ile NuGet, npm ve Actions paket güncellemelerini takip eder.
+Docker kullanmadan geliştirme yapmak için:
+
+### Backend
+```bash
+dotnet restore Cevik.slnx
+dotnet run --project src/Cevik.Api
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*(Frontend `localhost:3000` üzerinde, Backend `localhost:5000` üzerinde çalışacaktır)*
+
+## 🧪 Testler ve QA
+
+**Backend Testleri**:
+Birim ve Entegrasyon testleri Testcontainers kütüphanesi kullanarak gerçek izole ortamlar oluşturur.
+```bash
+dotnet test Cevik.slnx
+```
+
+**Frontend (Next.js)**:
+Kod kalitesi denetimi ve üretim derlemesi (production build) doğrulaması için:
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+## 🔐 Yönetim Paneli
+
+Yönetim ekranlarına `/yonetim` adresi üzerinden erişilebilir. Yönetim ekranları; Admin yetkisine sahip hesaplar ile giriş yapıldığında ürün ekleme/düzenleme, sipariş durumu takibi, kurumsal firma başvuru onayı ve gelen teklif taleplerini fiyatlandırma özelliklerini içerir. Rotalar Next.js Middleware (`proxy.ts`) ile korunmaktadır.
+
+## 📦 Son Sürüm Notları
+Projenin uçtan uca B2B satın alma akışı (Katalog -> Sepet -> Teslimat/Fatura Adresi -> Sipariş Tamamlama / Teklif İsteme) tamamlanmış, Docker Compose üzerinden dağıtıma (delivery) hazır hale getirilmiştir.

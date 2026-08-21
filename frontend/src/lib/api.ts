@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";
+const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export type Category = { id: number; ad: string; slug: string; ikonUrl: string | null; yaprakMi: boolean; sira: number; altKategoriler: Category[] };
 export type ProductSummary = { id: number; ureticiUrunKodu: string; ureticiAd: string; kisaAciklama: string; anaGorselUrl: string | null; gorselTemsiliMi: boolean; toplamStok: number; baslangicFiyati: number; paraBirimi: string; kampanyaliMi: boolean };
