@@ -2,17 +2,25 @@
 
 Çevik B2B E-Ticaret projesi için katalog arama altyapısı değerlendirmesi.
 
-## 1. Mevcut Durum: PostgreSQL Full Text Search (FTS)
-Şu anda sistem arama ve filtreleme işlemleri için PostgreSQL'in sunduğu yetenekleri (`tsvector`, `tsquery`, ILIKE ve indeksler) kullanmaktadır.
+## 1. Mevcut Durum: PostgreSQL ILIKE + trigram
+
+> **Düzeltme:** Bu bölüm önceki sürümde sistemin `tsvector`/`tsquery` tabanlı
+> Full Text Search kullandığını söylüyordu. Kod tabanında `tsvector` YOKTUR.
+> Arama `KatalogServisi` içinde `EF.Functions.ILike` ile, normalize edilmiş
+> ürün kodu ve kısa açıklama üzerinde yapılır; hız trigram (`pg_trgm`)
+> indeksinden gelir. Değerlendirme bu gerçek duruma göre yazılmıştır.
+
+Şu anda sistem arama ve filtreleme için PostgreSQL'in `ILIKE` operatörünü ve trigram (`pg_trgm`) indekslerini kullanmaktadır. Parametrik filtreler `jsonb` üzerinden, kategori ağacı ise `ltree` ile çözülür.
 
 **Avantajları:**
 - **Teknoloji Yığını Sadeliği:** Ekstra bir veritabanı veya arama motoru bakım maliyeti (RAM, CPU, yedekleme) yoktur.
 - **Gerçek Zamanlı Veri (Consistency):** Ürün verisi güncellendiği anda arama sonuçlarına anında yansır; asenkron veri senkronizasyon (ETL) gecikmesi yoktur.
-- **Yeterli Performans (100k - 500k satır için):** Doğru trigram (`pg_trgm`) ve GIN indeksleriyle 1 milyona kadar ürün skalasında ms seviyesinde (50-200ms) sonuç döndürebilir.
+- **Beklenen Performans:** Doğru trigram (`pg_trgm`) ve GIN indeksleriyle bu ölçekte ms seviyesinde sonuç dönmesi beklenir. **Bu rakam ölçülmemiştir**, sektör deneyimine dayanan bir beklentidir.
 
 **Dezavantajları:**
 - **Faceted Search (Filtre Gruplama) Zorluğu:** Çok fazla parametrik filtre seçildiğinde ve her bir facet (örn. Üretici, Kılıf) sayısının anlık (count) hesaplanması gerektiğinde RDBMS mimarisi `GROUP BY` yüzünden yavaşlamaya (table scan) meyillidir.
-- **Typo Tolerance (Yazım Hatası Toleransı):** Doğrudan desteklemez, `pg_trgm` ile benzerlik bulunsa da Meilisearch kadar doğal ve "out-of-the-box" çalışmaz.
+- **Typo Tolerance (Yazım Hatası Toleransı):** `pg_trgm` benzerlik bulsa da Meilisearch kadar doğal ve "out-of-the-box" çalışmaz.
+- **Sıralama (Relevance Ranking):** `ILIKE` bir alaka skoru üretmez; sonuçlar alaka düzeyine göre sıralanamaz. FTS'e (`ts_rank`) geçmek bunu çözer ve harici motora göre çok daha ucuzdur.
 
 ---
 
@@ -46,8 +54,17 @@ Devasa veri kümeleri için endüstri standardı.
 ---
 
 ## 4. Karar ve Sonuç
-Projeyi incelerken **Mevcut PostgreSQL altyapısının limitlerine ulaşılmadığını** gözlemledik. (Performans/Yük testleri PostgreSQL GIN indekslerinin şu anki B2B trafiğinde yeterli olduğunu gösteriyor).
+**Ölçüm durumu — dürüst kayıt:** `tests/load-tests/catalog-search-test.js` altında bir k6 senaryosu hazırlanmıştır, ancak **HENÜZ ÇALIŞTIRILMAMIŞTIR**; ortamda k6 kurulu değildir ve elimizde bir sonuç dosyası yoktur. Dolayısıyla aşağıdaki karar ölçüme değil, ölçümün *maliyet/fayda* değerlendirmesine dayanmaktadır.
 
-**Nihai Karar:** 
-Sisteme şimdilik Meilisearch veya Elasticsearch **EKLENMEMESİNE** karar verilmiştir. 
-Veri senkronizasyon maliyeti (Özellikle B2B'de sürekli değişen stok ve fiyatların anlık güncellenmesi ihtiyacı) şu anki ölçekte harici bir arama motoru getirisinden daha ağırdır. İlerleyen aşamalarda ürün gamı 1 Milyon+ üzerine çıktığında veya Faceted Search sorguları 500ms'yi aştığında **Meilisearch** entegrasyonu ilk tercih olacaktır.
+Bu, Görev 16 madde 7'nin ("PostgreSQL ile arama performansını ölçmeden harici arama motoruna geçme") gereğini karşılar: **geçiş yapılmamıştır**. Ama ters yönde de bir iddiada bulunulmamalıdır — mevcut altyapının yeterli olduğu ölçülerek kanıtlanmış değildir.
+
+**Nihai Karar:**
+Sisteme şimdilik Meilisearch veya Elasticsearch **EKLENMEMESİNE** karar verilmiştir.
+Veri senkronizasyon maliyeti (özellikle B2B'de sürekli değişen stok ve kademeli fiyatların anlık güncellenmesi ihtiyacı) mevcut ölçekte harici bir arama motorunun getirisinden ağır basmaktadır.
+
+**Geçişten önce yapılacaklar (sırayla):**
+1. k6 senaryosunu gerçek veri hacmiyle çalıştırıp p95 gecikmesini ölç.
+2. Yetersizse önce PostgreSQL içinde kal: `tsvector` + `ts_rank` ekle, facet sorgularını materialized view ile önbelleğe al.
+3. Bunlar da yetmezse **Meilisearch** ilk tercih olsun.
+
+**Geçiş eşiği:** facet sorgularında p95 > 500ms veya ürün sayısı 1 milyonu aşarsa.

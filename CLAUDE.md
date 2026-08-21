@@ -14,14 +14,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Comments and commit messages are Turkish; commit *subject lines* are English conventional-commit style (`feat:`, `fix:`, `ci:`, `chore:`).
 
-Note the encoding hazard: several files have suffered mojibake on Turkish characters (`GelismiÅŸKimlikTestleri.cs` is a committed 3-byte BOM-only artifact of this). Write files as UTF-8 and avoid PowerShell `Set-Content` round-trips on source containing Turkish text.
+Note the encoding hazard: several files have suffered mojibake on Turkish characters (a committed 3-byte BOM-only `GelismiÅŸKimlikTestleri.cs` was one artifact of this; it has since been removed). Write files as UTF-8 and avoid PowerShell `Set-Content` round-trips on source containing Turkish text.
 
 ## Commands
 
 ```bash
 dotnet build Cevik.slnx -c Release
 dotnet test tests/Cevik.BirimTestleri              # 79 unit tests, no dependencies
-dotnet test tests/Cevik.EntegrasyonTestleri        # 65 integration tests, REQUIRES Docker
+dotnet test tests/Cevik.EntegrasyonTestleri        # 89 integration tests, REQUIRES Docker
 dotnet test Cevik.slnx                             # everything
 ```
 
@@ -45,9 +45,9 @@ Requires a `.env` at repo root. `docker-compose.yml` uses `${VAR:?message}` so i
 
 ### Integration tests need Docker
 
-`CevikUygulamaFabrikasi` spins up a real `postgres:17-alpine` via Testcontainers. If Docker Desktop is not running, **all 65 integration tests fail at once** with `Failed to connect to Docker endpoint` — this looks like catastrophic breakage but is just a stopped daemon. Check `docker info` before diagnosing.
+`CevikUygulamaFabrikasi` spins up a real `postgres:17-alpine` via Testcontainers. If Docker Desktop is not running, **every integration test fails at once** with `Failed to connect to Docker endpoint` — this looks like catastrophic breakage but is just a stopped daemon. Check `docker info` before diagnosing.
 
-Postgres is real because the code depends on Postgres-only behaviour: `ltree` category paths, trigram/`ILIKE` search, `jsonb`, and `xmin` concurrency tokens. The InMemory provider runs none of it and produces false green. Do not "simplify" these tests onto InMemory. Redis, by contrast, *is* swapped for `AddDistributedMemoryCache()` in the factory.
+Postgres is real because the code depends on Postgres-only behaviour: `ltree` category paths, trigram/`ILIKE` search, `jsonb`, and `xmin` concurrency tokens. The InMemory provider runs none of it and produces false green. Do not "simplify" these tests onto InMemory. Redis also runs as a real container so the `/saglik` health check probes a live dependency; the distributed *cache* is still swapped for `AddDistributedMemoryCache()` so cache behaviour stays deterministic.
 
 ## Architecture
 
@@ -77,11 +77,19 @@ These are load-bearing and have each been violated at least once already.
 
 Read configuration through `IOptions<T>` or `sp.GetRequiredService<IConfiguration>()` inside a factory lambda. Top-level reads execute before `WebApplicationFactory` applies test configuration, so the value silently differs between the component that reads it early and the one that reads it late.
 
-`Program.cs` documents this at the top, and the DbContext registration does it correctly. **The health-check registration does not** — it reads the connection strings at top level, which is why `Saglik_Ucu_Ayakta_Doner` and `SaglikKontrolu_200OkVeHealthyDoner` currently return 503 and fail. This is a known open bug, not environmental flakiness.
+`Program.cs` documents this at the top. The DbContext, health-check, forwarded-headers and CORS registrations all follow it — the health checks resolve their connection strings through an `IServiceProvider` factory. Reading them at top level silently pointed the checks at `appsettings` instead of the Testcontainers instance and made `/saglik` return 503 on every integration run.
 
 ### Do not bump `Microsoft.OpenApi` past 2.x
 
 Pinned to 2.7.5 in `Directory.Packages.props` with an explanatory comment. Swashbuckle 10.2.3 compiles against Microsoft.OpenApi 2.x; with transitive pinning enabled, the central pin *overrides* Swashbuckle's own request. Raising it to 3.x **still builds cleanly** and then fails at runtime — `swagger.json` returns HTTP 500 with `MissingMethodException: IOpenApiRequestBody.get_Content()`. The compiler and CI's build step will not catch this. `Microsoft.AspNetCore.OpenApi` is deliberately absent for the same reason.
+
+### Never blanket-trust forwarded headers
+
+`ForwardedHeadersOptions` must keep a non-empty `KnownProxies`/`KnownIPNetworks` allowlist. Clearing them makes `X-Forwarded-For` acceptable from *any* source, and because the rate limiter partitions on `RemoteIpAddress`, a spoofed header opens a fresh partition on every request and defeats the 5/min auth limit entirely. Trusted proxies come from `ForwardedHeaders:GuvenilenProxyler` / `GuvenilenAglar`. The `TumProxylereGuven` escape hatch exists only so integration tests can partition clients through TestServer — it must stay `false` outside dev and test.
+
+### Payment never sees card data
+
+`IOdemeSaglayicisi` takes a one-time token, never a PAN. In a real integration the browser posts the card straight to the provider and the API only ever sees the token; the sandbox keeps the same contract by making the token a scenario key. Do not add card number, expiry or CVC fields to `OdemeIstekDto` or to the checkout form.
 
 ### Central package management
 
@@ -119,8 +127,10 @@ Brand tokens and logos live in `docs/marka/` (navy `#0F2740`, cyan `#00B4D8`).
 
 ## State of the tree
 
-`npm run lint` currently fails with ~32 errors (`no-explicit-any`, `no-unused-vars`, `react/no-unescaped-entities`); `npm run build` passes. CI (`.github/workflows/ci.yml`) has no frontend step, so lint regressions are not caught there. CI also has no Redis service and does not fix the health-check bug above, so the two health tests fail there too.
+Backend builds clean; 79 unit + 89 integration tests pass. Frontend `npm run build` and `npm run lint` are both clean.
 
-`fix.ps1` and `fix2.ps1` at repo root are one-off scratch scripts that were committed by accident — do not treat them as tooling.
+CI has two jobs: backend (restore, Release build, unit tests, Testcontainers integration tests, Docker image) and frontend (lint, build, Docker image). Integration tests start their own Postgres **and** Redis containers, so CI needs no service definitions — but it does need Docker, which `ubuntu-latest` provides.
 
-Dependabot's npm entry points at `/src/Cevik.UI`, which does not exist; the frontend is at `/frontend`, so npm updates never run.
+`tests/load-tests/catalog-search-test.js` is written but has never been run — k6 is not installed in this environment. `docs/SEARCH_EVALUATION.md` records that honestly; do not cite it as measured evidence for search performance.
+
+The admin panel, profile pages, cart, checkout, BOM matching and payment all call the real API. If you find a page rendering plausible-looking numbers without a fetch, treat it as a bug rather than a placeholder — that pattern caused most of the defects this codebase has had.
