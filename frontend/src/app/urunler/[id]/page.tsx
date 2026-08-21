@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, FileText, Download, Heart, ArrowLeftRight, CheckCircle2, ShieldCheck, Box, Package, Truck, Search, Info } from "lucide-react";
+import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
+import { ChevronRight, FileText, Download, CheckCircle2, ShieldCheck, Box, Package, Truck, Search, Info } from "lucide-react";
 import { getProduct, getCategories } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -74,12 +75,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                   </Link>
                   
                   <div className="flex gap-2">
-                    <button className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors tooltip-trigger" title="Favorilere Ekle">
-                      <Heart size={20} />
-                    </button>
-                    <button className="text-gray-400 hover:text-brand-cyan bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors tooltip-trigger" title="Karşılaştırmaya Ekle">
-                      <ArrowLeftRight size={20} />
-                    </button>
+                    <FavoriButonu urunId={product.id} boyut="buyuk" />
+                    <KarsilastirmaButonu urunId={product.id} />
                   </div>
                 </div>
                 

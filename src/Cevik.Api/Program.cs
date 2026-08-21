@@ -239,6 +239,13 @@ builder.Services.AddScoped<ISepetServisi, SepetServisi>();
 builder.Services.AddScoped<ISiparisServisi, SiparisServisi>();
 builder.Services.AddScoped<IDovizKuruServisi, Cevik.Altyapi.Fiyatlama.Servisler.DovizKuruServisi>();
 builder.Services.AddScoped<ITeklifServisi, TeklifServisi>();
+
+// Odeme. Saglayici degistirilebilir arayuz arkasinda: gercek saglayiciya
+// (iyzico/PayTR/Stripe) gecerken yalnizca bu kayit degisir.
+builder.Services.AddScoped<Cevik.Uygulama.Odemeler.Arayuzler.IOdemeSaglayicisi,
+    Cevik.Altyapi.Odemeler.Servisler.SandboxOdemeSaglayicisi>();
+builder.Services.AddScoped<Cevik.Uygulama.Odemeler.Arayuzler.IOdemeServisi,
+    Cevik.Altyapi.Odemeler.Servisler.OdemeServisi>();
 builder.Services.AddScoped<ITeklifYonetimServisi, Cevik.Altyapi.Teklif.Servisler.TeklifYonetimServisi>();
 builder.Services.AddScoped<IYonetimServisi, YonetimServisi>();
 

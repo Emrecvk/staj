@@ -3,41 +3,89 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createOrder } from "@/lib/cart-actions";
-import { Loader2, AlertCircle } from "lucide-react";
+import { odemeYap } from "@/lib/odeme-actions";
+import { Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 
-export function CheckoutForm({ addresses, cart }: { addresses: any[], cart: any }) {
+type Adres = {
+  id: number;
+  baslik: string;
+  acikAdres: string;
+  ilce: string;
+  sehir: string;
+};
+
+type BekleyenSiparis = { siparisId: number; siparisNo: string };
+
+/**
+ * Sandbox ödeme senaryoları.
+ *
+ * Kart numarası ALINMIYOR. Gerçek entegrasyonda kart bilgisi tarayıcıdan
+ * doğrudan sağlayıcıya gider ve geriye tek kullanımlık jeton döner; API
+ * kartı hiç görmez. Sandbox'ta da aynı sözleşme korunuyor: kullanıcı bir
+ * senaryo seçiyor, sunucuya yalnızca o jeton gidiyor.
+ *
+ * Önceki sürüm tarayıcıda `Math.random() < 0.20` ile ret üretiyor ve
+ * kullanıcıdan gerçek kart numarası istiyordu — girilen veri hiçbir yere
+ * gitmiyordu ve sonuç test edilemiyordu.
+ */
+const SANDBOX_SENARYOLARI = [
+  { jeton: "sandbox-basarili", ad: "Başarılı ödeme", aciklama: "Tahsilat onaylanır, sipariş onaylanır." },
+  { jeton: "sandbox-yetersiz-bakiye", ad: "Yetersiz bakiye", aciklama: "Reddedilir, yeniden denenebilir." },
+  { jeton: "sandbox-reddedildi", ad: "Banka reddi", aciklama: "Kalıcı ret, yeniden deneme önerilmez." },
+  { jeton: "sandbox-saglayici-hatasi", ad: "Sağlayıcı hatası", aciklama: "Geçici hata, yeniden denenebilir." },
+];
+
+export function CheckoutForm({ addresses, cart }: { addresses: Adres[]; cart: unknown }) {
   const [faturaAdresiId, setFaturaAdresiId] = useState<number>(addresses[0]?.id || 0);
   const [teslimatAdresiId, setTeslimatAdresiId] = useState<number>(addresses[0]?.id || 0);
   const [musteriNotu, setMusteriNotu] = useState("");
+  const [odemeJetonu, setOdemeJetonu] = useState(SANDBOX_SENARYOLARI[0].jeton);
+  const [kartSahibi, setKartSahibi] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const [yenidenDenenebilir, setYenidenDenenebilir] = useState(false);
+
+  // Ödeme başarısız olursa sipariş yeniden oluşturulmaz: aynı sipariş
+  // OdemeBekliyor durumunda durur ve kullanıcı sepeti yeniden doldurmadan
+  // tekrar deneyebilir. Sunucu da çift tahsilatı ayrıca engeller.
+  const [bekleyenSiparis, setBekleyenSiparis] = useState<BekleyenSiparis | null>(null);
+
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
     setError(null);
-    
-    // Simulate payment processing delay
-    await new Promise(r => setTimeout(r, 1500));
-    
-    // Simulate 20% failure rate for sandbox
-    if (Math.random() < 0.20) {
-      setError("Ödeme reddedildi (Sandbox Simülasyonu). Lütfen kart bilgilerinizi kontrol edip tekrar deneyin.");
-      setIsPending(false);
-      return;
-    }
+    setYenidenDenenebilir(false);
 
     try {
-      const res = await createOrder({ faturaAdresiId, teslimatAdresiId, musteriNotu });
-      if (res.success) {
-        router.push(`/siparis-basarili?siparisNo=${res.siparisNo || 'TEST-123'}`);
-      } else {
-        setError(res.message || "Sipariş oluşturulamadı. Lütfen tekrar deneyin.");
+      let siparis = bekleyenSiparis;
+
+      if (!siparis) {
+        const sonuc = await createOrder({ faturaAdresiId, teslimatAdresiId, musteriNotu });
+
+        if (!sonuc.success || !sonuc.siparisId) {
+          setError(sonuc.message || "Sipariş oluşturulamadı. Lütfen tekrar deneyin.");
+          setIsPending(false);
+          return;
+        }
+
+        siparis = { siparisId: sonuc.siparisId, siparisNo: sonuc.siparisNo! };
+        setBekleyenSiparis(siparis);
       }
-    } catch (err) {
-      setError("Bağlantı hatası.");
+
+      const odeme = await odemeYap(siparis.siparisId, odemeJetonu, kartSahibi || undefined);
+
+      if (odeme.basarili) {
+        router.push(`/siparis-basarili?siparisNo=${encodeURIComponent(siparis.siparisNo)}`);
+        return;
+      }
+
+      setError(odeme.mesaj);
+      setYenidenDenenebilir(odeme.yenidenDenenebilir);
+    } catch {
+      setError("Bağlantı hatası. Lütfen tekrar deneyin.");
+      setYenidenDenenebilir(true);
     } finally {
       setIsPending(false);
     }
@@ -46,9 +94,19 @@ export function CheckoutForm({ addresses, cart }: { addresses: any[], cart: any 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-start gap-3">
+        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-start gap-3">
           <AlertCircle size={20} className="shrink-0 mt-0.5" />
-          <span>{error}</span>
+          <div>
+            <p>{error}</p>
+            {bekleyenSiparis && (
+              <p className="mt-1 text-sm">
+                {bekleyenSiparis.siparisNo} numaralı siparişiniz oluşturuldu ve ödeme bekliyor.
+                {yenidenDenenebilir
+                  ? " Aşağıdan tekrar deneyebilirsiniz; sepetiniz korunur."
+                  : " Farklı bir ödeme yöntemi deneyin veya bankanızla iletişime geçin."}
+              </p>
+            )}
+          </div>
         </div>
       )}
       
@@ -113,34 +171,61 @@ export function CheckoutForm({ addresses, cart }: { addresses: any[], cart: any 
           </div>
         </div>
       </div>
-      
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-100 bg-gray-50">
-          <h3 className="font-bold text-gray-900 text-lg">3. Ödeme Bilgileri (Sandbox)</h3>
+          <h3 className="font-bold text-gray-900 text-lg">3. Ödeme (Sandbox)</h3>
         </div>
         <div className="p-6">
-          <div className="space-y-4 max-w-md">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kart Üzerindeki İsim</label>
-              <input type="text" required className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="Ad Soyad" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kart Numarası</label>
-              <input type="text" required maxLength={19} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="0000 0000 0000 0000" />
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Son Kul. Tarihi</label>
-                <input type="text" required maxLength={5} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="AA/YY" />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
-                <input type="text" required maxLength={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="123" />
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-               <AlertCircle size={12} /> Bu bir sandbox ödeme simülasyonudur. Test için rastgele veriler girebilirsiniz. Sistem %20 ihtimalle ret (decline) hatası döndürecektir.
+          <div className="mb-5 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+            <ShieldCheck size={18} className="mt-0.5 shrink-0" />
+            <p>
+              Bu bir sandbox ortamıdır ve <strong>kart bilgisi istenmez</strong>. Gerçek
+              entegrasyonda kart doğrudan ödeme sağlayıcısına gönderilir, sunucumuz yalnızca
+              tek kullanımlık bir jeton görür. Aşağıdan denemek istediğiniz senaryoyu seçin.
             </p>
+          </div>
+
+          <fieldset className="mb-4 max-w-xl">
+            <legend className="mb-2 text-sm font-medium text-gray-700">Ödeme senaryosu</legend>
+            <div className="space-y-2">
+              {SANDBOX_SENARYOLARI.map((senaryo) => (
+                <label
+                  key={senaryo.jeton}
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    odemeJetonu === senaryo.jeton
+                      ? "border-brand-cyan bg-cyan-50"
+                      : "border-gray-200 hover:border-brand-cyan"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="odemeSenaryosu"
+                    value={senaryo.jeton}
+                    checked={odemeJetonu === senaryo.jeton}
+                    onChange={() => setOdemeJetonu(senaryo.jeton)}
+                    className="mt-1 text-brand-cyan focus:ring-brand-cyan"
+                  />
+                  <span>
+                    <span className="block font-bold text-gray-900">{senaryo.ad}</span>
+                    <span className="block text-sm text-gray-600">{senaryo.aciklama}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="max-w-md">
+            <label htmlFor="kart-sahibi" className="mb-1 block text-sm font-medium text-gray-700">
+              Kart Üzerindeki İsim <span className="text-gray-400">(isteğe bağlı)</span>
+            </label>
+            <input
+              id="kart-sahibi"
+              type="text"
+              value={kartSahibi}
+              onChange={(e) => setKartSahibi(e.target.value)}
+              placeholder="Ad Soyad"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand-cyan focus:ring-brand-cyan"
+            />
           </div>
         </div>
       </div>
@@ -169,7 +254,7 @@ export function CheckoutForm({ addresses, cart }: { addresses: any[], cart: any 
           className="bg-brand-navy hover:bg-opacity-90 text-white font-bold py-4 px-8 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isPending && <Loader2 size={20} className="animate-spin" />}
-          Siparişi Onayla ve Öde
+          {bekleyenSiparis ? "Ödemeyi Tekrar Dene" : "Siparişi Onayla ve Öde"}
         </button>
       </div>
     </form>
