@@ -1,60 +1,111 @@
 import Link from "next/link";
-import { ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { FavoriButonu } from "@/components/favori-karsilastirma-butonlari";
+import { StokRozeti } from "@/components/ui/rozet";
 import type { ProductSummary } from "@/lib/api";
 
-function formatPrice(value: number, currency: string) { 
-  return new Intl.NumberFormat("tr-TR", { style: "currency", currency, maximumFractionDigits: 2 }).format(value); 
+function fiyatBicimle(deger: number, paraBirimi: string) {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: paraBirimi,
+    maximumFractionDigits: 4,
+  }).format(deger);
 }
 
+/**
+ * Ürün kartı.
+ *
+ * Üç bilinçli karar:
+ *
+ * 1. Nabız atan stok noktası kaldırıldı. Bir ızgarada 20+ kart var ve her
+ *    birinde sonsuz döngü çalışıyordu. Gerçek sinyal zaten adet; yanıp sönen
+ *    nokta bilgi taşımıyor, sadece dikkat çalıyor.
+ *
+ * 2. Sepet butonu yerine "İncele". Sepete ekleme ambalaj seçimi gerektiriyor
+ *    (MOQ, MPQ ve katlama kuralları ambalaj bazında); ızgaradan tek tıkla
+ *    eklemek bu kuralı atlamak olurdu. Önceki sürümde buton zaten hiçbir şeye
+ *    bağlı değildi.
+ *
+ * 3. Görsel yerine MPN. Seed verisi /gorseller/... yolunu veriyor ama o
+ *    dosyalar mevcut değil. Kırık görsel yerine parça kodunu mono ile
+ *    göstermek bu sektörde standart; Digi-Key ve Mouser da fotoğrafı
+ *    olmayan parçalarda aynısını yapıyor.
+ */
 export function ProductCard({ product }: { product: ProductSummary }) {
   return (
-    <article className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
-      <Link href={`/urunler/${product.id}`} className="block relative aspect-square bg-gray-50 overflow-hidden flex-shrink-0 flex items-center justify-center p-4">
+    <article
+      className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-kart)]
+                 border border-kenar bg-yuzey-kart
+                 transition-[border-color,box-shadow] duration-[var(--sure-acilir)]
+                 ease-[var(--ease-cikis)] hover:border-kenar-guclu hover:shadow-[var(--shadow-yukselti)]"
+    >
+      <div className="relative shrink-0 border-b border-kenar bg-yuzey-gomulu">
+        <Link
+          href={`/urunler/${product.id}`}
+          className="flex aspect-[4/3] items-center justify-center p-4"
+          aria-label={`${product.ureticiUrunKodu} ürün detayı`}
+        >
+          <span className="break-all text-center font-mono text-sm font-medium text-metin-ucuncul">
+            {product.ureticiUrunKodu}
+          </span>
+        </Link>
+
         {product.kampanyaliMi && (
-          <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-sm z-10">
-            FIRSAT
+          <span
+            className="absolute left-2 top-2 rounded-full bg-uyari-500 px-2 py-0.5
+                       text-[10px] font-bold uppercase tracking-wide text-white"
+          >
+            Fırsat
           </span>
         )}
-        
-        <div className="absolute top-2 right-2 z-10 opacity-0 transition-all group-hover:opacity-100">
+
+        {/* Odaklanınca da görünür: klavye kullanıcısı favoriye erişebilmeli. */}
+        <div
+          className="absolute right-2 top-2 opacity-0 transition-opacity
+                     duration-[var(--sure-acilir)] focus-within:opacity-100 group-hover:opacity-100"
+        >
           <FavoriButonu urunId={product.id} />
         </div>
-        
-        {/* Placeholder for product image since we don't have actual images */}
-        <div className="w-full h-full bg-white border-2 border-dashed border-gray-200 rounded-md flex flex-col items-center justify-center text-gray-400 relative">
-           <ImageIcon size={32} className="mb-2 opacity-50" />
-           <span className="text-xs font-mono text-center max-w-[80%] break-all">{product.ureticiUrunKodu}</span>
-        </div>
-      </Link>
-      
-      <div className="p-4 flex flex-col flex-grow">
-        <span className="text-xs text-brand-cyan font-medium mb-1 uppercase tracking-wider">{product.ureticiAd}</span>
-        
-        <Link href={`/urunler/${product.id}`} className="group-hover:text-brand-navy transition-colors mb-2">
-          <h3 className="font-bold text-gray-900 leading-tight line-clamp-1">{product.ureticiUrunKodu}</h3>
-        </Link>
-        
-        <p className="text-xs text-gray-500 line-clamp-2 mb-3 flex-grow">{product.kisaAciklama}</p>
-        
-        <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium mb-3">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          Stokta {product.toplamStok.toLocaleString("tr-TR")} adet
-        </div>
-        
-        <div className="mt-auto pt-3 border-t border-gray-100 flex items-end justify-between gap-2">
-          <div>
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">Başlangıç fiyatı</div>
-            <div className="font-bold text-brand-navy text-lg">{formatPrice(product.baslangicFiyati, product.paraBirimi)}</div>
-          </div>
-          
-          <button 
-            className="bg-brand-cyan hover:bg-opacity-90 text-white rounded-md p-2.5 transition-colors shadow-sm flex-shrink-0" 
-            type="button" 
-            aria-label="Sepete ekle"
+      </div>
+
+      <div className="flex flex-grow flex-col p-4">
+        <span className="mb-1 text-xs font-medium text-metin-ucuncul">{product.ureticiAd}</span>
+
+        <h3 className="mb-2 font-mono text-sm font-bold leading-tight text-metin">
+          <Link
+            href={`/urunler/${product.id}`}
+            className="line-clamp-1 transition-colors duration-[var(--sure-ipucu)] hover:text-vurgu"
           >
-            <ShoppingCart size={17} />
-          </button>
+            {product.ureticiUrunKodu}
+          </Link>
+        </h3>
+
+        <p className="mb-3 line-clamp-2 flex-grow text-xs leading-relaxed text-metin-ikincil">
+          {product.kisaAciklama}
+        </p>
+
+        <div className="mb-3">
+          <StokRozeti miktar={product.toplamStok} />
+        </div>
+
+        <div className="mt-auto flex items-end justify-between gap-2 border-t border-kenar pt-3">
+          <div>
+            <div className="text-[10px] text-metin-ucuncul">Başlangıç fiyatı</div>
+            <div className="font-mono text-base font-bold tabular-nums text-metin">
+              {fiyatBicimle(product.baslangicFiyati, product.paraBirimi)}
+            </div>
+          </div>
+
+          <Link
+            href={`/urunler/${product.id}`}
+            className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-girdi)]
+                       border border-kenar-guclu px-2.5 py-1.5 text-xs font-semibold text-metin
+                       transition-[background-color,border-color,color,transform]
+                       duration-[var(--sure-basma)] ease-[var(--ease-cikis)]
+                       hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu active:scale-[0.97]"
+          >
+            İncele <ArrowRight size={13} />
+          </Link>
         </div>
       </div>
     </article>

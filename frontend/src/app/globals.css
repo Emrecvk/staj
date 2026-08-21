@@ -5,15 +5,17 @@
 
    Marka renkleri korunmuştur:  Lacivert #0F2740 · Camgöbeği #00B4D8
 
-   Üç katman:
-     1. Ham ölçekler        @theme      → bg-navy-800, text-cyan-500 …
-     2. Semantik değişkenler :root       → tema ile değişen gerçek değerler
-     3. Semantik utility'ler @theme inline → bg-yuzey, text-metin …
+   İki katman:
+     1. Ham ölçekler   @theme → bg-navy-800, text-cyan-500 …
+     2. Semantik renkler @theme → bg-yuzey, text-metin, border-kenar …
 
-   2. ve 3. katman neden ayrı: Tailwind v4'te @theme bir media query içine
-   yazılamaz. `@theme inline` üretilen utility'nin değeri KOPYALAMASINI değil
-   var(...) referansı bırakmasını sağlar; böylece :root'taki değeri koyu temada
-   değiştirmek tüm arayüzü çevirir ve hiçbir bileşende dark: varyantı gerekmez.
+   Koyu tema, 2. katmandaki değişkenlerin :root[data-theme="dark"] altında
+   ezilmesiyle çalışır. Hiçbir bileşende dark: varyantı yazmaya gerek yok.
+
+   DİKKAT — `@theme inline` KULLANMAYIN: inline anahtar kelimesi üretilen
+   utility'ye değeri GÖMER, var() referansı bırakmaz. Öyle olunca koyu temada
+   değişkeni değiştirmek hiçbir şey yapmaz. Düz @theme ise
+   `border-color: var(--color-kenar)` üretir ve tema geçişi çalışır.
    =========================================================================== */
 
 @theme {
@@ -108,32 +110,44 @@
 }
 
 /* ===========================================================================
-   Semantik değişkenler — açık tema
+   Semantik renkler
+
+   Duz @theme kullaniliyor, "@theme inline" DEGIL. inline anahtar kelimesi
+   uretilen utility'ye degeri GOMUYOR; boyle olunca koyu temada degiskeni
+   degistirmek hicbir sey yapmiyor. Duz @theme ise
+    uretiyor ve asagidaki koyu tema blogu
+   ayni degiskeni ezerek tum arayuzu ceviriyor.
    =========================================================================== */
 
+@theme {
+  --color-yuzey: #f8fafc;
+  --color-yuzey-kart: #ffffff;
+  --color-yuzey-gomulu: #f1f5f9;
+  --color-yuzey-ters: #0f2740;
+
+  --color-kenar: #e2e8f0;
+  --color-kenar-guclu: #cbd5e1;
+
+  --color-metin: #0f172a;
+  --color-metin-ikincil: #475569;
+  --color-metin-ucuncul: #64748b;
+  --color-metin-ters: #ffffff;
+
+  --color-vurgu: #0389b0;
+  --color-vurgu-guclu: #0a6e8f;
+  --color-vurgu-zemin: #ecfdff;
+
+  --color-marka: #0f2740;
+  --color-marka-hover: #2b4a6d;
+
+  /* Mevcut rotalarda brand-navy / brand-cyan kullanimda; kirmamak icin kopru. */
+  --color-brand-navy: #0f2740;
+  --color-brand-cyan: #0389b0;
+}
+
 :root {
-  --yuzey: #f8fafc;
-  --yuzey-kart: #ffffff;
-  --yuzey-gomulu: #f1f5f9;
-  --yuzey-ters: #0f2740;
-
-  --kenar: #e2e8f0;
-  --kenar-guclu: #cbd5e1;
-
-  --metin: #0f172a;
-  --metin-ikincil: #475569;
-  --metin-ucuncul: #64748b;
-  --metin-ters: #ffffff;
-
-  --vurgu: #0389b0;
-  --vurgu-guclu: #0a6e8f;
-  --vurgu-zemin: #ecfdff;
-
-  --marka: #0f2740;
-  --marka-hover: #2b4a6d;
-
-  /* Süreler. UI animasyonları 300ms altında; çekmece fiziksel bir hareket
-     olduğu için tek istisna. */
+  /* Sureler. UI animasyonlari 300ms altinda; cekmece fiziksel bir hareket
+     oldugu icin tek istisna. */
   --sure-basma: 160ms;
   --sure-ipucu: 140ms;
   --sure-acilir: 200ms;
@@ -142,73 +156,39 @@
 }
 
 /* --- Koyu tema -------------------------------------------------------------
-   Yalnızca bu blok değişir. Camgöbeği bir basamak açılıyor: 600 tonu koyu
-   zeminde WCAG AA kontrastını tutturmuyor.
+   @theme'in :root'a bastigi ayni degiskenler eziliyor. Camgobegi bir basamak
+   aciliyor: 600 tonu koyu zeminde WCAG AA kontrastini tutturmuyor.
 
-   NEDEN prefers-color-scheme DEĞİL, henüz:
-   Mevcut sayfaların çoğu hâlâ sabit `bg-white` / `text-gray-900` sınıfları
-   kullanıyor ve bunlar token'a bağlı değil. Koyu temayı şimdi sistem
-   tercihine bağlarsak, sistemi koyu olan kullanıcı yarısı açık yarısı koyu
-   bozuk bir sayfa görür.
-
-   Yüzeyler semantik token'lara taşındıkça bu seçici
-     @media (prefers-color-scheme: dark) { :root { … } }
-   ile değiştirilecek. O ana kadar test için <html data-theme="dark">. */
+   NEDEN prefers-color-scheme DEGIL, henuz: mevcut sayfalarin cogu hala sabit
+   bg-white / text-gray-900 kullaniyor. Sistem tercihine baglasaydik koyu
+   sistemli kullanici yarisi acik yarisi koyu bozuk bir sayfa gorurdu.
+   Yuzeyler token'lara tasindikca bu secici prefers-color-scheme ile
+   degistirilecek. O ana kadar test icin <html data-theme="dark">. */
 :root[data-theme="dark"] {
-  --yuzey: #071523;
-  --yuzey-kart: #0c1f34;
-  --yuzey-gomulu: #0a1a2b;
-  --yuzey-ters: #f1f5f9;
+  --color-yuzey: #071523;
+  --color-yuzey-kart: #0c1f34;
+  --color-yuzey-gomulu: #0a1a2b;
+  --color-yuzey-ters: #f1f5f9;
 
-  --kenar: #1c344c;
-  --kenar-guclu: #27496b;
+  --color-kenar: #1c344c;
+  --color-kenar-guclu: #27496b;
 
-  --metin: #f1f5f9;
-  --metin-ikincil: #94a3b8;
-  --metin-ucuncul: #64748b;
-  --metin-ters: #071523;
+  --color-metin: #f1f5f9;
+  --color-metin-ikincil: #94a3b8;
+  --color-metin-ucuncul: #64748b;
+  --color-metin-ters: #071523;
 
-  --vurgu: #22c9ee;
-  --vurgu-guclu: #67e0f9;
-  --vurgu-zemin: #063143;
+  --color-vurgu: #22c9ee;
+  --color-vurgu-guclu: #67e0f9;
+  --color-vurgu-zemin: #063143;
 
-  --marka: #0c1f34;
-  --marka-hover: #0f2740;
+  --color-marka: #0c1f34;
+  --color-marka-hover: #0f2740;
+
+  --color-brand-navy: #0c1f34;
+  --color-brand-cyan: #22c9ee;
 }
 
-/* ===========================================================================
-   Semantik utility'ler
-
-   `inline` anahtar kelimesi kritik: değeri kopyalamak yerine var(...) referansı
-   bırakır, böylece yukarıdaki koyu tema bloğu çalışır.
-   =========================================================================== */
-
-@theme inline {
-  --color-yuzey: var(--yuzey);
-  --color-yuzey-kart: var(--yuzey-kart);
-  --color-yuzey-gomulu: var(--yuzey-gomulu);
-  --color-yuzey-ters: var(--yuzey-ters);
-
-  --color-kenar: var(--kenar);
-  --color-kenar-guclu: var(--kenar-guclu);
-
-  --color-metin: var(--metin);
-  --color-metin-ikincil: var(--metin-ikincil);
-  --color-metin-ucuncul: var(--metin-ucuncul);
-  --color-metin-ters: var(--metin-ters);
-
-  --color-vurgu: var(--vurgu);
-  --color-vurgu-guclu: var(--vurgu-guclu);
-  --color-vurgu-zemin: var(--vurgu-zemin);
-
-  --color-marka: var(--marka);
-  --color-marka-hover: var(--marka-hover);
-
-  /* Mevcut 27 rotada brand-navy / brand-cyan sınıfları kullanımda.
-     Kırmamak için köprü; yeni kodda marka / vurgu tercih edin. */
-  --color-brand-navy: var(--marka);
-  --color-brand-cyan: var(--vurgu);
-}
 
 /* ===========================================================================
    Temel katman
@@ -221,8 +201,8 @@
   }
 
   body {
-    background-color: var(--yuzey);
-    color: var(--metin);
+    background-color: var(--color-yuzey);
+    color: var(--color-metin);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
@@ -230,7 +210,7 @@
   /* Odak halkası her zaman görünür: klavye kullanıcısı nerede olduğunu
      görmeden gezinemez. */
   :focus-visible {
-    outline: 2px solid var(--vurgu);
+    outline: 2px solid var(--color-vurgu);
     outline-offset: 2px;
     border-radius: 2px;
   }

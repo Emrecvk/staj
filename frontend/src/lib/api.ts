@@ -67,3 +67,36 @@ export async function getProduct(id: string) {
 // Favori ve karsilastirma islemleri lib/katalog-actions.ts icinde,
 // gercek API uclarina bagli olarak yer alir. Buradaki sahte
 // toggleFavorite/toggleCompare fonksiyonlari kaldirildi.
+
+/**
+ * Ana sayfa için katalog özeti.
+ *
+ * Rakamlar GERÇEK: hepsi API'den geliyor, hiçbiri sabit yazılmadı. Bir
+ * distribütörün vitrinde göstereceği en güçlü kanıt zaten envanterinin
+ * kendisi; "hızlı teslimat" gibi genel vaatler değil.
+ *
+ * API kapalıysa null döner ve çağıran taraf şeridi hiç basmaz. Uydurma
+ * sayı göstermek, hiç göstermemekten kötüdür.
+ */
+export async function getKatalogOzeti(): Promise<{
+  toplamUrun: number;
+  stoktakiUrun: number;
+  kategoriSayisi: number;
+} | null> {
+  const [tumu, stoktakiler, kategoriler] = await Promise.all([
+    safeFetch<ProductResult | null>("/Katalog/urunler?sayfaNo=1&sayfaBoyutu=1", null),
+    safeFetch<ProductResult | null>("/Katalog/urunler?sayfaNo=1&sayfaBoyutu=1&sadeceStoktakiler=true", null),
+    safeFetch<Category[]>("/Katalog/kategoriler/agac", []),
+  ]);
+
+  if (!tumu?.urunler) return null;
+
+  const kategoriSay = (dallar: Category[]): number =>
+    dallar.reduce((toplam, dal) => toplam + 1 + kategoriSay(dal.altKategoriler ?? []), 0);
+
+  return {
+    toplamUrun: tumu.urunler.toplamKayit,
+    stoktakiUrun: stoktakiler?.urunler?.toplamKayit ?? 0,
+    kategoriSayisi: kategoriSay(kategoriler),
+  };
+}
