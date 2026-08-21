@@ -6,8 +6,10 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
 
+  # Frontend /frontend altindadir. Onceki deger (/src/Cevik.UI) diye bir
+  # dizin hic olmadi; npm guncellemeleri sessizce hic calismiyordu.
   - package-ecosystem: "npm"
-    directory: "/src/Cevik.UI" # Frontend için npm paketleri (varsa)
+    directory: "/frontend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
