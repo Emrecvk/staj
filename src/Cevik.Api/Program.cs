@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -102,18 +103,65 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
+// ---------------------------------------------------------------------------
+// Forwarded headers
+//
+// GUVENLIK: KnownProxies/KnownIPNetworks BOSALTILMAZ.
+// Bosaltmak, X-Forwarded-For basligini HER kaynaktan kabul etmek demektir.
+// Oran sinirlayici istemciyi RemoteIpAddress'e gore bolumlendirdigi icin,
+// saldirgan her istekte sahte bir X-Forwarded-For gondererek kendine yeni bir
+// bolum acar ve giris ucundaki 5/dk limitini sinirsiz kez atlar.
+//
+// Guvenilen proxy'ler yapilandirmadan okunur. Hicbiri tanimli degilse
+// ASP.NET Core'un varsayilani gecerli olur (yalnizca loopback guvenilir),
+// yani disaridan gelen forwarded basliklari yok sayilir.
+// ---------------------------------------------------------------------------
+builder.Services.AddOptions<ForwardedHeadersOptions>()
+    .Configure<IConfiguration>((options, yapilandirma) =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+        // Yalnizca gelistirme ve test icin kacis kapisi: uretimde ACILMAMALIDIR.
+        if (yapilandirma.GetValue<bool>("ForwardedHeaders:TumProxylereGuven"))
+        {
+            options.KnownIPNetworks.Clear();
+            options.KnownProxies.Clear();
+            return;
+        }
+
+        var proxyler = yapilandirma.GetSection("ForwardedHeaders:GuvenilenProxyler").Get<string[]>() ?? [];
+        foreach (var proxy in proxyler)
+            if (System.Net.IPAddress.TryParse(proxy, out var ip))
+                options.KnownProxies.Add(ip);
+
+        var aglar = yapilandirma.GetSection("ForwardedHeaders:GuvenilenAglar").Get<string[]>() ?? [];
+        foreach (var ag in aglar)
+        {
+            var parcalar = ag.Split('/');
+            if (parcalar.Length == 2
+                && System.Net.IPAddress.TryParse(parcalar[0], out var agAdresi)
+                && int.TryParse(parcalar[1], out var uzunluk))
+            {
+                options.KnownIPNetworks.Add(new System.Net.IPNetwork(agAdresi, uzunluk));
+            }
+        }
+    });
 
 builder.Services.AddCors(options =>
 {
     // Kokenler lambda icinde okunur; boylece nihai yapilandirmadan gelir.
-    var izinliKokenler = builder.Configuration.GetSection("Cors:IzinliKokenler").Get<string[]>()
-        ?? ["http://localhost:3000"];
+    var izinliKokenler = builder.Configuration.GetSection("Cors:IzinliKokenler").Get<string[]>() ?? [];
+
+    // Uretimde localhost'a geri dusmek yok: yanlis yapilandirilmis bir dagitim
+    // sessizce gelistirme kokenini kabul etmektense acikca durmalidir.
+    if (izinliKokenler.Length == 0)
+    {
+        if (!builder.Environment.IsDevelopment())
+            throw new InvalidOperationException(
+                "Cors:IzinliKokenler uretim ortaminda tanimlanmalidir.");
+
+        izinliKokenler = ["http://localhost:3000"];
+    }
 
     options.AddPolicy("FrontendCorsPolicy", policy =>
         policy.WithOrigins(izinliKokenler)
@@ -204,12 +252,23 @@ builder.Services.AddHostedService<Cevik.Altyapi.Fiyatlama.ArkaPlan.TcmbDovizGunc
 // Stok Bildirim
 builder.Services.AddHostedService<Cevik.Altyapi.Katalog.ArkaPlan.StokBildirimIsleyiciBackgroundService>();
 
+// ---------------------------------------------------------------------------
 // Health Checks
-var baglantiDizesi = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection yapilandirilmamis.");
-var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+//
+// Baglanti dizeleri FABRIKA ile verilir. Daha once dogrudan
+// builder.Configuration'dan okunuyordu; bu, dosyanin basindaki kurali cigniyor
+// ve saglik kontrolu entegrasyon testinde Testcontainers'in baglanti dizesi
+// yerine appsettings'teki yerel adrese bakiyordu — /saglik her testte 503
+// donuyordu. Fabrika, nihai yapilandirmadan okur.
+// ---------------------------------------------------------------------------
 builder.Services.AddHealthChecks()
-    .AddNpgSql(baglantiDizesi)
-    .AddRedis(redisConnectionString);
+    .AddNpgSql(
+        sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+              ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection yapilandirilmamis."),
+        name: "postgresql")
+    .AddRedis(
+        sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis") ?? "localhost:6379",
+        name: "redis");
 
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -311,7 +370,29 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapHealthChecks("/saglik");
+// Hangi bagimliligin dustugunu govdede bildirir; duz "Unhealthy" metni
+// PostgreSQL mi Redis mi diye ayirt etmeyi imkansiz kiliyordu.
+app.MapHealthChecks("/saglik", new HealthCheckOptions
+{
+    ResponseWriter = async (context, rapor) =>
+    {
+        context.Response.ContentType = "application/json; charset=utf-8";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            durum = rapor.Status.ToString(),
+            toplamSureMs = rapor.TotalDuration.TotalMilliseconds,
+            kontroller = rapor.Entries.Select(e => new
+            {
+                ad = e.Key,
+                durum = e.Value.Status.ToString(),
+                sureMs = e.Value.Duration.TotalMilliseconds,
+                // Hata ayrintisi yalnizca gelistirmede: uretimde baglanti
+                // dizesi ve sunucu adi sizabilir.
+                hata = app.Environment.IsDevelopment() ? e.Value.Exception?.Message : null
+            })
+        });
+    }
+});
 
 app.Run();
 

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
+using Testcontainers.Redis;
 
 namespace Cevik.EntegrasyonTestleri;
 
@@ -31,6 +32,11 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
         .WithPassword("test_parolasi")
         .Build();
 
+    // Redis, onbellek icin kullanilmasa da /saglik ucu onu gercekten yokluyor.
+    // Konteyner olmadan saglik kontrolu her testte 503 donuyordu; sahte bir
+    // saglik kontrolu koymaktansa gercek bagimliligi ayaga kaldirmak dogru.
+    private readonly RedisContainer _redis = new RedisBuilder("redis:7-alpine").Build();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -39,6 +45,7 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
             yapilandirma.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString(),
+                ["ConnectionStrings:Redis"] = _redis.GetConnectionString(),
                 ["Jwt:Key"] = "TEST_ORTAMI_ICIN_EN_AZ_32_KARAKTERLIK_ANAHTAR",
                 ["Jwt:Issuer"] = "CevikApi",
                 ["Jwt:Audience"] = "CevikWeb",
@@ -48,6 +55,11 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
                 ["Ticari:UcretsizKargoEsigi"] = "1000",
                 ["Ticari:KargoUcreti"] = "50",
                 ["Cors:IzinliKokenler:0"] = "https://test.cevik.com",
+                // TestServer'da gercek bir uzak IP yok; oran sinirlayicinin
+                // istemcileri ayirabilmesi icin testler X-Forwarded-For gonderir
+                // ve bu bayrak o baslige guvenilmesini saglar.
+                // URETIMDE ACILMAZ — bkz. Program.cs forwarded headers bolumu.
+                ["ForwardedHeaders:TumProxylereGuven"] = "true",
                 ["TestOrtami"] = "true",
                 ["Yonetici:Eposta"] = YoneticiEpostasi,
                 ["Yonetici:Parola"] = YoneticiParolasi
@@ -74,7 +86,8 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
         client.DefaultRequestHeaders.Add("X-Forwarded-For", randomIp);
     }
 
-    Task IAsyncLifetime.InitializeAsync() => _postgres.StartAsync();
+    Task IAsyncLifetime.InitializeAsync() =>
+        Task.WhenAll(_postgres.StartAsync(), _redis.StartAsync());
 
     // WebApplicationFactory.DisposeAsync ValueTask döndürdüğü için
     // IAsyncLifetime'ın Task döndüren üyesi ACIK arayüz olarak uygulanır.
@@ -82,6 +95,7 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
     {
         await base.DisposeAsync();
         await _postgres.DisposeAsync();
+        await _redis.DisposeAsync();
     }
 
     /// <summary>Test içinden doğrudan veritabanına bakmak için.</summary>
