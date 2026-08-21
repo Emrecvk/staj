@@ -19,6 +19,16 @@ export function CheckoutForm({ addresses, cart }: { addresses: any[], cart: any 
     setIsPending(true);
     setError(null);
     
+    // Simulate payment processing delay
+    await new Promise(r => setTimeout(r, 1500));
+    
+    // Simulate 20% failure rate for sandbox
+    if (Math.random() < 0.20) {
+      setError("Ödeme reddedildi (Sandbox Simülasyonu). Lütfen kart bilgilerinizi kontrol edip tekrar deneyin.");
+      setIsPending(false);
+      return;
+    }
+
     try {
       const res = await createOrder({ faturaAdresiId, teslimatAdresiId, musteriNotu });
       if (res.success) {
@@ -106,7 +116,38 @@ export function CheckoutForm({ addresses, cart }: { addresses: any[], cart: any 
       
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-100 bg-gray-50">
-          <h3 className="font-bold text-gray-900 text-lg">3. Sipariş Notu</h3>
+          <h3 className="font-bold text-gray-900 text-lg">3. Ödeme Bilgileri (Sandbox)</h3>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4 max-w-md">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kart Üzerindeki İsim</label>
+              <input type="text" required className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="Ad Soyad" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kart Numarası</label>
+              <input type="text" required maxLength={19} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="0000 0000 0000 0000" />
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Son Kul. Tarihi</label>
+                <input type="text" required maxLength={5} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="AA/YY" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                <input type="text" required maxLength={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-brand-cyan focus:border-brand-cyan" placeholder="123" />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+               <AlertCircle size={12} /> Bu bir sandbox ödeme simülasyonudur. Test için rastgele veriler girebilirsiniz. Sistem %20 ihtimalle ret (decline) hatası döndürecektir.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 bg-gray-50">
+          <h3 className="font-bold text-gray-900 text-lg">4. Sipariş Notu</h3>
         </div>
         <div className="p-6">
           <textarea
