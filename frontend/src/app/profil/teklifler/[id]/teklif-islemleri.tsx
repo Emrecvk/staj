@@ -90,7 +90,7 @@ export function TeklifIslemleri({ teklifId, talepNo, durum, gecerlilikTarihi }: 
             </button>
             <button
               type="button" onClick={() => setIslem("red")} disabled={beklemede}
-              className="flex items-center gap-2 rounded-lg border border-red-300 px-5 py-2.5 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-hata-500 px-5 py-2.5 text-sm font-bold text-hata-600 hover:bg-hata-50 disabled:opacity-50"
             >
               <X size={16} /> Reddet
             </button>
@@ -100,7 +100,7 @@ export function TeklifIslemleri({ teklifId, talepNo, durum, gecerlilikTarihi }: 
         {siparieCevrilebilir && (
           <button
             type="button" onClick={() => setIslem("siparis")} disabled={beklemede}
-            className="flex items-center gap-2 rounded-lg bg-brand-navy px-5 py-2.5 text-sm font-bold text-white hover:bg-opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-marka px-5 py-2.5 text-sm font-bold text-white hover:bg-opacity-90 disabled:opacity-50"
           >
             {beklemede ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={16} />}
             Siparişe Dönüştür

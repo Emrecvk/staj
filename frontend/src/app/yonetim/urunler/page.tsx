@@ -20,7 +20,7 @@ export default async function AdminUrunlerPage({ searchParams }: {
   if (!urunler.success) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Ürün Yönetimi</h1>
+        <h1 className="mb-6 text-2xl font-bold text-metin">Ürün Yönetimi</h1>
         <ApiHatasi mesaj={urunler.message} />
       </div>
     );

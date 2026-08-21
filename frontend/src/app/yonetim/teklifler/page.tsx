@@ -10,7 +10,7 @@ export default async function AdminTekliflerPage() {
   if (!sonuc.success) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Teklif Talepleri</h1>
+        <h1 className="mb-6 text-2xl font-bold text-metin">Teklif Talepleri</h1>
         <ApiHatasi mesaj={sonuc.message} />
       </div>
     );

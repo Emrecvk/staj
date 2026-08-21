@@ -10,7 +10,7 @@ export default async function AdminFirmalarPage() {
   if (!sonuc.success) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Firma Başvuruları</h1>
+        <h1 className="mb-6 text-2xl font-bold text-metin">Firma Başvuruları</h1>
         <ApiHatasi mesaj={sonuc.message} />
       </div>
     );

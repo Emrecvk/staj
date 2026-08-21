@@ -100,13 +100,13 @@ export function UrunYonetimi({ urunler, toplam, kategoriler, ureticiler, arama, 
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ürün Yönetimi</h1>
-          <p className="mt-1 text-sm text-gray-500">{toplam.toLocaleString("tr-TR")} kayıt</p>
+          <h1 className="text-2xl font-bold text-metin">Ürün Yönetimi</h1>
+          <p className="mt-1 text-sm text-metin-ucuncul">{toplam.toLocaleString("tr-TR")} kayıt</p>
         </div>
         <button
           type="button"
           onClick={() => setDuzenlenen("yeni")}
-          className="flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90"
+          className="flex items-center gap-2 rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90"
         >
           <Plus size={16} /> Yeni Ürün Ekle
         </button>
@@ -115,20 +115,20 @@ export function UrunYonetimi({ urunler, toplam, kategoriler, ureticiler, arama, 
       {hata && <div className="mb-4"><ApiHatasi mesaj={hata} /></div>}
       {basari && <div className="mb-4"><BasariBildirimi mesaj={basari} /></div>}
 
-      <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <form action={aramaYap} className="flex flex-wrap items-center gap-4 border-b border-gray-100 bg-gray-50 p-4">
+      <div className="mb-8 overflow-hidden rounded-xl border border-kenar bg-yuzey-kart shadow-sm">
+        <form action={aramaYap} className="flex flex-wrap items-center gap-4 border-b border-kenar bg-yuzey p-4">
           <input
             name="arama"
             defaultValue={arama}
             placeholder="Ürün kodu ara…"
             aria-label="Ürün kodu ara"
-            className="min-w-0 flex-grow rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-cyan focus:ring-brand-cyan"
+            className="min-w-0 flex-grow rounded-md border border-kenar-guclu px-3 py-2 text-sm focus:border-vurgu focus:ring-vurgu"
           />
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-metin-ikincil">
             <input type="checkbox" name="silinmisler" defaultChecked={silinmisleriGoster} className="rounded" />
             Silinmişleri göster
           </label>
-          <button type="submit" className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white">
+          <button type="submit" className="rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white">
             Ara
           </button>
         </form>
@@ -138,7 +138,7 @@ export function UrunYonetimi({ urunler, toplam, kategoriler, ureticiler, arama, 
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="bg-yuzey text-left text-xs uppercase tracking-wide text-metin-ucuncul">
                 <tr>
                   <th className="p-4">Ürün Kodu</th>
                   <th className="p-4">Açıklama</th>
@@ -147,15 +147,15 @@ export function UrunYonetimi({ urunler, toplam, kategoriler, ureticiler, arama, 
                   <th className="p-4 text-right">İşlemler</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-kenar">
                 {urunler.map((u) => (
-                  <tr key={u.id} className={u.silindiMi ? "bg-red-50/40" : "hover:bg-gray-50"}>
-                    <td className="p-4 font-bold text-gray-900">{u.ureticiUrunKodu}</td>
-                    <td className="p-4 text-gray-600">{u.kisaAciklama}</td>
+                  <tr key={u.id} className={u.silindiMi ? "bg-hata-50/40" : "hover:bg-yuzey"}>
+                    <td className="p-4 font-bold text-metin">{u.ureticiUrunKodu}</td>
+                    <td className="p-4 text-metin-ikincil">{u.kisaAciklama}</td>
                     <td className="p-4 font-medium">{u.toplamStok.toLocaleString("tr-TR")}</td>
                     <td className="p-4">
                       {u.silindiMi
-                        ? <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">Silinmiş</span>
+                        ? <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-hata-600">Silinmiş</span>
                         : <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-bold text-green-700">
                             {u.aktif ? "Aktif" : "Pasif"}
                           </span>}
@@ -166,7 +166,7 @@ export function UrunYonetimi({ urunler, toplam, kategoriler, ureticiler, arama, 
                           <button
                             type="button" onClick={() => setOnay({ tip: "geri-al", urun: u })}
                             aria-label={`${u.ureticiUrunKodu} geri al`}
-                            className="rounded p-2 text-green-600 hover:bg-green-50"
+                            className="rounded p-2 text-basari-600 hover:bg-basari-50"
                           >
                             <RotateCcw size={16} />
                           </button>
@@ -182,14 +182,14 @@ export function UrunYonetimi({ urunler, toplam, kategoriler, ureticiler, arama, 
                             <button
                               type="button" onClick={() => setDuzenlenen(u)}
                               aria-label={`${u.ureticiUrunKodu} düzenle`}
-                              className="rounded p-2 text-gray-600 hover:bg-gray-100"
+                              className="rounded p-2 text-metin-ikincil hover:bg-yuzey-gomulu"
                             >
                               <Edit2 size={16} />
                             </button>
                             <button
                               type="button" onClick={() => setOnay({ tip: "sil", urun: u })}
                               aria-label={`${u.ureticiUrunKodu} sil`}
-                              className="rounded p-2 text-red-600 hover:bg-red-50"
+                              className="rounded p-2 text-hata-600 hover:bg-hata-50"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -253,10 +253,10 @@ function Kutu({ baslik, onKapat, children }: {
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-8 w-full max-w-2xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 p-5">
-          <h2 className="text-lg font-bold text-gray-900">{baslik}</h2>
-          <button type="button" onClick={onKapat} className="text-sm text-gray-500 hover:text-gray-800">
+      <div className="my-8 w-full max-w-2xl rounded-xl bg-yuzey-kart shadow-xl">
+        <div className="flex items-center justify-between border-b border-kenar p-5">
+          <h2 className="text-lg font-bold text-metin">{baslik}</h2>
+          <button type="button" onClick={onKapat} className="text-sm text-metin-ucuncul hover:text-metin">
             Kapat
           </button>
         </div>
@@ -269,14 +269,14 @@ function Kutu({ baslik, onKapat, children }: {
 function Alan({ etiket, children }: { etiket: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-gray-700">{etiket}</span>
+      <span className="mb-1 block text-sm font-medium text-metin-ikincil">{etiket}</span>
       {children}
     </label>
   );
 }
 
 const girdiSinifi =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-cyan focus:ring-brand-cyan";
+  "w-full rounded-md border border-kenar-guclu px-3 py-2 text-sm focus:border-vurgu focus:ring-vurgu";
 
 function UrunFormu({ urun, kategoriler, ureticiler, onKapat, onTamam, onHata }: {
   urun: AdminUrun | null;
@@ -381,23 +381,23 @@ function UrunFormu({ urun, kategoriler, ureticiler, onKapat, onTamam, onHata }: 
         </div>
 
         <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-metin-ikincil">
             <input type="checkbox" name="aktif" defaultChecked={urun?.aktif ?? true} className="rounded" /> Aktif
           </label>
           {!yeniMi && (
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2 text-sm text-metin-ikincil">
               <input type="checkbox" name="kampanyaliMi" className="rounded" /> Kampanyalı
             </label>
           )}
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+        <div className="flex justify-end gap-3 border-t border-kenar pt-4">
           <button type="button" onClick={onKapat}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            className="rounded-lg border border-kenar-guclu px-4 py-2 text-sm font-medium text-metin-ikincil hover:bg-yuzey">
             Vazgeç
           </button>
           <button type="submit" disabled={beklemede}
-            className="flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            className="flex items-center gap-2 rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
             {beklemede && <Loader2 size={14} className="animate-spin" />}
             {yeniMi ? "Ekle" : "Kaydet"}
           </button>
@@ -464,8 +464,8 @@ function StokFiyatPaneli({ urun, ambalajlar, onKapat, onTamam, onHata }: {
                 key={a.id} type="button" onClick={() => ambalajSec(a)}
                 className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
                   secili?.id === a.id
-                    ? "border-brand-navy bg-brand-navy text-white"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    ? "border-brand-navy bg-marka text-white"
+                    : "border-kenar-guclu text-metin-ikincil hover:bg-yuzey"
                 }`}
               >
                 {a.ad ?? `Ambalaj #${a.id}`}
@@ -475,8 +475,8 @@ function StokFiyatPaneli({ urun, ambalajlar, onKapat, onTamam, onHata }: {
 
           {secili && (
             <>
-              <form action={stokKaydet} className="mb-6 rounded-lg border border-gray-200 p-4">
-                <h3 className="mb-3 flex items-center gap-2 font-bold text-gray-900">
+              <form action={stokKaydet} className="mb-6 rounded-lg border border-kenar p-4">
+                <h3 className="mb-3 flex items-center gap-2 font-bold text-metin">
                   <Package size={16} /> Stok
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -494,17 +494,17 @@ function StokFiyatPaneli({ urun, ambalajlar, onKapat, onTamam, onHata }: {
                 </div>
                 <div className="mt-3 flex justify-end">
                   <button type="submit" disabled={beklemede}
-                    className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+                    className="rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
                     Stoğu Kaydet
                   </button>
                 </div>
               </form>
 
-              <div className="rounded-lg border border-gray-200 p-4">
-                <h3 className="mb-3 flex items-center gap-2 font-bold text-gray-900">
+              <div className="rounded-lg border border-kenar p-4">
+                <h3 className="mb-3 flex items-center gap-2 font-bold text-metin">
                   <Layers size={16} /> Kademeli Fiyat
                 </h3>
-                <p className="mb-3 text-xs text-gray-500">
+                <p className="mb-3 text-xs text-metin-ucuncul">
                   Kademe aralıkları çakışamaz ve son kademe hariç üst sınır zorunludur;
                   aksi hâlde API 422 döndürür.
                 </p>
@@ -533,7 +533,7 @@ function StokFiyatPaneli({ urun, ambalajlar, onKapat, onTamam, onHata }: {
                         </select>
                         <button type="button" aria-label={`${i + 1}. kademeyi sil`}
                           onClick={() => setKademeler(d => d.filter((_, j) => j !== i))}
-                          className="rounded p-2 text-red-600 hover:bg-red-50">
+                          className="rounded p-2 text-hata-600 hover:bg-hata-50">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -547,11 +547,11 @@ function StokFiyatPaneli({ urun, ambalajlar, onKapat, onTamam, onHata }: {
                       minMiktar: (d.at(-1)?.maxMiktar ?? 0) + 1,
                       maxMiktar: null, birimFiyat: 0, paraBirimi: "USD",
                     }])}
-                    className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    className="flex items-center gap-1 rounded-lg border border-kenar-guclu px-3 py-2 text-sm font-medium text-metin-ikincil hover:bg-yuzey">
                     <Plus size={14} /> Kademe ekle
                   </button>
                   <button type="button" onClick={fiyatKaydet} disabled={beklemede || kademeler.length === 0}
-                    className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+                    className="rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
                     Fiyatları Kaydet
                   </button>
                 </div>

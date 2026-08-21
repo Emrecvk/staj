@@ -16,17 +16,17 @@ export default async function SiparislerPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Siparişlerim</h1>
+      <h1 className="mb-6 text-2xl font-bold text-metin">Siparişlerim</h1>
 
       {siparisler.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 p-12 text-center">
-          <p className="text-gray-500">Henüz bir siparişiniz bulunmuyor.</p>
+        <div className="rounded-xl border border-kenar p-12 text-center">
+          <p className="text-metin-ucuncul">Henüz bir siparişiniz bulunmuyor.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200">
+        <div className="overflow-hidden rounded-xl border border-kenar">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="bg-yuzey text-left text-xs uppercase tracking-wide text-metin-ucuncul">
                 <tr>
                   <th className="px-4 py-3">Sipariş No</th>
                   <th className="px-4 py-3">Tarih</th>
@@ -34,11 +34,11 @@ export default async function SiparislerPage() {
                   <th className="px-4 py-3 text-right">Tutar</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-kenar">
                 {siparisler.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 font-bold text-brand-navy">{s.siparisNo}</td>
-                    <td className="px-4 py-4 text-gray-600">
+                  <tr key={s.id} className="hover:bg-yuzey">
+                    <td className="px-4 py-4 font-bold text-marka">{s.siparisNo}</td>
+                    <td className="px-4 py-4 text-metin-ikincil">
                       {new Date(s.tarih).toLocaleDateString("tr-TR")}
                     </td>
                     <td className="px-4 py-4">
@@ -47,7 +47,7 @@ export default async function SiparislerPage() {
                         ton={durumTonu(s.durum)}
                       />
                     </td>
-                    <td className="px-4 py-4 text-right font-medium text-gray-900">
+                    <td className="px-4 py-4 text-right font-medium text-metin">
                       {s.genelToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} {s.paraBirimi}
                     </td>
                   </tr>

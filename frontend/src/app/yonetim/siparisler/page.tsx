@@ -15,7 +15,7 @@ export default async function AdminSiparislerPage({ searchParams }: {
   if (!sonuc.success) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Sipariş Yönetimi</h1>
+        <h1 className="mb-6 text-2xl font-bold text-metin">Sipariş Yönetimi</h1>
         <ApiHatasi mesaj={sonuc.message} />
       </div>
     );

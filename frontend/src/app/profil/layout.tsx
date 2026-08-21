@@ -31,15 +31,15 @@ export default async function ProfileLayout({ children }: { children: ReactNode 
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-yuzey">
       <SiteHeader categories={categories} />
       
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-8">
           
           <aside className="w-full md:w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 bg-brand-navy text-white">
+            <div className="bg-yuzey-kart rounded-xl shadow-sm border border-kenar overflow-hidden">
+              <div className="p-6 border-b border-kenar bg-marka text-white">
                 <div className="font-bold text-lg">{user.ad}</div>
                 <div className="text-sm text-cyan-400 mt-1">{user.firmaMi ? "Kurumsal Hesap" : "Bireysel Hesap"}</div>
               </div>
@@ -49,17 +49,17 @@ export default async function ProfileLayout({ children }: { children: ReactNode 
                   <Link 
                     key={index} 
                     href={item.href}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-cyan transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-metin-ikincil hover:bg-yuzey hover:text-vurgu transition-colors"
                   >
                     <item.icon size={18} />
                     <span className="font-medium text-sm">{item.label}</span>
                   </Link>
                 ))}
                 
-                <div className="my-2 border-t border-gray-100"></div>
+                <div className="my-2 border-t border-kenar"></div>
                 
                 <form action={logout}>
-                  <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors">
+                  <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-hata-600 hover:bg-hata-50 transition-colors">
                     <LogOut size={18} />
                     <span className="font-medium text-sm">Çıkış Yap</span>
                   </button>
@@ -69,7 +69,7 @@ export default async function ProfileLayout({ children }: { children: ReactNode 
           </aside>
           
           <div className="flex-grow">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 min-h-[500px]">
+            <div className="bg-yuzey-kart rounded-xl shadow-sm border border-kenar p-6 md:p-8 min-h-[500px]">
               {children}
             </div>
           </div>
