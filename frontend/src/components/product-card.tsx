@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Heart, ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { FavoriButonu } from "@/components/favori-karsilastirma-butonlari";
 import type { ProductSummary } from "@/lib/api";
 
 function formatPrice(value: number, currency: string) { 
@@ -16,14 +17,9 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           </span>
         )}
         
-        <button 
-          className="absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-white rounded-full p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-all z-10" 
-          aria-label="Favorilere ekle" 
-          type="button"
-          onClick={(e) => e.preventDefault()}
-        >
-          <Heart size={16} />
-        </button>
+        <div className="absolute top-2 right-2 z-10 opacity-0 transition-all group-hover:opacity-100">
+          <FavoriButonu urunId={product.id} />
+        </div>
         
         {/* Placeholder for product image since we don't have actual images */}
         <div className="w-full h-full bg-white border-2 border-dashed border-gray-200 rounded-md flex flex-col items-center justify-center text-gray-400 relative">

@@ -27,7 +27,7 @@ async function getAuthHeaders() {
 export async function addToCart(ambalajId: number, miktar: number) {
   try {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}/Sepet/ekle`, {
+    const res = await fetch(`${API_URL}/Sepet`, {
       method: "POST",
       headers,
       body: JSON.stringify({ urunAmbalajId: ambalajId, miktar }),
@@ -57,7 +57,7 @@ export async function addToCart(ambalajId: number, miktar: number) {
 export async function updateCartItem(kalemId: number, yeniMiktar: number) {
   try {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}/Sepet/guncelle`, {
+    const res = await fetch(`${API_URL}/Sepet`, {
       method: "PUT",
       headers,
       body: JSON.stringify({ kalemId, yeniMiktar }),
@@ -77,7 +77,7 @@ export async function updateCartItem(kalemId: number, yeniMiktar: number) {
 export async function removeCartItem(kalemId: number) {
   try {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}/Sepet/kalem/${kalemId}`, {
+    const res = await fetch(`${API_URL}/Sepet/${kalemId}`, {
       method: "DELETE",
       headers,
     });
@@ -94,7 +94,7 @@ export async function removeCartItem(kalemId: number) {
 export async function clearCart() {
   try {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}/Sepet`, {
+    const res = await fetch(`${API_URL}/Sepet/bosalt`, {
       method: "DELETE",
       headers,
     });
@@ -126,19 +126,26 @@ export async function getCart() {
 export async function createOrder(data: any) {
   try {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}/Siparisler`, {
+    const res = await fetch(`${API_URL}/Siparis`, {
       method: "POST",
       headers,
       body: JSON.stringify(data),
     });
     
     if (!res.ok) {
-       return { success: false, message: "Sipariş oluşturulamadı." };
+      // Stok yetersizligi ve eszamanlilik catismasi is kurali ihlali olarak
+      // 422/409 doner; metni kullaniciya gostermek gerekir.
+      const govde = await res.json().catch(() => null);
+      return {
+        success: false,
+        message: govde?.detail || govde?.title || "Sipariş oluşturulamadı.",
+      };
     }
-    
+
     const siparis = await res.json();
-    return { success: true, siparisNo: siparis.siparisNo };
-  } catch (err) {
+    // siparisId odeme adimi icin sart: odeme ayri bir istek.
+    return { success: true, siparisId: siparis.id as number, siparisNo: siparis.siparisNo as string };
+  } catch {
     return { success: false, message: "Sunucu bağlantı hatası." };
   }
 }
@@ -146,7 +153,7 @@ export async function createOrder(data: any) {
 export async function createQuote(data: any) {
   try {
     const headers = await getAuthHeaders();
-    const res = await fetch(`${API_URL}/Teklifler`, {
+    const res = await fetch(`${API_URL}/Teklif`, {
       method: "POST",
       headers,
       body: JSON.stringify(data),

@@ -64,12 +64,6 @@ export async function getProduct(id: string) {
   return safeFetch<ProductDetail | null>(`/Katalog/urunler/${id}`, null);
 }
 
-export async function toggleFavorite(productId: number, isFavorite: boolean) {
-  // Mock API call since this is just frontend UI task
-  return { success: true };
-}
-
-export async function toggleCompare(productId: number, isCompare: boolean) {
-  // Mock API call
-  return { success: true };
-}
+// Favori ve karsilastirma islemleri lib/katalog-actions.ts icinde,
+// gercek API uclarina bagli olarak yer alir. Buradaki sahte
+// toggleFavorite/toggleCompare fonksiyonlari kaldirildi.

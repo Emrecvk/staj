@@ -1,230 +1,340 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  FileUp, CheckCircle, AlertTriangle, XCircle, ShoppingCart,
+  Loader2, ArrowRight, Upload, Info,
+} from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { FileUp, CheckCircle, AlertTriangle, XCircle, ShoppingCart, FileText, Loader2, ArrowRight } from "lucide-react";
-import { getProducts } from "@/lib/api";
+import { bomEslestir, bomAdaySec } from "@/lib/bom-actions";
+import { bomMetniniAyristir, type BomEslesmeSonucu, type EslesmeAdayi } from "@/lib/bom-tipler";
 import { addToCart } from "@/lib/cart-actions";
-import { useRouter } from "next/navigation";
+
+const KABUL_EDILEN = ".csv,.tsv,.txt";
 
 export default function BomPage() {
-  const [bomText, setBomText] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const router = useRouter();
+  const dosyaRef = useRef<HTMLInputElement>(null);
 
-  const handleProcessBom = async () => {
-    if (!bomText.trim()) return;
-    
-    setIsProcessing(true);
-    setResults([]);
-    
-    // Parse naive CSV/TSV
-    const lines = bomText.split('\n').map(l => l.trim()).filter(l => l);
-    
-    const parsedItems = lines.map(line => {
-      // split by tab or comma
-      const parts = line.split(/[\t,]/);
-      return {
-        mpn: parts[0]?.trim(),
-        qty: parseInt(parts[1]?.trim()) || 1
-      };
-    }).filter(item => item.mpn);
+  const [bomMetni, setBomMetni] = useState("");
+  const [sonuclar, setSonuclar] = useState<BomEslesmeSonucu[]>([]);
+  const [atlananSatirlar, setAtlananSatirlar] = useState<number[]>([]);
+  const [hata, setHata] = useState<string | null>(null);
+  const [sepetHatalari, setSepetHatalari] = useState<string[]>([]);
+  const [isleniyor, basla] = useTransition();
+  const [sepeteEkleniyor, setSepeteEkleniyor] = useState(false);
 
-    // Fetch matches
-    const newResults = [];
-    for (const item of parsedItems) {
-      try {
-        const res = await getProducts({ aramaMetni: item.mpn });
-        const matches = res.urunler?.kayitlar || [];
-        
-        let status = 'unmatched';
-        let selectedProduct = null;
-        
-        if (matches.length === 1 || (matches.length > 0 && matches[0].ureticiUrunKodu.toLowerCase() === item.mpn.toLowerCase())) {
-          status = 'matched';
-          selectedProduct = matches[0];
-        } else if (matches.length > 1) {
-          status = 'multiple';
-        }
+  const dosyaSec = async (dosya: File) => {
+    setHata(null);
 
-        newResults.push({
-          ...item,
-          status,
-          matches,
-          selectedProduct
-        });
-      } catch (err) {
-        newResults.push({
-          ...item,
-          status: 'error',
-          matches: [],
-          selectedProduct: null
-        });
-      }
+    if (/\.xlsx?$/i.test(dosya.name)) {
+      setHata(
+        "Excel dosyaları doğrudan okunamıyor. Excel'de \"Farklı Kaydet → CSV (virgülle ayrılmış)\" " +
+        "seçeneğiyle kaydedip yeniden yükleyin.",
+      );
+      return;
     }
-    
-    setResults(newResults);
-    setIsProcessing(false);
+
+    const metin = await dosya.text();
+    setBomMetni(metin);
+    isle(metin);
   };
 
-  const handleSelectMatch = (index: number, product: any) => {
-    const updated = [...results];
-    updated[index].selectedProduct = product;
-    updated[index].status = 'matched';
-    setResults(updated);
+  const isle = (metin: string) => {
+    const { satirlar, atlanan } = bomMetniniAyristir(metin);
+    setAtlananSatirlar(atlanan);
+
+    if (satirlar.length === 0) {
+      setHata("Okunabilir satır bulunamadı. Her satır \"ÜrünKodu, Miktar\" biçiminde olmalı.");
+      setSonuclar([]);
+      return;
+    }
+
+    setHata(null);
+    basla(async () => setSonuclar(await bomEslestir(satirlar)));
   };
 
-  const handleBulkAddToCart = async () => {
-    setIsAddingToCart(true);
-    const matched = results.filter(r => r.status === 'matched' && r.selectedProduct);
-    
-    for (const item of matched) {
-      // In a real app we'd need the specific packaging ID. Here we mock using product ID.
-      // Usually product details need to be fetched to get packages. 
-      // For BOM bulk add, we assume a default package ID = item.selectedProduct.id * 10 
-      try {
-        await addToCart(item.selectedProduct.id * 10, item.qty);
-      } catch (e) {
-        // ignore individual failures for this demo
+  const adaySec = (indeks: number, aday: EslesmeAdayi) => {
+    basla(async () => {
+      const secilen = await bomAdaySec(aday.id, sonuclar[indeks].miktar);
+      setSonuclar(mevcut => mevcut.map((s, i) =>
+        i === indeks
+          ? { ...s, secilen, durum: secilen ? "eslesti" : "ambalajsiz" }
+          : s));
+    });
+  };
+
+  const topluSepeteEkle = async () => {
+    setSepeteEkleniyor(true);
+    setSepetHatalari([]);
+
+    const eslesenler = sonuclar.filter(s => s.durum === "eslesti" && s.secilen);
+    const hatalar: string[] = [];
+
+    for (const satir of eslesenler) {
+      // Gerçek ambalaj kimliği ve MOQ/katlama kurallarına göre düzeltilmiş
+      // miktar gönderilir; sunucu aynı kuralı yeniden doğrular.
+      const sonuc = await addToCart(satir.secilen!.ambalajId, satir.secilen!.gecerliMiktar);
+      if (!sonuc.success) {
+        hatalar.push(`${satir.secilen!.ureticiUrunKodu}: ${sonuc.message ?? "eklenemedi"}`);
       }
     }
-    
-    setIsAddingToCart(false);
+
+    setSepeteEkleniyor(false);
+
+    // Kısmi başarıda kullanıcıyı sessizce sepete atmak yerine ne olduğunu göster.
+    if (hatalar.length > 0) { setSepetHatalari(hatalar); return; }
     router.push("/sepet");
   };
 
+  const eslesenSayisi = sonuclar.filter(s => s.durum === "eslesti").length;
+  const coklu = sonuclar.filter(s => s.durum === "coklu").length;
+  const eslesmeyen = sonuclar.filter(s => s.durum === "eslesmedi" || s.durum === "ambalajsiz").length;
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       <SiteHeader categories={[]} />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-extrabold text-brand-navy mb-2 flex items-center gap-3">
+
+      <main className="container mx-auto flex-grow px-4 py-8">
+        <h1 className="mb-2 flex items-center gap-3 text-3xl font-extrabold text-brand-navy">
           <FileUp size={32} /> BOM Yükleme ve Eşleştirme
         </h1>
-        <p className="text-gray-600 mb-8 max-w-3xl">
-          Malzeme listenizi (Bill of Materials) buraya yapıştırın. Sistemimiz ürünleri otomatik eşleştirerek sepetinize veya teklif sepetinize eklemenizi sağlar. Her satırda <strong>Ürün Kodu, Miktar</strong> formatını kullanın.
+        <p className="mb-8 max-w-3xl text-gray-600">
+          Malzeme listenizi (Bill of Materials) CSV olarak yükleyin veya aşağıya yapıştırın.
+          Her satırda <strong>Ürün Kodu, Miktar</strong> bulunmalıdır.
         </p>
 
-        {results.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <textarea
-              className="w-full border border-gray-300 rounded-lg p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan mb-4"
-              rows={10}
-              placeholder="1N4148, 1000&#10;LM358, 500&#10;BilinmeyenUrun, 100"
-              value={bomText}
-              onChange={(e) => setBomText(e.target.value)}
-            ></textarea>
-            
-            <button
-              onClick={handleProcessBom}
-              disabled={isProcessing || !bomText.trim()}
-              className="bg-brand-navy hover:bg-opacity-90 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70"
+        {sonuclar.length === 0 ? (
+          <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const dosya = e.dataTransfer.files?.[0];
+                if (dosya) dosyaSec(dosya);
+              }}
+              className="mb-6 flex flex-col items-center gap-3 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center"
             >
-              {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
-              Eşleştirmeyi Başlat
+              <Upload size={28} className="text-gray-400" />
+              <p className="text-sm text-gray-600">
+                CSV dosyanızı buraya sürükleyin veya
+              </p>
+              <button
+                type="button"
+                onClick={() => dosyaRef.current?.click()}
+                className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90"
+              >
+                Dosya seç
+              </button>
+              <input
+                ref={dosyaRef}
+                type="file"
+                accept={KABUL_EDILEN}
+                className="hidden"
+                aria-label="BOM dosyası seç"
+                onChange={(e) => {
+                  const dosya = e.target.files?.[0];
+                  if (dosya) dosyaSec(dosya);
+                }}
+              />
+              <p className="flex items-center gap-1 text-xs text-gray-500">
+                <Info size={12} /> CSV, TSV veya TXT. Excel için önce &quot;CSV olarak kaydet&quot;.
+              </p>
+            </div>
+
+            <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="bom-metni">
+              veya listeyi yapıştırın
+            </label>
+            <textarea
+              id="bom-metni"
+              className="mb-4 w-full rounded-lg border border-gray-300 p-4 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-brand-cyan"
+              rows={8}
+              placeholder={"1N4148, 1000\nLM358, 500\nBilinmeyenUrun, 100"}
+              value={bomMetni}
+              onChange={(e) => setBomMetni(e.target.value)}
+            />
+
+            {hata && (
+              <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                {hata}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => isle(bomMetni)}
+              disabled={isleniyor || !bomMetni.trim()}
+              className="flex items-center gap-2 rounded-lg bg-brand-cyan px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            >
+              {isleniyor ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+              Listeyi Eşleştir
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="flex gap-4">
-               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex-1 text-center">
-                  <div className="text-2xl font-bold text-green-600">{results.filter(r => r.status === 'matched').length}</div>
-                  <div className="text-xs text-gray-500 uppercase font-bold">Eşleşen</div>
-               </div>
-               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex-1 text-center">
-                  <div className="text-2xl font-bold text-yellow-600">{results.filter(r => r.status === 'multiple').length}</div>
-                  <div className="text-xs text-gray-500 uppercase font-bold">Çoklu Sonuç</div>
-               </div>
-               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex-1 text-center">
-                  <div className="text-2xl font-bold text-red-600">{results.filter(r => r.status === 'unmatched').length}</div>
-                  <div className="text-xs text-gray-500 uppercase font-bold">Bulunamayan</div>
-               </div>
+          <>
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Ozet etiket="Eşleşen" adet={eslesenSayisi} renk="text-green-700 bg-green-50" />
+              <Ozet etiket="Seçim bekleyen" adet={coklu} renk="text-amber-700 bg-amber-50" />
+              <Ozet etiket="Eşleşmeyen" adet={eslesmeyen} renk="text-red-700 bg-red-50" />
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-medium">BOM Satırı (MPN)</th>
-                    <th className="px-4 py-3 text-center font-medium">Miktar</th>
-                    <th className="px-4 py-3 text-left font-medium">Durum & Seçim</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {results.map((r, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 font-bold text-gray-900">{r.mpn}</td>
-                      <td className="px-4 py-4 text-center">{r.qty}</td>
-                      <td className="px-4 py-4">
-                        {r.status === 'matched' && (
-                          <div className="flex items-center gap-2 text-green-700">
-                            <CheckCircle size={18} />
-                            <span>{r.selectedProduct?.ureticiUrunKodu} ({r.selectedProduct?.ureticiAd})</span>
-                          </div>
-                        )}
-                        {r.status === 'unmatched' && (
-                          <div className="flex items-center gap-2 text-red-600">
-                            <XCircle size={18} />
-                            <span>Eşleşme bulunamadı.</span>
-                          </div>
-                        )}
-                        {r.status === 'multiple' && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-yellow-600 mb-2">
-                              <AlertTriangle size={18} />
-                              <span>Birden fazla sonuç bulundu. Doğru ürünü seçin:</span>
-                            </div>
-                            <select 
-                              className="border border-gray-300 rounded p-2 text-sm w-full outline-none focus:ring-1 focus:ring-brand-cyan"
-                              onChange={(e) => handleSelectMatch(i, r.matches[parseInt(e.target.value)])}
-                              defaultValue=""
-                            >
-                              <option value="" disabled>Ürün Seçiniz...</option>
-                              {r.matches.map((m: any, idx: number) => (
-                                <option key={m.id} value={idx}>{m.ureticiUrunKodu} - {m.ureticiAd}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </td>
+            {atlananSatirlar.length > 0 && (
+              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                Miktarı okunamayan {atlananSatirlar.length} satır atlandı
+                (satır {atlananSatirlar.slice(0, 10).join(", ")}
+                {atlananSatirlar.length > 10 ? "…" : ""}).
+              </p>
+            )}
+
+            {sepetHatalari.length > 0 && (
+              <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                <p className="font-bold">Bazı kalemler sepete eklenemedi:</p>
+                <ul className="mt-1 list-inside list-disc">
+                  {sepetHatalari.map((h) => <li key={h}>{h}</li>)}
+                </ul>
+              </div>
+            )}
+
+            <div className="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr>
+                      <th className="p-4">BOM Satırı</th>
+                      <th className="p-4">İstenen</th>
+                      <th className="p-4">Eşleşme</th>
+                      <th className="p-4">Ambalaj / Miktar</th>
+                      <th className="p-4">Durum</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {sonuclar.map((s, i) => (
+                      <tr key={`${s.satirNo}-${s.mpn}`} className="align-top">
+                        <td className="p-4 font-mono font-bold text-gray-900">{s.mpn}</td>
+                        <td className="p-4 text-gray-600">{s.miktar}</td>
+                        <td className="p-4">
+                          {s.secilen ? (
+                            <div>
+                              <p className="font-bold text-gray-900">{s.secilen.ureticiUrunKodu}</p>
+                              <p className="text-xs text-gray-500">
+                                {s.secilen.ureticiAd} — {s.secilen.kisaAciklama}
+                              </p>
+                            </div>
+                          ) : s.durum === "coklu" ? (
+                            <div className="space-y-1">
+                              <p className="mb-1 text-xs text-gray-500">
+                                {s.adaylar.length} aday — birini seçin:
+                              </p>
+                              {s.adaylar.slice(0, 5).map((a) => (
+                                <button
+                                  key={a.id} type="button" onClick={() => adaySec(i, a)}
+                                  disabled={isleniyor}
+                                  className="block w-full rounded border border-gray-300 px-2 py-1 text-left text-xs hover:border-brand-cyan disabled:opacity-50"
+                                >
+                                  <span className="font-bold">{a.ureticiUrunKodu}</span> — {a.ureticiAd}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          {s.secilen ? (
+                            <div className="text-xs">
+                              <p className="font-medium text-gray-900">{s.secilen.ambalajAdi}</p>
+                              <p className="text-gray-600">
+                                {s.secilen.gecerliMiktar} adet
+                                {s.secilen.miktarDuzeltildiMi && (
+                                  <span className="ml-1 text-amber-700">
+                                    (MOQ {s.secilen.moq}
+                                    {s.secilen.katlamaMiktari > 1 && `, ${s.secilen.katlamaMiktari}'li katlama`}
+                                    {" "}nedeniyle yukarı yuvarlandı)
+                                  </span>
+                                )}
+                              </p>
+                              {!s.secilen.stokYeterliMi && (
+                                <p className="text-red-600">Stok yetersiz ({s.secilen.stokMiktari})</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <Rozet durum={s.durum} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 justify-end mt-6">
+            <div className="flex flex-wrap gap-3">
               <button
-                onClick={() => setResults([])}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-bold hover:bg-gray-50 transition-colors"
+                type="button" onClick={topluSepeteEkle}
+                disabled={sepeteEkleniyor || eslesenSayisi === 0}
+                className="flex items-center gap-2 rounded-lg bg-brand-navy px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
               >
-                Yeni BOM Yükle
+                {sepeteEkleniyor
+                  ? <Loader2 size={16} className="animate-spin" />
+                  : <ShoppingCart size={16} />}
+                Eşleşen {eslesenSayisi} kalemi sepete ekle
               </button>
-              
               <button
-                onClick={handleBulkAddToCart}
-                disabled={isAddingToCart || results.filter(r => r.status === 'matched').length === 0}
-                className="bg-brand-cyan hover:bg-opacity-90 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70"
+                type="button"
+                onClick={() => { setSonuclar([]); setSepetHatalari([]); setAtlananSatirlar([]); }}
+                className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                {isAddingToCart ? <Loader2 size={18} className="animate-spin" /> : <ShoppingCart size={18} />}
-                Eşleşenleri Sepete Ekle
-              </button>
-
-              <button
-                disabled={results.filter(r => r.status === 'unmatched').length === 0}
-                className="bg-brand-navy hover:bg-opacity-90 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70"
-              >
-                <FileText size={18} /> Eşleşmeyenler İçin Teklif İste
+                Yeni liste yükle
               </button>
             </div>
-          </div>
+          </>
         )}
       </main>
-      
+
       <SiteFooter />
     </div>
+  );
+}
+
+function Ozet({ etiket, adet, renk }: { etiket: string; adet: number; renk: string }) {
+  return (
+    <div className={`rounded-xl p-4 ${renk}`}>
+      <p className="text-sm font-medium">{etiket}</p>
+      <p className="text-2xl font-bold">{adet}</p>
+    </div>
+  );
+}
+
+function Rozet({ durum }: { durum: BomEslesmeSonucu["durum"] }) {
+  if (durum === "eslesti") {
+    return (
+      <span className="flex items-center gap-1 text-xs font-bold text-green-700">
+        <CheckCircle size={14} /> Eşleşti
+      </span>
+    );
+  }
+  if (durum === "coklu") {
+    return (
+      <span className="flex items-center gap-1 text-xs font-bold text-amber-700">
+        <AlertTriangle size={14} /> Seçim gerekli
+      </span>
+    );
+  }
+  if (durum === "ambalajsiz") {
+    return (
+      <span className="flex items-center gap-1 text-xs font-bold text-amber-700">
+        <AlertTriangle size={14} /> Ambalaj tanımsız
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 text-xs font-bold text-red-700">
+      <XCircle size={14} /> Eşleşmedi
+    </span>
   );
 }

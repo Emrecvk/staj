@@ -87,7 +87,7 @@ export async function registerCompany(prevState: ActionResponse, formData: FormD
   try {
     // Kurumsal kayıt endpoint'i (önce bireysel kullanıcı kaydı yapılıp sonra firma başvurusu yapılabilir,
     // ya da birleşik bir endpoint olabilir. Biz birleşik olduğunu varsayarak gönderelim).
-    const res = await fetch(`${API_URL}/Kimlik/firma-basvuru`, {
+    const res = await fetch(`${API_URL}/Kimlik/firma-basvurusu`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

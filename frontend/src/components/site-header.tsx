@@ -39,7 +39,7 @@ export function SiteHeader({ categories }: { categories: Category[] }) {
         </form>
 
         <nav className="flex items-center gap-6 text-sm font-medium text-brand-navy shrink-0" aria-label="Kullanıcı işlemleri">
-          <Link href="/favoriler" className="flex flex-col items-center gap-1 hover:text-brand-cyan transition-colors">
+          <Link href="/profil/favoriler" className="flex flex-col items-center gap-1 hover:text-brand-cyan transition-colors">
             <Heart size={22} />
             <span className="hidden sm:block">Favoriler</span>
           </Link>
