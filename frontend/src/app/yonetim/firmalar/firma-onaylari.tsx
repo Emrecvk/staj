@@ -37,8 +37,8 @@ export function FirmaOnaylari({ firmalar }: { firmalar: AdminFirma[] }) {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold text-gray-900">Firma Başvuruları</h1>
-      <p className="mb-6 text-sm text-gray-500">
+      <h1 className="mb-1 text-2xl font-bold text-metin">Firma Başvuruları</h1>
+      <p className="mb-6 text-sm text-metin-ucuncul">
         Onay bekleyen {firmalar.length} başvuru. Onaylanan firmanın yetkilisi B2B fiyatlarına
         ve teklif isteme akışına erişir.
       </p>
@@ -46,13 +46,13 @@ export function FirmaOnaylari({ firmalar }: { firmalar: AdminFirma[] }) {
       {hata && <div className="mb-4"><ApiHatasi mesaj={hata} /></div>}
       {basari && <div className="mb-4"><BasariBildirimi mesaj={basari} /></div>}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-kenar bg-yuzey-kart shadow-sm">
         {firmalar.length === 0 ? (
           <BosDurum mesaj="Onay bekleyen firma başvurusu yok." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="bg-yuzey text-left text-xs uppercase tracking-wide text-metin-ucuncul">
                 <tr>
                   <th className="p-4">Unvan</th>
                   <th className="p-4">Vergi Dairesi / No</th>
@@ -62,17 +62,17 @@ export function FirmaOnaylari({ firmalar }: { firmalar: AdminFirma[] }) {
                   <th className="p-4 text-right">İşlem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-kenar">
                 {firmalar.map((f) => (
-                  <tr key={f.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-bold text-gray-900">{f.unvan}</td>
-                    <td className="p-4 text-gray-600">
+                  <tr key={f.id} className="hover:bg-yuzey">
+                    <td className="p-4 font-bold text-metin">{f.unvan}</td>
+                    <td className="p-4 text-metin-ikincil">
                       {f.vergiDairesi}<br />
-                      <span className="text-xs text-gray-500">{f.vergiNo}</span>
+                      <span className="text-xs text-metin-ucuncul">{f.vergiNo}</span>
                     </td>
-                    <td className="p-4 text-gray-600">{f.kepAdresi ?? "—"}</td>
-                    <td className="p-4 text-gray-600">{f.kullaniciSayisi}</td>
-                    <td className="p-4 text-gray-600">
+                    <td className="p-4 text-metin-ikincil">{f.kepAdresi ?? "—"}</td>
+                    <td className="p-4 text-metin-ikincil">{f.kullaniciSayisi}</td>
+                    <td className="p-4 text-metin-ikincil">
                       {new Date(f.basvuruTarihi).toLocaleDateString("tr-TR")}
                     </td>
                     <td className="p-4">
@@ -87,7 +87,7 @@ export function FirmaOnaylari({ firmalar }: { firmalar: AdminFirma[] }) {
                         <button
                           type="button" onClick={() => setOnay({ firma: f, durum: REDDET })}
                           aria-label={`${f.unvan} reddet`}
-                          className="flex items-center gap-1 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
+                          className="flex items-center gap-1 rounded-lg border border-hata-500 px-3 py-1.5 text-xs font-bold text-hata-600 hover:bg-hata-50"
                         >
                           <X size={14} /> Reddet
                         </button>

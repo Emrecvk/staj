@@ -50,8 +50,8 @@ export function SiparisYonetimi({ siparisler, seciliDurum }: {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold text-gray-900">Sipariş Yönetimi</h1>
-      <p className="mb-6 text-sm text-gray-500">
+      <h1 className="mb-1 text-2xl font-bold text-metin">Sipariş Yönetimi</h1>
+      <p className="mb-6 text-sm text-metin-ucuncul">
         Durum geçişleri sunucudaki sipariş durum makinesine tabidir; yalnızca izin verilen
         geçişler buton olarak gösterilir.
       </p>
@@ -60,12 +60,12 @@ export function SiparisYonetimi({ siparisler, seciliDurum }: {
       {basari && <div className="mb-4"><BasariBildirimi mesaj={basari} /></div>}
 
       <div className="mb-4">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-metin-ikincil">
           Durum filtresi{" "}
           <select
             defaultValue={seciliDurum ?? ""}
             onChange={(e) => filtrele(e.target.value)}
-            className="ml-2 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="ml-2 rounded-md border border-kenar-guclu px-3 py-2 text-sm"
           >
             <option value="">Tümü</option>
             {Object.entries(SIPARIS_DURUMLARI).map(([deger, ad]) => (
@@ -75,13 +75,13 @@ export function SiparisYonetimi({ siparisler, seciliDurum }: {
         </label>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-kenar bg-yuzey-kart shadow-sm">
         {siparisler.length === 0 ? (
           <BosDurum mesaj="Bu filtreye uyan sipariş yok." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="bg-yuzey text-left text-xs uppercase tracking-wide text-metin-ucuncul">
                 <tr>
                   <th className="p-4">Sipariş No</th>
                   <th className="p-4">Müşteri</th>
@@ -91,22 +91,22 @@ export function SiparisYonetimi({ siparisler, seciliDurum }: {
                   <th className="p-4">Geçiş</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-kenar">
                 {siparisler.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-bold text-gray-900">
+                  <tr key={s.id} className="hover:bg-yuzey">
+                    <td className="p-4 font-bold text-metin">
                       {s.siparisNo}
-                      <span className="block text-xs font-normal text-gray-500">
+                      <span className="block text-xs font-normal text-metin-ucuncul">
                         {s.kalemSayisi} kalem
                       </span>
                     </td>
-                    <td className="p-4 text-gray-600">
+                    <td className="p-4 text-metin-ikincil">
                       {s.firmaUnvani ?? s.musteriAdi ?? "—"}
                     </td>
-                    <td className="p-4 font-medium text-gray-900">
+                    <td className="p-4 font-medium text-metin">
                       {s.genelToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} {s.paraBirimi}
                     </td>
-                    <td className="p-4 text-gray-600">
+                    <td className="p-4 text-metin-ikincil">
                       {new Date(s.tarih).toLocaleDateString("tr-TR")}
                     </td>
                     <td className="p-4">
@@ -114,14 +114,14 @@ export function SiparisYonetimi({ siparisler, seciliDurum }: {
                     </td>
                     <td className="p-4">
                       {s.izinliGecisler.length === 0 ? (
-                        <span className="text-xs text-gray-400">Son durum</span>
+                        <span className="text-xs text-metin-ucuncul">Son durum</span>
                       ) : (
                         <div className="flex flex-wrap gap-1">
                           {s.izinliGecisler.map((d) => (
                             <button
                               key={d} type="button"
                               onClick={() => setOnay({ siparis: s, yeniDurum: d })}
-                              className="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-brand-cyan hover:text-brand-cyan"
+                              className="rounded-lg border border-kenar-guclu px-2.5 py-1 text-xs font-medium text-metin-ikincil hover:border-vurgu hover:text-vurgu"
                             >
                               {SIPARIS_DURUMLARI[d] ?? `#${d}`}
                             </button>

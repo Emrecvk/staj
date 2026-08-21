@@ -15,7 +15,7 @@ export default async function AdminTanimlarPage() {
   if (!kategoriler.success && !ureticiler.success && !ozellikler.success) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Kategori, Üretici ve Özellikler</h1>
+        <h1 className="mb-6 text-2xl font-bold text-metin">Kategori, Üretici ve Özellikler</h1>
         <ApiHatasi mesaj={kategoriler.message} />
       </div>
     );

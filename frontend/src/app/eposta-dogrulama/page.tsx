@@ -42,31 +42,31 @@ function EmailVerificationContent() {
   }, [token, eposta]);
 
   return (
-    <div className="min-h-[70vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50">
+    <div className="min-h-[70vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-yuzey">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center mb-6">
           <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-brand-navy">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-marka">
           E-posta Doğrulama
         </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100 text-center">
+        <div className="bg-yuzey-kart py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-kenar text-center">
           {status === "loading" && (
             <div className="flex flex-col items-center">
-              <Loader2 size={48} className="text-brand-cyan animate-spin mb-4" />
-              <p className="text-gray-600">Bilgileriniz doğrulanıyor, lütfen bekleyin...</p>
+              <Loader2 size={48} className="text-vurgu animate-spin mb-4" />
+              <p className="text-metin-ikincil">Bilgileriniz doğrulanıyor, lütfen bekleyin...</p>
             </div>
           )}
 
           {status === "success" && (
             <div className="flex flex-col items-center">
-              <CheckCircle2 size={48} className="text-green-500 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">E-posta Doğrulandı!</h3>
-              <p className="text-gray-600 mb-6">Hesabınız başarıyla doğrulandı. Artık güvenle alışveriş yapabilirsiniz.</p>
-              <Link href="/giris" className="w-full bg-brand-cyan hover:bg-opacity-90 text-white font-bold py-3 rounded-md transition-colors shadow-sm">
+              <CheckCircle2 size={48} className="text-basari-500 mb-4" />
+              <h3 className="text-xl font-bold text-metin mb-2">E-posta Doğrulandı!</h3>
+              <p className="text-metin-ikincil mb-6">Hesabınız başarıyla doğrulandı. Artık güvenle alışveriş yapabilirsiniz.</p>
+              <Link href="/giris" className="w-full bg-vurgu hover:bg-opacity-90 text-white font-bold py-3 rounded-md transition-colors shadow-sm">
                 Giriş Yap
               </Link>
             </div>
@@ -74,10 +74,10 @@ function EmailVerificationContent() {
 
           {status === "error" && (
             <div className="flex flex-col items-center">
-              <XCircle size={48} className="text-red-500 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Doğrulama Başarısız</h3>
-              <p className="text-gray-600 mb-6">Bağlantı geçersiz veya süresi dolmuş olabilir. Lütfen tekrar deneyin.</p>
-              <Link href="/giris" className="text-brand-cyan font-medium hover:underline">
+              <XCircle size={48} className="text-hata-500 mb-4" />
+              <h3 className="text-xl font-bold text-metin mb-2">Doğrulama Başarısız</h3>
+              <p className="text-metin-ikincil mb-6">Bağlantı geçersiz veya süresi dolmuş olabilir. Lütfen tekrar deneyin.</p>
+              <Link href="/giris" className="text-vurgu font-medium hover:underline">
                 Giriş sayfasına dön
               </Link>
             </div>
@@ -91,8 +91,8 @@ function EmailVerificationContent() {
 export default function EmailVerificationPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 size={48} className="text-brand-cyan animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-yuzey">
+        <Loader2 size={48} className="text-vurgu animate-spin" />
       </div>
     }>
       <EmailVerificationContent />

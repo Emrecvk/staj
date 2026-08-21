@@ -21,7 +21,7 @@ const GOSTERIM_TIPLERI = [
 ];
 
 const girdiSinifi =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-cyan focus:ring-brand-cyan";
+  "w-full rounded-md border border-kenar-guclu px-3 py-2 text-sm focus:border-vurgu focus:ring-vurgu";
 
 type Sekme = "kategori" | "uretici" | "ozellik";
 type Silme = { tur: "kategori" | "uretici"; id: number; ad: string } | null;
@@ -70,15 +70,15 @@ export function TanimYonetimi({ kategoriler, ureticiler, ozellikler }: {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kategori, Üretici ve Özellikler</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-metin">Kategori, Üretici ve Özellikler</h1>
+          <p className="mt-1 text-sm text-metin-ucuncul">
             Parametrik özellik tanımları katalog filtre panelini besler.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setForm({ tur: sekme, kayit: null } as never)}
-          className="flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90"
+          className="flex items-center gap-2 rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90"
         >
           <Plus size={16} /> Yeni Tanım Ekle
         </button>
@@ -87,35 +87,35 @@ export function TanimYonetimi({ kategoriler, ureticiler, ozellikler }: {
       {hata && <div className="mb-4"><ApiHatasi mesaj={hata} /></div>}
       {basari && <div className="mb-4"><BasariBildirimi mesaj={basari} /></div>}
 
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-gray-200">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-kenar">
         {sekmeler.map((s) => (
           <button
             key={s.anahtar} type="button" onClick={() => setSekme(s.anahtar)}
             aria-current={sekme === s.anahtar ? "page" : undefined}
             className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium ${
               sekme === s.anahtar
-                ? "border-brand-cyan text-brand-cyan"
-                : "border-transparent text-gray-500 hover:text-gray-800"
+                ? "border-vurgu text-vurgu"
+                : "border-transparent text-metin-ucuncul hover:text-metin"
             }`}
           >
             {s.ikon} {s.ad}
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{s.adet}</span>
+            <span className="rounded-full bg-yuzey-gomulu px-2 py-0.5 text-xs text-metin-ikincil">{s.adet}</span>
           </button>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-kenar bg-yuzey-kart shadow-sm">
         {sekme === "kategori" && (
           kategoriler.length === 0 ? <BosDurum mesaj="Kategori yok." /> : (
             <Tablo basliklar={["Ad", "Yol", "Seviye", "Yaprak", "Durum", ""]}>
               {kategoriler.map((k) => (
-                <tr key={k.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-bold text-gray-900" style={{ paddingLeft: `${16 + k.seviye * 16}px` }}>
+                <tr key={k.id} className="hover:bg-yuzey">
+                  <td className="p-4 font-bold text-metin" style={{ paddingLeft: `${16 + k.seviye * 16}px` }}>
                     {k.adTr}
                   </td>
-                  <td className="p-4 font-mono text-xs text-gray-500">{k.yol}</td>
-                  <td className="p-4 text-gray-600">{k.seviye}</td>
-                  <td className="p-4 text-gray-600">{k.yaprakMi ? "Evet" : "Hayır"}</td>
+                  <td className="p-4 font-mono text-xs text-metin-ucuncul">{k.yol}</td>
+                  <td className="p-4 text-metin-ikincil">{k.seviye}</td>
+                  <td className="p-4 text-metin-ikincil">{k.yaprakMi ? "Evet" : "Hayır"}</td>
                   <td className="p-4">{k.aktif ? "Aktif" : "Pasif"}</td>
                   <td className="p-4">
                     <Islemler
@@ -133,11 +133,11 @@ export function TanimYonetimi({ kategoriler, ureticiler, ozellikler }: {
           ureticiler.length === 0 ? <BosDurum mesaj="Üretici yok." /> : (
             <Tablo basliklar={["Ad", "Slug", "Ürün", "Yetkili Dist.", "Durum", ""]}>
               {ureticiler.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-bold text-gray-900">{u.ad}</td>
-                  <td className="p-4 font-mono text-xs text-gray-500">{u.slug}</td>
-                  <td className="p-4 text-gray-600">{u.urunSayisi}</td>
-                  <td className="p-4 text-gray-600">{u.yetkiliDistributorMu ? "Evet" : "Hayır"}</td>
+                <tr key={u.id} className="hover:bg-yuzey">
+                  <td className="p-4 font-bold text-metin">{u.ad}</td>
+                  <td className="p-4 font-mono text-xs text-metin-ucuncul">{u.slug}</td>
+                  <td className="p-4 text-metin-ikincil">{u.urunSayisi}</td>
+                  <td className="p-4 text-metin-ikincil">{u.yetkiliDistributorMu ? "Evet" : "Hayır"}</td>
                   <td className="p-4">{u.aktif ? "Aktif" : "Pasif"}</td>
                   <td className="p-4">
                     <Islemler
@@ -155,15 +155,15 @@ export function TanimYonetimi({ kategoriler, ureticiler, ozellikler }: {
           ozellikler.length === 0 ? <BosDurum mesaj="Özellik tanımı yok." /> : (
             <Tablo basliklar={["Kod", "Ad", "Veri Tipi", "Birim", "Filtre", "Kategori", ""]}>
               {ozellikler.map((o) => (
-                <tr key={o.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-mono text-xs font-bold text-gray-900">{o.kod}</td>
-                  <td className="p-4 text-gray-900">{o.adTr}</td>
-                  <td className="p-4 text-gray-600">
+                <tr key={o.id} className="hover:bg-yuzey">
+                  <td className="p-4 font-mono text-xs font-bold text-metin">{o.kod}</td>
+                  <td className="p-4 text-metin">{o.adTr}</td>
+                  <td className="p-4 text-metin-ikincil">
                     {VERI_TIPLERI.find(v => v.deger === o.veriTipi)?.ad ?? o.veriTipi}
                   </td>
-                  <td className="p-4 text-gray-600">{o.birim ?? "—"}</td>
-                  <td className="p-4 text-gray-600">{o.filtrelenebilirMi ? "Evet" : "Hayır"}</td>
-                  <td className="p-4 text-gray-600">{o.kullanildigiKategoriSayisi}</td>
+                  <td className="p-4 text-metin-ikincil">{o.birim ?? "—"}</td>
+                  <td className="p-4 text-metin-ikincil">{o.filtrelenebilirMi ? "Evet" : "Hayır"}</td>
+                  <td className="p-4 text-metin-ikincil">{o.kullanildigiKategoriSayisi}</td>
                   <td className="p-4">
                     {/* Özellik tanımı için silme ucu yok — kategorilere bağlı
                         olduğu için yalnızca güncellenebilir. */}
@@ -209,10 +209,10 @@ function Tablo({ basliklar, children }: { basliklar: string[]; children: React.R
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+        <thead className="bg-yuzey text-left text-xs uppercase tracking-wide text-metin-ucuncul">
           <tr>{basliklar.map((b, i) => <th key={i} className="p-4">{b}</th>)}</tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">{children}</tbody>
+        <tbody className="divide-y divide-kenar">{children}</tbody>
       </table>
     </div>
   );
@@ -222,12 +222,12 @@ function Islemler({ onDuzenle, onSil }: { onDuzenle: () => void; onSil?: () => v
   return (
     <div className="flex justify-end gap-1">
       <button type="button" onClick={onDuzenle} aria-label="Düzenle"
-        className="rounded p-2 text-gray-600 hover:bg-gray-100">
+        className="rounded p-2 text-metin-ikincil hover:bg-yuzey-gomulu">
         <Edit2 size={16} />
       </button>
       {onSil && (
         <button type="button" onClick={onSil} aria-label="Sil"
-          className="rounded p-2 text-red-600 hover:bg-red-50">
+          className="rounded p-2 text-hata-600 hover:bg-hata-50">
           <Trash2 size={16} />
         </button>
       )}
@@ -295,12 +295,12 @@ function TanimFormu({ form, kategoriler, onKapat, onTamam, onHata }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-8 w-full max-w-xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 p-5">
-          <h2 className="text-lg font-bold text-gray-900">
+      <div className="my-8 w-full max-w-xl rounded-xl bg-yuzey-kart shadow-xl">
+        <div className="flex items-center justify-between border-b border-kenar p-5">
+          <h2 className="text-lg font-bold text-metin">
             {yeniMi ? `Yeni ${baslik}` : `${baslik} Düzenle`}
           </h2>
-          <button type="button" onClick={onKapat} className="text-sm text-gray-500 hover:text-gray-800">
+          <button type="button" onClick={onKapat} className="text-sm text-metin-ucuncul hover:text-metin">
             Kapat
           </button>
         </div>
@@ -310,7 +310,7 @@ function TanimFormu({ form, kategoriler, onKapat, onTamam, onHata }: {
             <>
               {yeniMi && (
                 <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">Üst Kategori</span>
+                  <span className="mb-1 block text-sm font-medium text-metin-ikincil">Üst Kategori</span>
                   <select name="ustKategoriId" className={girdiSinifi}>
                     <option value="">Kök kategori</option>
                     {kategoriler.filter(k => !k.yaprakMi).map(k => (
@@ -342,7 +342,7 @@ function TanimFormu({ form, kategoriler, onKapat, onTamam, onHata }: {
               <Metin ad="logoUrl" etiket="Logo URL" tip="url" varsayilan={form.kayit?.logoUrl ?? ""} />
               <Metin ad="webSitesi" etiket="Web Sitesi" tip="url" varsayilan={form.kayit?.webSitesi ?? ""} />
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-gray-700">Açıklama</span>
+                <span className="mb-1 block text-sm font-medium text-metin-ikincil">Açıklama</span>
                 <textarea name="aciklama" rows={2} className={girdiSinifi} />
               </label>
               <div className="flex gap-6">
@@ -364,13 +364,13 @@ function TanimFormu({ form, kategoriler, onKapat, onTamam, onHata }: {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">Veri Tipi</span>
+                  <span className="mb-1 block text-sm font-medium text-metin-ikincil">Veri Tipi</span>
                   <select name="veriTipi" defaultValue={form.kayit?.veriTipi ?? 1} className={girdiSinifi}>
                     {VERI_TIPLERI.map(v => <option key={v.deger} value={v.deger}>{v.ad}</option>)}
                   </select>
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">Gösterim Tipi</span>
+                  <span className="mb-1 block text-sm font-medium text-metin-ikincil">Gösterim Tipi</span>
                   <select name="gosterimTipi" defaultValue={form.kayit?.gosterimTipi ?? 1} className={girdiSinifi}>
                     {GOSTERIM_TIPLERI.map(g => <option key={g.deger} value={g.deger}>{g.ad}</option>)}
                   </select>
@@ -384,13 +384,13 @@ function TanimFormu({ form, kategoriler, onKapat, onTamam, onHata }: {
             </>
           )}
 
-          <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+          <div className="flex justify-end gap-3 border-t border-kenar pt-4">
             <button type="button" onClick={onKapat}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              className="rounded-lg border border-kenar-guclu px-4 py-2 text-sm font-medium text-metin-ikincil hover:bg-yuzey">
               Vazgeç
             </button>
             <button type="submit" disabled={beklemede}
-              className="flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+              className="flex items-center gap-2 rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
               {beklemede && <Loader2 size={14} className="animate-spin" />}
               {yeniMi ? "Ekle" : "Kaydet"}
             </button>
@@ -407,16 +407,16 @@ function Metin({ ad, etiket, gerekli, tip = "text", varsayilan, ipucu }: {
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-gray-700">{etiket}</span>
+      <span className="mb-1 block text-sm font-medium text-metin-ikincil">{etiket}</span>
       <input name={ad} type={tip} required={gerekli} defaultValue={varsayilan} className={girdiSinifi} />
-      {ipucu && <span className="mt-1 block text-xs text-gray-500">{ipucu}</span>}
+      {ipucu && <span className="mt-1 block text-xs text-metin-ucuncul">{ipucu}</span>}
     </label>
   );
 }
 
 function Kutu({ ad, etiket, varsayilan }: { ad: string; etiket: string; varsayilan?: boolean }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-gray-700">
+    <label className="flex items-center gap-2 text-sm text-metin-ikincil">
       <input type="checkbox" name={ad} defaultChecked={varsayilan} className="rounded" /> {etiket}
     </label>
   );

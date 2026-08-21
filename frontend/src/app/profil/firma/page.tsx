@@ -17,7 +17,7 @@ function DurumSatiri({ durum }: { durum: number }) {
   }
   if (durum === REDDEDILDI) {
     return (
-      <p className="flex items-center gap-2 text-sm font-medium text-red-700">
+      <p className="flex items-center gap-2 text-sm font-medium text-hata-600">
         <XCircle size={18} /> Başvurunuz reddedildi. Bilgilerinizi gözden geçirip tekrar başvurabilirsiniz.
       </p>
     );
@@ -32,8 +32,8 @@ function DurumSatiri({ durum }: { durum: number }) {
 function Alan({ etiket, deger }: { etiket: string; deger: string }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wide text-gray-500">{etiket}</dt>
-      <dd className="mt-0.5 font-medium text-gray-900">{deger}</dd>
+      <dt className="text-xs uppercase tracking-wide text-metin-ucuncul">{etiket}</dt>
+      <dd className="mt-0.5 font-medium text-metin">{deger}</dd>
     </div>
   );
 }
@@ -43,15 +43,15 @@ export default async function FirmaPage() {
 
   if (!firma) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 py-20 text-center">
-        <Building2 size={40} className="mb-4 text-gray-300" />
-        <h3 className="mb-2 text-lg font-bold text-gray-700">Firma Hesabınız Yok</h3>
-        <p className="mb-6 max-w-md text-gray-500">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-kenar py-20 text-center">
+        <Building2 size={40} className="mb-4 text-metin-ucuncul" />
+        <h3 className="mb-2 text-lg font-bold text-metin-ikincil">Firma Hesabınız Yok</h3>
+        <p className="mb-6 max-w-md text-metin-ucuncul">
           Kurumsal fiyatlar, vadeli ödeme ve teklif isteme akışı için firma başvurusu yapın.
         </p>
         <Link
           href="/kayit/kurumsal"
-          className="rounded-lg bg-brand-cyan px-6 py-3 font-bold text-white hover:bg-opacity-90"
+          className="rounded-lg bg-vurgu px-6 py-3 font-bold text-white hover:bg-opacity-90"
         >
           Firma Başvurusu Yap
         </Link>
@@ -61,13 +61,13 @@ export default async function FirmaPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Firma Bilgileri</h1>
+      <h1 className="mb-6 text-2xl font-bold text-metin">Firma Bilgileri</h1>
 
-      <div className="mb-6 rounded-xl border border-gray-200 p-5">
+      <div className="mb-6 rounded-xl border border-kenar p-5">
         <DurumSatiri durum={firma.onayDurumu} />
       </div>
 
-      <dl className="grid grid-cols-1 gap-5 rounded-xl border border-gray-200 p-5 sm:grid-cols-2">
+      <dl className="grid grid-cols-1 gap-5 rounded-xl border border-kenar p-5 sm:grid-cols-2">
         <Alan etiket="Unvan" deger={firma.unvan} />
         <Alan etiket="Onay Durumu" deger={FIRMA_ONAY_DURUMLARI[firma.onayDurumu] ?? "—"} />
         <Alan etiket="Vergi Dairesi" deger={firma.vergiDairesi} />
@@ -90,7 +90,7 @@ export default async function FirmaPage() {
       </dl>
 
       {firma.onayDurumu === BEKLEMEDE && (
-        <p className="mt-4 text-sm text-gray-500">
+        <p className="mt-4 text-sm text-metin-ucuncul">
           Onay süreci genellikle 1 iş günü sürer. Sorularınız için satış temsilcinizle iletişime geçebilirsiniz.
         </p>
       )}

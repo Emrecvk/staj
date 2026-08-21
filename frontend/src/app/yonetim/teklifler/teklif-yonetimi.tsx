@@ -40,7 +40,7 @@ function girdiyeCevir(k: AdminTeklifKalemi): KalemGirdisi {
 }
 
 const girdiSinifi =
-  "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-brand-cyan focus:ring-brand-cyan";
+  "w-full rounded-md border border-kenar-guclu px-2 py-1.5 text-sm focus:border-vurgu focus:ring-vurgu";
 
 export function TeklifYonetimi({ teklifler }: { teklifler: AdminTeklif[] }) {
   const router = useRouter();
@@ -80,8 +80,8 @@ export function TeklifYonetimi({ teklifler }: { teklifler: AdminTeklif[] }) {
 
   return (
     <div>
-      <h1 className="mb-1 text-2xl font-bold text-gray-900">Teklif Talepleri</h1>
-      <p className="mb-6 text-sm text-gray-500">
+      <h1 className="mb-1 text-2xl font-bold text-metin">Teklif Talepleri</h1>
+      <p className="mb-6 text-sm text-metin-ucuncul">
         Fiyatlandırılan teklif müşteri onayına düşer. Geçerlilik tarihi geçtiğinde teklif
         otomatik olarak süresi dolmuş sayılır.
       </p>
@@ -89,13 +89,13 @@ export function TeklifYonetimi({ teklifler }: { teklifler: AdminTeklif[] }) {
       {hata && <div className="mb-4"><ApiHatasi mesaj={hata} /></div>}
       {basari && <div className="mb-4"><BasariBildirimi mesaj={basari} /></div>}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-kenar bg-yuzey-kart shadow-sm">
         {teklifler.length === 0 ? (
           <BosDurum mesaj="Henüz teklif talebi yok." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="bg-yuzey text-left text-xs uppercase tracking-wide text-metin-ucuncul">
                 <tr>
                   <th className="p-4">Talep No</th>
                   <th className="p-4">Durum</th>
@@ -103,14 +103,14 @@ export function TeklifYonetimi({ teklifler }: { teklifler: AdminTeklif[] }) {
                   <th className="p-4 text-right">İşlem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-kenar">
                 {teklifler.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-bold text-gray-900">{t.talepNo}</td>
+                  <tr key={t.id} className="hover:bg-yuzey">
+                    <td className="p-4 font-bold text-metin">{t.talepNo}</td>
                     <td className="p-4">
                       <DurumRozeti metin={TEKLIF_DURUMLARI[t.durum] ?? `#${t.durum}`} ton={durumTonu(t.durum)} />
                     </td>
-                    <td className="p-4 text-gray-600">
+                    <td className="p-4 text-metin-ikincil">
                       {t.gecerlilikTarihi
                         ? new Date(t.gecerlilikTarihi).toLocaleDateString("tr-TR")
                         : "—"}
@@ -120,7 +120,7 @@ export function TeklifYonetimi({ teklifler }: { teklifler: AdminTeklif[] }) {
                         {t.durum === YENI && (
                           <button
                             type="button" onClick={() => incelemeyeAl(t)} disabled={beklemede}
-                            className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            className="flex items-center gap-1 rounded-lg border border-kenar-guclu px-3 py-1.5 text-xs font-bold text-metin-ikincil hover:bg-yuzey disabled:opacity-50"
                           >
                             <Eye size={14} /> İncelemeye al
                           </button>
@@ -129,7 +129,7 @@ export function TeklifYonetimi({ teklifler }: { teklifler: AdminTeklif[] }) {
                           <>
                             <button
                               type="button" onClick={() => fiyatPaneliniAc(t)} disabled={yukleniyor === t.id}
-                              className="flex items-center gap-1 rounded-lg bg-brand-navy px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                              className="flex items-center gap-1 rounded-lg bg-marka px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
                             >
                               {yukleniyor === t.id
                                 ? <Loader2 size={14} className="animate-spin" />
@@ -137,7 +137,7 @@ export function TeklifYonetimi({ teklifler }: { teklifler: AdminTeklif[] }) {
                             </button>
                             <button
                               type="button" onClick={() => setRedOnayi(t)}
-                              className="flex items-center gap-1 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
+                              className="flex items-center gap-1 rounded-lg border border-hata-500 px-3 py-1.5 text-xs font-bold text-hata-600 hover:bg-hata-50"
                             >
                               <XCircle size={14} /> Reddet
                             </button>
@@ -224,15 +224,15 @@ function FiyatlandirmaPaneli({ teklif, onKapat, onTamam, onHata }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-8 w-full max-w-4xl rounded-xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-gray-100 p-5">
+      <div className="my-8 w-full max-w-4xl rounded-xl bg-yuzey-kart shadow-xl">
+        <div className="flex items-center justify-between border-b border-kenar p-5">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Teklifi Fiyatlandır — {teklif.talepNo}</h2>
+            <h2 className="text-lg font-bold text-metin">Teklifi Fiyatlandır — {teklif.talepNo}</h2>
             {teklif.musteriNotu && (
-              <p className="mt-1 text-sm text-gray-500">Müşteri notu: {teklif.musteriNotu}</p>
+              <p className="mt-1 text-sm text-metin-ucuncul">Müşteri notu: {teklif.musteriNotu}</p>
             )}
           </div>
-          <button type="button" onClick={onKapat} className="text-sm text-gray-500 hover:text-gray-800">
+          <button type="button" onClick={onKapat} className="text-sm text-metin-ucuncul hover:text-metin">
             Kapat
           </button>
         </div>
@@ -240,7 +240,7 @@ function FiyatlandirmaPaneli({ teklif, onKapat, onTamam, onHata }: {
         <form action={gonder} className="p-5">
           <div className="mb-5 overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+              <thead className="bg-yuzey text-left text-xs uppercase tracking-wide text-metin-ucuncul">
                 <tr>
                   <th className="p-3">Ürün</th>
                   <th className="p-3">İstenen</th>
@@ -251,13 +251,13 @@ function FiyatlandirmaPaneli({ teklif, onKapat, onTamam, onHata }: {
                   <th className="p-3">Not</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-kenar">
                 {teklif.kalemler.map((k) => (
                   <tr key={k.id}>
-                    <td className="p-3 font-medium text-gray-900">
+                    <td className="p-3 font-medium text-metin">
                       {k.serbestUrunKodu ?? `Ürün #${k.urunId}`}
                     </td>
-                    <td className="p-3 text-gray-600">{k.miktar}</td>
+                    <td className="p-3 text-metin-ikincil">{k.miktar}</td>
                     <td className="p-3">
                       <input type="number" min={1} aria-label="Teklif edilen miktar"
                         value={kalemler[k.id]?.teklifEdilenMiktar ?? ""}
@@ -298,26 +298,26 @@ function FiyatlandirmaPaneli({ teklif, onKapat, onTamam, onHata }: {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-gray-700">Geçerlilik Tarihi</span>
+              <span className="mb-1 block text-sm font-medium text-metin-ikincil">Geçerlilik Tarihi</span>
               <input name="gecerlilikTarihi" type="date" required
                 defaultValue={varsayilanGecerlilik}
                 min={enErkenTarih}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                className="w-full rounded-md border border-kenar-guclu px-3 py-2 text-sm" />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-gray-700">Temsilci Notu</span>
+              <span className="mb-1 block text-sm font-medium text-metin-ikincil">Temsilci Notu</span>
               <input name="temsilciNotu"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                className="w-full rounded-md border border-kenar-guclu px-3 py-2 text-sm" />
             </label>
           </div>
 
-          <div className="mt-5 flex justify-end gap-3 border-t border-gray-100 pt-4">
+          <div className="mt-5 flex justify-end gap-3 border-t border-kenar pt-4">
             <button type="button" onClick={onKapat}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              className="rounded-lg border border-kenar-guclu px-4 py-2 text-sm font-medium text-metin-ikincil hover:bg-yuzey">
               Vazgeç
             </button>
             <button type="submit" disabled={beklemede}
-              className="flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+              className="flex items-center gap-2 rounded-lg bg-marka px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
               {beklemede && <Loader2 size={14} className="animate-spin" />}
               Fiyatlandır ve müşteri onayına gönder
             </button>
