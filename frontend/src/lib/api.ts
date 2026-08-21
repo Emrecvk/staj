@@ -6,11 +6,70 @@ export type FacetOption = { deger: string; hamDeger: string; urunSayisi: number 
 export type FacetGroup = { kod: string; ad: string; gosterimTipi: number; secenekler: FacetOption[] };
 export type ProductResult = { urunler: { sayfaNo: number; sayfaBoyutu: number; toplamKayit: number; toplamSayfa: number; kayitlar: ProductSummary[] }; filtreler: FacetGroup[] };
 
+export type DocumentType = { tip: number; url: string; baslik: string };
+export type PriceTier = { minMiktar: number; maxMiktar: number | null; birimFiyat: number; paraBirimi: string };
+export type PackagingOption = { ambalajId: number; ad: string; mpq: number; moq: number; katlamaMiktari: number; stokMiktari: number; gelecekStokMiktari: number; gelecekStokTarihi: string | null; fiyatlar: PriceTier[] };
+export type RelatedProductSummary = { id: number; ureticiUrunKodu: string; kisaAciklama: string; anaGorselUrl: string | null };
+
+export type ProductDetail = {
+  id: number;
+  ureticiUrunKodu: string;
+  ureticiAd: string;
+  kisaAciklama: string;
+  detayliAciklama: string | null;
+  gorselUrlleri: string[];
+  gorselTemsiliMi: boolean;
+  urunDurumu: string | null;
+  rohsDurumu: string | null;
+  montajTipi: string | null;
+  ureticiTeslimSuresi: string | null;
+  dokumanlar: DocumentType[];
+  ozellikler: Record<string, string>;
+  ambalajlarVeFiyatlar: PackagingOption[];
+  muadiller: RelatedProductSummary[];
+  benzerUrunler: RelatedProductSummary[];
+  parametrikUrunler: RelatedProductSummary[];
+  birlikteKullanilanlar: RelatedProductSummary[];
+};
+
 async function safeFetch<T>(path: string, fallback: T): Promise<T> {
-  try { const response = await fetch(`${API_URL}${path}`, { cache: "no-store" }); if (!response.ok) return fallback; return await response.json() as T; } catch { return fallback; }
+  try { 
+    const response = await fetch(`${API_URL}${path}`, { cache: "no-store" }); 
+    if (!response.ok) return fallback; 
+    return await response.json() as T; 
+  } catch { 
+    return fallback; 
+  }
 }
+
 export function getCategories() { return safeFetch<Category[]>("/Katalog/kategoriler/agac", []); }
-export function getProducts(params: Record<string, string | number | boolean | undefined> = {}) {
-  const query = new URLSearchParams(); Object.entries(params).forEach(([key, value]) => value !== undefined && query.set(key, String(value)));
-  return safeFetch<ProductResult>(`/Katalog/urunler?${query}`, { urunler: { sayfaNo: 1, sayfaBoyutu: 0, toplamKayit: 0, toplamSayfa: 0, kayitlar: [] }, filtreler: [] });
+
+export async function getProducts(params: Record<string, string | number | boolean | undefined | string[]> = {}) {
+  const query = new URLSearchParams(); 
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      if (Array.isArray(value)) {
+        value.forEach(v => query.append(key, String(v)));
+      } else {
+        query.append(key, String(value));
+      }
+    }
+  });
+  
+  const result = await safeFetch<ProductResult | null>(`/Katalog/urunler?${query}`, null);
+  return result || { urunler: { sayfaNo: 1, sayfaBoyutu: 0, toplamKayit: 0, toplamSayfa: 0, kayitlar: [] }, filtreler: [] };
+}
+
+export async function getProduct(id: string) {
+  return safeFetch<ProductDetail | null>(`/Katalog/urunler/${id}`, null);
+}
+
+export async function toggleFavorite(productId: number, isFavorite: boolean) {
+  // Mock API call since this is just frontend UI task
+  return { success: true };
+}
+
+export async function toggleCompare(productId: number, isCompare: boolean) {
+  // Mock API call
+  return { success: true };
 }
