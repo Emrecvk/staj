@@ -1,49 +1,69 @@
-import { getProducts } from "@/lib/api";
-import { ProductListingClient } from "./client";
-import { SiteHeader } from "@/components/site-header";
+import type { Metadata } from "next";
 import { SiteFooter } from "@/components/site-footer";
-import { getCategories } from "@/lib/api";
+import { SiteHeader } from "@/components/site-header";
+import { Kapsayici } from "@/components/ui/yuzey";
+import { getCategories, getProducts } from "@/lib/api";
+import { ProductListingClient } from "./client";
+import { apiParametreleriniKur } from "./parametreler";
 
-export default async function UrunlerPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const resolvedParams = await searchParams;
-  
-  // Convert searchParams to a flat record for the API
-  const apiParams: Record<string, string | string[]> = {};
-  
-  Object.entries(resolvedParams).forEach(([key, value]) => {
-    if (value !== undefined) {
-      apiParams[key] = value;
-    }
-  });
+export const dynamic = "force-dynamic";
 
-  // Default sayfaNo to 1 if not provided
-  if (!apiParams.sayfaNo) apiParams.sayfaNo = "1";
-  // Default sayfaBoyutu
-  if (!apiParams.sayfaBoyutu) apiParams.sayfaBoyutu = "24";
+export const metadata: Metadata = {
+  title: "Ürün Kataloğu",
+  description:
+    "Parametrik filtreleme ile elektronik komponent arayın: kılıf, gerilim, tolerans ve stok durumuna göre daraltın.",
+};
 
-  const [categories, result] = await Promise.all([
+export default async function UrunlerPage({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const parametreler = await searchParams;
+
+  // URL parametreleri API bicimine cevrilir; parametrik filtreler
+  // ParametrikFiltreler[anahtar] olmadan sunucu tarafindan yok sayiliyor.
+  const apiParametreleri = apiParametreleriniKur(parametreler);
+
+  const [kategoriler, sonuc] = await Promise.all([
     getCategories(),
-    getProducts(apiParams)
+    getProducts(apiParametreleri),
   ]);
 
+  const aramaMetni = typeof parametreler.aramaMetni === "string" ? parametreler.aramaMetni : null;
+  const kategoriId = typeof parametreler.kategoriId === "string" ? parametreler.kategoriId : null;
+
+  // Kategori adini agactan coz; baslikta "Ürün Kataloğu" yerine gercek
+  // kategori adini gostermek kullaniciya nerede oldugunu soyluyor.
+  const kategoriAdiBul = (dallar: typeof kategoriler): string | null => {
+    for (const dal of dallar) {
+      if (String(dal.id) === kategoriId) return dal.ad;
+      const alt = kategoriAdiBul(dal.altKategoriler ?? []);
+      if (alt) return alt;
+    }
+    return null;
+  };
+  const kategoriAdi = kategoriId ? kategoriAdiBul(kategoriler) : null;
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <SiteHeader categories={categories} />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-brand-navy">Ürün Kataloğu</h1>
-          {resolvedParams.aramaMetni && (
-            <p className="text-gray-500 mt-1">&ldquo;{resolvedParams.aramaMetni}&rdquo; için sonuçlar gösteriliyor</p>
-          )}
-        </div>
-        
-        <ProductListingClient 
-          initialData={result} 
-          searchParams={resolvedParams}
-        />
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader categories={kategoriler} />
+
+      <main id="icerik" className="flex-grow py-8">
+        <Kapsayici>
+          <header className="mb-6">
+            <h1 className="text-2xl font-bold tracking-tight text-metin">
+              {kategoriAdi ?? "Ürün Kataloğu"}
+            </h1>
+            {aramaMetni && (
+              <p className="mt-1 text-sm text-metin-ikincil">
+                <span className="font-mono text-metin">{aramaMetni}</span> için sonuçlar
+              </p>
+            )}
+          </header>
+
+          <ProductListingClient initialData={sonuc} />
+        </Kapsayici>
       </main>
-      
+
       <SiteFooter />
     </div>
   );

@@ -1,313 +1,405 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, LayoutGrid, List, ChevronLeft, ChevronRight, X, SlidersHorizontal, ArrowDownAZ } from "lucide-react";
+import {
+  Filter, LayoutGrid, List, ChevronLeft, ChevronRight, X, ArrowUpDown,
+} from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { ProductListCard } from "@/components/product-list-card";
-import type { ProductResult, FacetGroup } from "@/lib/api";
+import { Buton } from "@/components/ui/buton";
+import { Cekmece } from "@/components/ui/cekmece";
+import { BosDurum, HataDurumu, UrunKartiIskeleti } from "@/components/ui/yuzey";
+import { FiltrePaneli } from "./filtre-paneli";
+import { GEZINME_ANAHTARLARI } from "./parametreler";
+import type { ProductResult } from "@/lib/api";
 
+const SIRALAMA_SECENEKLERI = [
+  { deger: "", ad: "Önerilen" },
+  { deger: "fiyat_artan", ad: "Fiyat (artan)" },
+  { deger: "fiyat_azalan", ad: "Fiyat (azalan)" },
+  // Backend "stok" bekliyor. Onceki surumde "stok_azalan" gonderiliyordu ve
+  // sunucu bunu tanimadigi icin sessizce varsayilan siralamaya dusuyordu.
+  { deger: "stok", ad: "Stok (en çok)" },
+  { deger: "populer", ad: "Popüler" },
+  { deger: "yeni", ad: "Yeni eklenenler" },
+];
 
-/**
- * Filtre paneli.
- *
- * Modül seviyesinde tanımlıdır: bileşen fonksiyonunun İÇİNDE tanımlanırsa
- * her render yeni bir bileşen TİPİ üretilir; React alt ağacı söküp yeniden
- * kurar ve panelin kaydırma konumu ile odak her filtre tıklamasında sıfırlanır.
- */
-function FiltrePaneli({ filtreler, activeFilters, updateFilters, clearFilters }: {
-  filtreler: FacetGroup[];
-  activeFilters: Record<string, string[]>;
-  updateFilters: (key: string, value: string, checked: boolean) => void;
-  clearFilters: () => void;
-}) {
+export function ProductListingClient({ initialData }: { initialData: ProductResult | null }) {
+  const [mobilFiltreAcik, setMobilFiltreAcik] = useState(false);
+  const router = useRouter();
+  const sorguParametreleri = useSearchParams();
+
+  // Filtre degisimi sunucuya gidiyor. useTransition olmadan kullanici
+  // tikladiktan sonra sonuc gelene kadar hicbir geri bildirim gormuyor ve
+  // arayuz donmus gibi hissettiriyor.
+  const [beklemede, gecisBaslat] = useTransition();
+
+  const gorunum = sorguParametreleri.get("gorunum") === "liste" ? "liste" : "izgara";
+  const sadeceStoktakiler = sorguParametreleri.get("sadeceStoktakiler") === "true";
+
+  /** Aktif parametrik filtreler: kod -> secili degerler. */
+  const aktifFiltreler: Record<string, string[]> = {};
+  sorguParametreleri.forEach((deger, anahtar) => {
+    if (GEZINME_ANAHTARLARI.has(anahtar)) return;
+    (aktifFiltreler[anahtar] ??= []).push(deger);
+  });
+
+  const gezin = useCallback(
+    (parametreler: URLSearchParams) => {
+      gecisBaslat(() => router.push(`/urunler?${parametreler.toString()}`, { scroll: false }));
+    },
+    [router],
+  );
+
+  const filtreDegistir = useCallback(
+    (kod: string, deger: string, secili: boolean) => {
+      const p = new URLSearchParams(sorguParametreleri.toString());
+      p.set("sayfaNo", "1");
+
+      if (secili) {
+        p.append(kod, deger);
+      } else {
+        const kalanlar = p.getAll(kod).filter((d) => d !== deger);
+        p.delete(kod);
+        kalanlar.forEach((d) => p.append(kod, d));
+      }
+      gezin(p);
+    },
+    [sorguParametreleri, gezin],
+  );
+
+  const stokDegistir = useCallback(
+    (acik: boolean) => {
+      const p = new URLSearchParams(sorguParametreleri.toString());
+      p.set("sayfaNo", "1");
+      if (acik) p.set("sadeceStoktakiler", "true");
+      else p.delete("sadeceStoktakiler");
+      gezin(p);
+    },
+    [sorguParametreleri, gezin],
+  );
+
+  const filtreleriTemizle = useCallback(() => {
+    const p = new URLSearchParams();
+    // Arama metni, kategori ve gorunum tercihi korunur: bunlar filtre degil,
+    // kullanicinin bulundugu yer.
+    for (const anahtar of ["aramaMetni", "kategoriId", "gorunum"]) {
+      const d = sorguParametreleri.get(anahtar);
+      if (d) p.set(anahtar, d);
+    }
+    gezin(p);
+  }, [sorguParametreleri, gezin]);
+
+  const siralamaDegistir = useCallback(
+    (deger: string) => {
+      const p = new URLSearchParams(sorguParametreleri.toString());
+      if (deger) p.set("siralama", deger);
+      else p.delete("siralama");
+      p.set("sayfaNo", "1");
+      gezin(p);
+    },
+    [sorguParametreleri, gezin],
+  );
+
+  /** Görünüm tercihi URL'de tutulur; aksi hâlde her filtre tıklamasında
+      sunucu yeniden render edip tercihi sıfırlıyordu. */
+  const gorunumDegistir = useCallback(
+    (yeni: "izgara" | "liste") => {
+      const p = new URLSearchParams(sorguParametreleri.toString());
+      if (yeni === "liste") p.set("gorunum", "liste");
+      else p.delete("gorunum");
+      gezin(p);
+    },
+    [sorguParametreleri, gezin],
+  );
+
+  const sayfaDegistir = useCallback(
+    (sayfa: number) => {
+      const p = new URLSearchParams(sorguParametreleri.toString());
+      p.set("sayfaNo", String(sayfa));
+      gezin(p);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [sorguParametreleri, gezin],
+  );
+
+  // API erisilemedi: bos sonuctan FARKLI bir durum, ayri gosterilmeli.
+  if (!initialData?.urunler) {
+    return (
+      <HataDurumu
+        baslik="Katalog yüklenemedi"
+        aciklama="Ürün servisine şu anda ulaşılamıyor. Bağlantınızı kontrol edip tekrar deneyin."
+        onTekrarDene={() => router.refresh()}
+      />
+    );
+  }
+
+  const { urunler, filtreler } = initialData;
+  const aktifCipler = Object.entries(aktifFiltreler).flatMap(([kod, degerler]) =>
+    degerler.map((deger) => ({ kod, deger })),
+  );
+
+  const panelOzellikleri = {
+    filtreler,
+    aktifFiltreler,
+    sadeceStoktakiler,
+    onFiltreDegisim: filtreDegistir,
+    onStokDegisim: stokDegistir,
+    onTemizle: filtreleriTemizle,
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-        <h3 className="font-bold text-brand-navy flex items-center gap-2">
-          <SlidersHorizontal size={18} /> Filtreler
-        </h3>
-        {Object.keys(activeFilters).length > 0 && (
-          <button onClick={clearFilters} className="text-xs text-red-500 hover:underline">
-            Temizle
-          </button>
-        )}
-      </div>
-      
-      <div className="divide-y divide-gray-100 max-h-[calc(100vh-200px)] overflow-y-auto">
-        {filtreler.map((facetGroup: FacetGroup) => (
-          <div key={facetGroup.kod} className="p-4">
-            <h4 className="font-semibold text-gray-800 text-sm mb-3">{facetGroup.ad}</h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-              {facetGroup.secenekler.map((option) => {
-                const isActive = activeFilters[facetGroup.kod]?.includes(option.hamDeger);
-                return (
-                  <label key={option.hamDeger} className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative flex items-center">
-                      <input 
-                        type="checkbox" 
-                        className="peer appearance-none w-4 h-4 border border-gray-300 rounded-sm checked:bg-brand-cyan checked:border-brand-cyan transition-all"
-                        checked={isActive}
-                        onChange={(e) => updateFilters(facetGroup.kod, option.hamDeger, e.target.checked)}
-                      />
-                      <svg className="absolute w-4 h-4 pointer-events-none hidden peer-checked:block text-white p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <span className={`text-sm flex-grow ${isActive ? 'text-brand-navy font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>
-                      {option.deger}
-                    </span>
-                    <span className="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
-                      {option.urunSayisi}
-                    </span>
-                  </label>
-                );
-              })}
+    <div className="flex flex-col items-start gap-6 lg:flex-row">
+      <aside className="hidden w-72 shrink-0 lg:block">
+        <FiltrePaneli {...panelOzellikleri} />
+      </aside>
+
+      <Cekmece
+        acik={mobilFiltreAcik}
+        onDegisim={setMobilFiltreAcik}
+        baslik="Filtreler"
+        aciklama={`${urunler.toplamKayit.toLocaleString("tr-TR")} ürün arasından seçin`}
+        altAlan={
+          <Buton tamGenislik gorunum="vurgu" onClick={() => setMobilFiltreAcik(false)}>
+            Sonuçları göster
+          </Buton>
+        }
+      >
+        <FiltrePaneli {...panelOzellikleri} kutuIcinde={false} />
+      </Cekmece>
+
+      <div className="w-full flex-grow">
+        <div
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-kart)]
+                     border border-kenar bg-yuzey-kart px-4 py-3"
+        >
+          <p className="text-sm text-metin-ikincil">
+            <b className="font-mono tabular-nums text-metin">
+              {urunler.toplamKayit.toLocaleString("tr-TR")}
+            </b>{" "}
+            ürün
+            {beklemede && <span className="ml-2 text-metin-ucuncul">güncelleniyor…</span>}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Buton
+              gorunum="anahat"
+              boyut="kucuk"
+              className="lg:hidden"
+              ikon={<Filter size={14} />}
+              onClick={() => setMobilFiltreAcik(true)}
+            >
+              Filtrele
+              {aktifCipler.length + (sadeceStoktakiler ? 1 : 0) > 0 &&
+                ` (${aktifCipler.length + (sadeceStoktakiler ? 1 : 0)})`}
+            </Buton>
+
+            <label className="flex items-center gap-1.5">
+              <ArrowUpDown size={14} className="text-metin-ucuncul" aria-hidden />
+              <span className="sr-only">Sıralama</span>
+              <select
+                value={sorguParametreleri.get("siralama") ?? ""}
+                onChange={(olay) => siralamaDegistir(olay.target.value)}
+                className="min-w-0 max-w-[9.5rem] rounded-[var(--radius-girdi)] border border-kenar
+                           bg-yuzey-kart px-2 py-1.5 text-sm text-metin"
+              >
+                {SIRALAMA_SECENEKLERI.map((s) => (
+                  <option key={s.deger} value={s.deger}>{s.ad}</option>
+                ))}
+              </select>
+            </label>
+
+            <div
+              className="flex items-center gap-0.5 rounded-[var(--radius-girdi)] border border-kenar p-0.5"
+              role="group"
+              aria-label="Görünüm"
+            >
+              {([
+                { tip: "izgara", Ikon: LayoutGrid, ad: "Izgara görünümü" },
+                { tip: "liste", Ikon: List, ad: "Liste görünümü" },
+              ] as const).map(({ tip, Ikon, ad }) => (
+                <button
+                  key={tip}
+                  type="button"
+                  onClick={() => gorunumDegistir(tip)}
+                  aria-label={ad}
+                  aria-pressed={gorunum === tip}
+                  className={`rounded-[4px] p-1.5 transition-colors duration-[var(--sure-ipucu)] ${
+                    gorunum === tip
+                      ? "bg-yuzey-gomulu text-vurgu"
+                      : "text-metin-ucuncul hover:text-metin"
+                  }`}
+                >
+                  <Ikon size={16} />
+                </button>
+              ))}
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* Aktif filtre çipleri.
+            Parametrik katalogda en büyük kullanılabilirlik kazancı bu: hangi
+            filtrelerin açık olduğunu görmek için paneli taramak gerekmiyor ve
+            her biri tek tıkla kaldırılabiliyor. */}
+        {(aktifCipler.length > 0 || sadeceStoktakiler) && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {sadeceStoktakiler && (
+              <FiltreCipi etiket="Yalnızca stoktakiler" onKaldir={() => stokDegistir(false)} />
+            )}
+            {aktifCipler.map(({ kod, deger }) => (
+              <FiltreCipi
+                key={`${kod}-${deger}`}
+                etiket={deger}
+                onKaldir={() => filtreDegistir(kod, deger, false)}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={filtreleriTemizle}
+              className="text-xs font-medium text-metin-ikincil underline underline-offset-2
+                         transition-colors duration-[var(--sure-ipucu)] hover:text-hata-600"
+            >
+              Tümünü temizle
+            </button>
+          </div>
+        )}
+
+        {/* Bekleme sırasında sonuçlar YERİNDE kalır, yalnızca soluklaşır.
+            İskeletle değiştirmek kullanıcının bağlamını kaybettiriyor;
+            filtre daraltırken listenin nasıl değiştiğini görmek gerekiyor. */}
+        <div
+          className={`transition-opacity duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] ${
+            beklemede ? "pointer-events-none opacity-55" : "opacity-100"
+          }`}
+          aria-busy={beklemede}
+        >
+          {urunler.kayitlar.length === 0 ? (
+            <BosDurum
+              baslik="Eşleşen ürün yok"
+              aciklama="Seçtiğiniz filtreler birlikte hiçbir ürüne uymuyor. Bir filtreyi kaldırıp tekrar deneyin."
+              ikon={<Filter size={36} strokeWidth={1.5} />}
+            />
+          ) : gorunum === "izgara" ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              {urunler.kayitlar.map((urun) => (
+                <ProductCard key={urun.id} product={urun} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {urunler.kayitlar.map((urun) => (
+                <ProductListCard key={urun.id} product={urun} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {urunler.toplamSayfa > 1 && (
+          <Sayfalama
+            sayfaNo={urunler.sayfaNo}
+            toplamSayfa={urunler.toplamSayfa}
+            onDegisim={sayfaDegistir}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-export function ProductListingClient({ 
-  initialData, 
-  searchParams 
-}: { 
-  initialData: ProductResult | null,
-  searchParams: Record<string, string | string[] | undefined>
+function FiltreCipi({ etiket, onKaldir }: { etiket: string; onKaldir: () => void }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-kenar bg-yuzey-kart
+                 py-1 pl-2.5 pr-1 text-xs font-medium text-metin"
+    >
+      {etiket}
+      <button
+        type="button"
+        onClick={onKaldir}
+        aria-label={`${etiket} filtresini kaldır`}
+        className="rounded-full p-0.5 text-metin-ucuncul transition-colors
+                   duration-[var(--sure-ipucu)] hover:bg-hata-50 hover:text-hata-600"
+      >
+        <X size={12} />
+      </button>
+    </span>
+  );
+}
+
+function Sayfalama({
+  sayfaNo, toplamSayfa, onDegisim,
+}: {
+  sayfaNo: number;
+  toplamSayfa: number;
+  onDegisim: (sayfa: number) => void;
 }) {
-  const router = useRouter();
-  const searchParamsHook = useSearchParams();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  // En fazla 5 numara; mevcut sayfa ortada kalacak sekilde kaydirilir.
+  const baslangic = Math.max(1, Math.min(sayfaNo - 2, toplamSayfa - 4));
+  const numaralar = Array.from(
+    { length: Math.min(5, toplamSayfa) },
+    (_, i) => baslangic + i,
+  ).filter((n) => n >= 1 && n <= toplamSayfa);
 
-  // Parse current active filters
-  const getActiveFilters = () => {
-    const filters: Record<string, string[]> = {};
-    searchParamsHook.forEach((value, key) => {
-      if (key !== "sayfaNo" && key !== "sayfaBoyutu" && key !== "siralama" && key !== "aramaMetni" && key !== "kategoriId") {
-        if (!filters[key]) filters[key] = [];
-        filters[key].push(value);
-      }
-    });
-    return filters;
-  };
-
-  const activeFilters = getActiveFilters();
-
-  const updateFilters = (key: string, value: string, checked: boolean) => {
-    const params = new URLSearchParams(searchParamsHook.toString());
-    
-    // Reset to page 1 on filter change
-    params.set("sayfaNo", "1");
-    
-    if (checked) {
-      params.append(key, value);
-    } else {
-      // Remove specific value for the key
-      const values = params.getAll(key);
-      params.delete(key);
-      values.filter(v => v !== value).forEach(v => params.append(key, v));
-    }
-    
-    router.push(`/urunler?${params.toString()}`);
-  };
-
-  const clearFilters = () => {
-    const params = new URLSearchParams(searchParamsHook.toString());
-    const keysToRemove = Array.from(params.keys()).filter(k => 
-      k !== "aramaMetni" && k !== "kategoriId"
-    );
-    keysToRemove.forEach(k => params.delete(k));
-    router.push(`/urunler?${params.toString()}`);
-  };
-
-  const updateSort = (sortOption: string) => {
-    const params = new URLSearchParams(searchParamsHook.toString());
-    if (sortOption) {
-      params.set("siralama", sortOption);
-    } else {
-      params.delete("siralama");
-    }
-    params.set("sayfaNo", "1");
-    router.push(`/urunler?${params.toString()}`);
-  };
-
-  const changePage = (newPage: number) => {
-    const params = new URLSearchParams(searchParamsHook.toString());
-    params.set("sayfaNo", newPage.toString());
-    router.push(`/urunler?${params.toString()}`);
-  };
-
-  if (!initialData || !initialData.urunler) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center flex flex-col items-center">
-        <Filter size={48} className="text-gray-300 mb-4" />
-        <h2 className="text-xl font-bold text-gray-800 mb-2">Sonuç Bulunamadı</h2>
-        <p className="text-gray-500 mb-6">Arama kriterlerinize uygun ürün bulunamadı veya API bağlantısı sağlanamadı.</p>
-        <button onClick={clearFilters} className="bg-brand-cyan text-white px-6 py-2 rounded-lg font-medium">
-          Filtreleri Temizle
-        </button>
-      </div>
-    );
-  }
-
-  const { urunler, filtreler } = initialData;
-
+  const okSinifi =
+    "inline-flex size-9 items-center justify-center rounded-[var(--radius-girdi)] border border-kenar " +
+    "text-metin-ikincil transition-[background-color,color] duration-[var(--sure-ipucu)] " +
+    "hover:bg-yuzey-gomulu hover:text-metin disabled:pointer-events-none disabled:opacity-40";
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 items-start">
-      {/* Mobile Filter Toggle */}
-      <div className="w-full lg:hidden flex gap-2">
-        <button 
-          onClick={() => setIsMobileFiltersOpen(true)}
-          className="flex-1 bg-white border border-gray-200 rounded-lg py-3 px-4 flex items-center justify-center gap-2 font-medium text-brand-navy shadow-sm"
+    <nav className="mt-8 flex items-center justify-center gap-2" aria-label="Sayfalama">
+      <button
+        type="button"
+        onClick={() => onDegisim(sayfaNo - 1)}
+        disabled={sayfaNo <= 1}
+        aria-label="Önceki sayfa"
+        className={okSinifi}
+      >
+        <ChevronLeft size={17} />
+      </button>
+
+      {numaralar.map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onDegisim(n)}
+          aria-current={n === sayfaNo ? "page" : undefined}
+          className={`inline-flex size-9 items-center justify-center rounded-[var(--radius-girdi)]
+                      font-mono text-sm tabular-nums transition-[background-color,color]
+                      duration-[var(--sure-ipucu)] ${
+                        n === sayfaNo
+                          ? "bg-marka font-bold text-metin-ters"
+                          : "border border-kenar text-metin-ikincil hover:bg-yuzey-gomulu hover:text-metin"
+                      }`}
         >
-          <Filter size={18} /> Filtrele ({Object.keys(activeFilters).length})
+          {n}
         </button>
-      </div>
+      ))}
 
-      {/* Mobile Filter Overlay */}
-      {isMobileFiltersOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 lg:hidden flex justify-end">
-          <div className="bg-white w-4/5 max-w-sm h-full flex flex-col shadow-2xl animate-in slide-in-from-right">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="font-bold text-lg">Filtreler</h3>
-              <button onClick={() => setIsMobileFiltersOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-grow overflow-hidden p-4">
-               <FiltrePaneli filtreler={filtreler} activeFilters={activeFilters} updateFilters={updateFilters} clearFilters={clearFilters} />
-            </div>
-            <div className="p-4 border-t border-gray-200">
-              <button 
-                onClick={() => setIsMobileFiltersOpen(false)}
-                className="w-full bg-brand-cyan text-white py-3 rounded-lg font-bold"
-              >
-                Sonuçları Göster
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={() => onDegisim(sayfaNo + 1)}
+        disabled={sayfaNo >= toplamSayfa}
+        aria-label="Sonraki sayfa"
+        className={okSinifi}
+      >
+        <ChevronRight size={17} />
+      </button>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-1/4 min-w-[280px] flex-shrink-0">
-        <FiltrePaneli filtreler={filtreler} activeFilters={activeFilters} updateFilters={updateFilters} clearFilters={clearFilters} />
-      </aside>
+      <span className="ml-2 hidden font-mono text-xs tabular-nums text-metin-ucuncul sm:inline">
+        {sayfaNo} / {toplamSayfa}
+      </span>
+    </nav>
+  );
+}
 
-      {/* Main Content */}
-      <div className="flex-grow w-full">
-        {/* Toolbar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-gray-500 font-medium">
-            Toplam <b className="text-brand-navy">{urunler.toplamKayit}</b> ürün bulundu
-          </div>
-          
-          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-            <div className="flex items-center gap-2">
-              <ArrowDownAZ size={18} className="text-gray-400" />
-              <select 
-                className="text-sm border border-gray-200 rounded-md py-1.5 px-3 bg-gray-50 outline-none focus:border-brand-cyan"
-                value={searchParamsHook.get("siralama") || ""}
-                onChange={(e) => updateSort(e.target.value)}
-              >
-                <option value="">Önerilen</option>
-                <option value="fiyat_artan">Fiyat (Artan)</option>
-                <option value="fiyat_azalan">Fiyat (Azalan)</option>
-                <option value="stok_azalan">Stok (En Çok)</option>
-              </select>
-            </div>
-            
-            <div className="flex items-center border border-gray-200 rounded-md bg-gray-50 p-0.5">
-              <button 
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-sm transition-colors ${viewMode === "grid" ? "bg-white shadow-sm text-brand-cyan" : "text-gray-400 hover:text-gray-600"}`}
-                aria-label="Grid Görünümü"
-              >
-                <LayoutGrid size={18} />
-              </button>
-              <button 
-                onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-sm transition-colors ${viewMode === "list" ? "bg-white shadow-sm text-brand-cyan" : "text-gray-400 hover:text-gray-600"}`}
-                aria-label="Liste Görünümü"
-              >
-                <List size={18} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Product Grid/List */}
-        {urunler.kayitlar.length > 0 ? (
-          <div className={viewMode === "grid" 
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" 
-            : "flex flex-col gap-4"
-          }>
-            {urunler.kayitlar.map((product) => (
-              viewMode === "grid" ? (
-                <ProductCard product={product} key={product.id} />
-              ) : (
-                <ProductListCard product={product} key={product.id} />
-              )
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Aradığınız kriterlere uygun ürün bulunamadı.</h3>
-            <p className="text-gray-500 mb-6">Lütfen filtreleri azaltarak tekrar deneyin.</p>
-            <button onClick={clearFilters} className="bg-brand-navy text-white px-6 py-2 rounded-lg font-medium hover:bg-opacity-90">
-              Tüm Filtreleri Temizle
-            </button>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {urunler.toplamSayfa > 1 && (
-          <div className="mt-8 flex justify-center items-center gap-2">
-            <button 
-              onClick={() => changePage(urunler.sayfaNo - 1)}
-              disabled={urunler.sayfaNo <= 1}
-              className="p-2 border border-gray-200 rounded-lg text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            
-            <div className="flex gap-1">
-              {Array.from({ length: Math.min(5, urunler.toplamSayfa) }, (_, i) => {
-                let pageNum;
-                if (urunler.toplamSayfa <= 5) pageNum = i + 1;
-                else if (urunler.sayfaNo <= 3) pageNum = i + 1;
-                else if (urunler.sayfaNo >= urunler.toplamSayfa - 2) pageNum = urunler.toplamSayfa - 4 + i;
-                else pageNum = urunler.sayfaNo - 2 + i;
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => changePage(pageNum)}
-                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                      pageNum === urunler.sayfaNo 
-                        ? "bg-brand-cyan text-white shadow-sm" 
-                        : "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-            </div>
-            
-            <button 
-              onClick={() => changePage(urunler.sayfaNo + 1)}
-              disabled={urunler.sayfaNo >= urunler.toplamSayfa}
-              className="p-2 border border-gray-200 rounded-lg text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        )}
-      </div>
+/** Sunucudan ilk veri gelene kadar gösterilen iskelet. */
+export function KatalogIskeleti() {
+  return (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: 8 }, (_, i) => (
+        <UrunKartiIskeleti key={i} />
+      ))}
     </div>
   );
 }
