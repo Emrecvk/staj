@@ -1,12 +1,271 @@
 @import "tailwindcss";
 
+/* ===========================================================================
+   ÇEVİK ELEKTRONİK — TASARIM SİSTEMİ
+
+   Marka renkleri korunmuştur:  Lacivert #0F2740 · Camgöbeği #00B4D8
+
+   Üç katman:
+     1. Ham ölçekler        @theme      → bg-navy-800, text-cyan-500 …
+     2. Semantik değişkenler :root       → tema ile değişen gerçek değerler
+     3. Semantik utility'ler @theme inline → bg-yuzey, text-metin …
+
+   2. ve 3. katman neden ayrı: Tailwind v4'te @theme bir media query içine
+   yazılamaz. `@theme inline` üretilen utility'nin değeri KOPYALAMASINI değil
+   var(...) referansı bırakmasını sağlar; böylece :root'taki değeri koyu temada
+   değiştirmek tüm arayüzü çevirir ve hiçbir bileşende dark: varyantı gerekmez.
+   =========================================================================== */
+
 @theme {
-  --color-brand-navy: #0F2740;
-  --color-brand-cyan: #00B4D8;
+  /* --- Lacivert ölçeği ---------------------------------------------------
+     Marka rengi #0F2740 ölçeğin 800'ü; ortada durur ki iki yöne de yer kalsın. */
+  --color-navy-50: #f2f6fa;
+  --color-navy-100: #e3ecf4;
+  --color-navy-200: #c6d8e8;
+  --color-navy-300: #9bbad4;
+  --color-navy-400: #6893bb;
+  --color-navy-500: #4573a1;
+  --color-navy-600: #345b86;
+  --color-navy-700: #2b4a6d;
+  --color-navy-800: #0f2740;
+  --color-navy-900: #0c1f34;
+  --color-navy-950: #071523;
+
+  /* --- Camgöbeği ölçeği --------------------------------------------------- */
+  --color-cyan-50: #ecfdff;
+  --color-cyan-100: #cff7fe;
+  --color-cyan-200: #a5eefc;
+  --color-cyan-300: #67e0f9;
+  --color-cyan-400: #22c9ee;
+  --color-cyan-500: #00b4d8;
+  --color-cyan-600: #0389b0;
+  --color-cyan-700: #0a6e8f;
+  --color-cyan-800: #115a74;
+  --color-cyan-900: #134b62;
+  --color-cyan-950: #063143;
+
+  /* --- Nötrler -------------------------------------------------------------
+     Lacivere doğru hafif soğutuldu; saf gri marka renginin yanında ölü durur.
+     Saf siyah ve saf beyaz bilerek yok, ikisi de derinliği öldürür. */
+  --color-notr-0: #ffffff;
+  --color-notr-50: #f8fafc;
+  --color-notr-100: #f1f5f9;
+  --color-notr-200: #e2e8f0;
+  --color-notr-300: #cbd5e1;
+  --color-notr-400: #94a3b8;
+  --color-notr-500: #64748b;
+  --color-notr-600: #475569;
+  --color-notr-700: #334155;
+  --color-notr-800: #1e293b;
+  --color-notr-900: #0f172a;
+  --color-notr-950: #080d18;
+
+  /* --- Durum renkleri ------------------------------------------------------
+     Doygunluk %80 altında: katalogda yan yana çok sayıda rozet duruyor,
+     parlak renkler taramayı zorlaştırıyor. */
+  --color-basari-50: #ecfdf3;
+  --color-basari-500: #12a150;
+  --color-basari-600: #0d8a43;
+  --color-basari-900: #0a3b21;
+
+  --color-uyari-50: #fffaeb;
+  --color-uyari-500: #d97b06;
+  --color-uyari-600: #b45f05;
+  --color-uyari-900: #4a2708;
+
+  --color-hata-50: #fef3f2;
+  --color-hata-500: #d92d20;
+  --color-hata-600: #b42318;
+  --color-hata-900: #491310;
+
+  /* --- Tipografi -----------------------------------------------------------
+     Mono dekoratif değil işlevsel: MPN, parça kodu, miktar ve fiyat
+     mono ile sütun halinde hizalanır. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* --- Yarıçap: TEK sistem, belgelenmiş kural ------------------------------
+       girdi ve buton 6px · kart 8px · panel 12px · rozet full-pill
+     Bu kuralın dışına çıkma. Karışık yarıçap bozuk tasarım demektir. */
+  --radius-girdi: 0.375rem;
+  --radius-kart: 0.5rem;
+  --radius-panel: 0.75rem;
+
+  /* --- Gölgeler: lacivert tonuna boyalı ------------------------------------
+     Açık zeminde saf siyah gölge kirli görünür. */
+  --shadow-hafif: 0 1px 2px 0 rgb(15 39 64 / 0.06);
+  --shadow-kart: 0 1px 3px 0 rgb(15 39 64 / 0.08), 0 1px 2px -1px rgb(15 39 64 / 0.04);
+  --shadow-yukselti: 0 4px 12px -2px rgb(15 39 64 / 0.10), 0 2px 6px -2px rgb(15 39 64 / 0.06);
+  --shadow-katman: 0 12px 32px -8px rgb(15 39 64 / 0.18), 0 4px 12px -4px rgb(15 39 64 / 0.10);
+
+  /* --- Hareket -------------------------------------------------------------
+     Yerleşik CSS easing'leri fazla yumuşak, niyetli hissettirmiyor.
+     ease-in UI'da KULLANILMAZ: yavaş başlar ve kullanıcının en dikkatli
+     baktığı ilk anı geciktirip arayüzü ağır gösterir. */
+  --ease-cikis: cubic-bezier(0.23, 1, 0.32, 1);      /* giriş ve çıkış */
+  --ease-hareket: cubic-bezier(0.77, 0, 0.175, 1);   /* ekran içi taşıma */
+  --ease-cekmece: cubic-bezier(0.32, 0.72, 0, 1);    /* iOS drawer eğrisi */
 }
 
+/* ===========================================================================
+   Semantik değişkenler — açık tema
+   =========================================================================== */
+
+:root {
+  --yuzey: #f8fafc;
+  --yuzey-kart: #ffffff;
+  --yuzey-gomulu: #f1f5f9;
+  --yuzey-ters: #0f2740;
+
+  --kenar: #e2e8f0;
+  --kenar-guclu: #cbd5e1;
+
+  --metin: #0f172a;
+  --metin-ikincil: #475569;
+  --metin-ucuncul: #64748b;
+  --metin-ters: #ffffff;
+
+  --vurgu: #0389b0;
+  --vurgu-guclu: #0a6e8f;
+  --vurgu-zemin: #ecfdff;
+
+  --marka: #0f2740;
+  --marka-hover: #2b4a6d;
+
+  /* Süreler. UI animasyonları 300ms altında; çekmece fiziksel bir hareket
+     olduğu için tek istisna. */
+  --sure-basma: 160ms;
+  --sure-ipucu: 140ms;
+  --sure-acilir: 200ms;
+  --sure-dialog: 250ms;
+  --sure-cekmece: 400ms;
+}
+
+/* --- Koyu tema -------------------------------------------------------------
+   Yalnızca bu blok değişir. Camgöbeği bir basamak açılıyor: 600 tonu koyu
+   zeminde WCAG AA kontrastını tutturmuyor.
+
+   NEDEN prefers-color-scheme DEĞİL, henüz:
+   Mevcut sayfaların çoğu hâlâ sabit `bg-white` / `text-gray-900` sınıfları
+   kullanıyor ve bunlar token'a bağlı değil. Koyu temayı şimdi sistem
+   tercihine bağlarsak, sistemi koyu olan kullanıcı yarısı açık yarısı koyu
+   bozuk bir sayfa görür.
+
+   Yüzeyler semantik token'lara taşındıkça bu seçici
+     @media (prefers-color-scheme: dark) { :root { … } }
+   ile değiştirilecek. O ana kadar test için <html data-theme="dark">. */
+:root[data-theme="dark"] {
+  --yuzey: #071523;
+  --yuzey-kart: #0c1f34;
+  --yuzey-gomulu: #0a1a2b;
+  --yuzey-ters: #f1f5f9;
+
+  --kenar: #1c344c;
+  --kenar-guclu: #27496b;
+
+  --metin: #f1f5f9;
+  --metin-ikincil: #94a3b8;
+  --metin-ucuncul: #64748b;
+  --metin-ters: #071523;
+
+  --vurgu: #22c9ee;
+  --vurgu-guclu: #67e0f9;
+  --vurgu-zemin: #063143;
+
+  --marka: #0c1f34;
+  --marka-hover: #0f2740;
+}
+
+/* ===========================================================================
+   Semantik utility'ler
+
+   `inline` anahtar kelimesi kritik: değeri kopyalamak yerine var(...) referansı
+   bırakır, böylece yukarıdaki koyu tema bloğu çalışır.
+   =========================================================================== */
+
+@theme inline {
+  --color-yuzey: var(--yuzey);
+  --color-yuzey-kart: var(--yuzey-kart);
+  --color-yuzey-gomulu: var(--yuzey-gomulu);
+  --color-yuzey-ters: var(--yuzey-ters);
+
+  --color-kenar: var(--kenar);
+  --color-kenar-guclu: var(--kenar-guclu);
+
+  --color-metin: var(--metin);
+  --color-metin-ikincil: var(--metin-ikincil);
+  --color-metin-ucuncul: var(--metin-ucuncul);
+  --color-metin-ters: var(--metin-ters);
+
+  --color-vurgu: var(--vurgu);
+  --color-vurgu-guclu: var(--vurgu-guclu);
+  --color-vurgu-zemin: var(--vurgu-zemin);
+
+  --color-marka: var(--marka);
+  --color-marka-hover: var(--marka-hover);
+
+  /* Mevcut 27 rotada brand-navy / brand-cyan sınıfları kullanımda.
+     Kırmamak için köprü; yeni kodda marka / vurgu tercih edin. */
+  --color-brand-navy: var(--marka);
+  --color-brand-cyan: var(--vurgu);
+}
+
+/* ===========================================================================
+   Temel katman
+   =========================================================================== */
+
 @layer base {
+  html {
+    /* Sabit başlık altında çapa linkleri gizlenmesin. */
+    scroll-padding-top: 6rem;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    background-color: var(--yuzey);
+    color: var(--metin);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Odak halkası her zaman görünür: klavye kullanıcısı nerede olduğunu
+     görmeden gezinemez. */
+  :focus-visible {
+    outline: 2px solid var(--vurgu);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Rakamlar eşit genişlikte olmadığında fiyat ve stok sütunları titriyor.
+     Bir parça kataloğunda "mühendislik ürünü" hissini veren en ucuz detay. */
+  .sayisal,
+  th,
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* ===========================================================================
+   Hareket erişilebilirliği
+
+   Azaltılmış hareket "sıfır animasyon" demek DEĞİL: anlamayı kolaylaştıran
+   opaklık ve renk geçişleri kalır, yer değiştiren hareket kaldırılır.
+   =========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
