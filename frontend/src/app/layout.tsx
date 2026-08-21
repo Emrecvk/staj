@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { Bildirimler } from "@/components/ui/bildirim";
+import { KarsilastirmaDock } from "@/components/karsilastirma/karsilastirma-dock";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           İçeriğe geç
         </a>
         {children}
+        <KarsilastirmaDock />
         <Bildirimler />
       </body>
     </html>

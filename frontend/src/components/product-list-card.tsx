@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { FavoriButonu } from "@/components/favori-karsilastirma-butonlari";
+import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
 import { StokRozeti } from "@/components/ui/rozet";
 import type { ProductSummary } from "@/lib/api";
 
@@ -14,11 +14,6 @@ function fiyatBicimle(deger: number, paraBirimi: string) {
 
 /**
  * Liste görünümü kartı.
- *
- * Izgara görünümünden farkı yalnızca yerleşim değil: liste görünümü
- * KARŞILAŞTIRMA içindir. Bu yüzden ürün kodu, stok ve fiyat aynı hizada,
- * sabit genişlikli sütunlarda ve mono ile duruyor; kullanıcı gözünü aşağı
- * kaydırarak değerleri karşılaştırabilsin.
  */
 export function ProductListCard({ product }: { product: ProductSummary }) {
   return (
@@ -61,9 +56,7 @@ export function ProductListCard({ product }: { product: ProductSummary }) {
         <p className="mt-0.5 truncate text-xs text-metin-ikincil">{product.kisaAciklama}</p>
       </div>
 
-      {/* Sabit genişlikli sütunlar: satırlar arası hizalama karşılaştırmayı
-          mümkün kılan şey. Değişken genişlikte gözün takip edeceği bir eksen
-          kalmıyor. */}
+      {/* Sabit genişlikli sütunlar */}
       <div className="hidden w-32 shrink-0 sm:block">
         <StokRozeti miktar={product.toplamStok} />
       </div>
@@ -76,6 +69,20 @@ export function ProductListCard({ product }: { product: ProductSummary }) {
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        <KarsilastirmaButonu
+          urunId={product.id}
+          product={{
+            id: product.id,
+            ureticiUrunKodu: product.ureticiUrunKodu,
+            ureticiAd: product.ureticiAd,
+            anaGorselUrl: product.anaGorselUrl,
+            baslangicFiyati: product.baslangicFiyati,
+            paraBirimi: product.paraBirimi,
+            toplamStok: product.toplamStok,
+            kategoriId: product.kategoriId,
+            ozellikler: product.ozellikler,
+          }}
+        />
         <FavoriButonu urunId={product.id} />
         <Link
           href={`/urunler/${product.id}`}
