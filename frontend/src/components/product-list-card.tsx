@@ -1,64 +1,92 @@
 import Link from "next/link";
-import { ShoppingCart, Image as ImageIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { FavoriButonu } from "@/components/favori-karsilastirma-butonlari";
+import { StokRozeti } from "@/components/ui/rozet";
 import type { ProductSummary } from "@/lib/api";
 
-function formatPrice(value: number, currency: string) { 
-  return new Intl.NumberFormat("tr-TR", { style: "currency", currency, maximumFractionDigits: 4 }).format(value); 
+function fiyatBicimle(deger: number, paraBirimi: string) {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: paraBirimi,
+    maximumFractionDigits: 4,
+  }).format(deger);
 }
 
+/**
+ * Liste görünümü kartı.
+ *
+ * Izgara görünümünden farkı yalnızca yerleşim değil: liste görünümü
+ * KARŞILAŞTIRMA içindir. Bu yüzden ürün kodu, stok ve fiyat aynı hizada,
+ * sabit genişlikli sütunlarda ve mono ile duruyor; kullanıcı gözünü aşağı
+ * kaydırarak değerleri karşılaştırabilsin.
+ */
 export function ProductListCard({ product }: { product: ProductSummary }) {
   return (
-    <article className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row">
-      <Link href={`/urunler/${product.id}`} className="block relative w-full sm:w-48 aspect-square sm:aspect-auto sm:min-h-full bg-gray-50 flex-shrink-0 flex items-center justify-center p-4 border-b sm:border-b-0 sm:border-r border-gray-100">
-        {product.kampanyaliMi && (
-          <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-sm z-10">
-            FIRSAT
-          </span>
-        )}
-        
-        {/* Placeholder for product image since we don't have actual images */}
-        <div className="w-full h-full bg-white border-2 border-dashed border-gray-200 rounded-md flex flex-col items-center justify-center text-gray-400 relative">
-           <ImageIcon size={32} className="mb-2 opacity-50" />
-           <span className="text-xs font-mono text-center max-w-[80%] break-all">{product.ureticiUrunKodu}</span>
-        </div>
+    <article
+      className="group flex items-center gap-4 rounded-[var(--radius-kart)] border border-kenar
+                 bg-yuzey-kart p-3 transition-[border-color,box-shadow]
+                 duration-[var(--sure-acilir)] ease-[var(--ease-cikis)]
+                 hover:border-kenar-guclu hover:shadow-[var(--shadow-yukselti)]"
+    >
+      <Link
+        href={`/urunler/${product.id}`}
+        className="flex size-20 shrink-0 items-center justify-center rounded-[var(--radius-girdi)]
+                   border border-kenar bg-yuzey-gomulu p-2"
+        aria-label={`${product.ureticiUrunKodu} ürün detayı`}
+      >
+        <span className="break-all text-center font-mono text-[10px] leading-tight text-metin-ucuncul">
+          {product.ureticiUrunKodu}
+        </span>
       </Link>
-      
-      <div className="p-4 sm:p-5 flex flex-col flex-grow w-full">
-        <div className="flex justify-between items-start mb-1">
-          <span className="text-xs text-brand-cyan font-bold uppercase tracking-wider">{product.ureticiAd}</span>
-          <FavoriButonu urunId={product.id} />
+
+      <div className="min-w-0 flex-grow">
+        <div className="mb-0.5 flex items-center gap-2">
+          <span className="text-xs text-metin-ucuncul">{product.ureticiAd}</span>
+          {product.kampanyaliMi && (
+            <span className="rounded-full bg-uyari-50 px-1.5 text-[10px] font-bold uppercase text-uyari-600">
+              Fırsat
+            </span>
+          )}
         </div>
-        
-        <Link href={`/urunler/${product.id}`} className="group-hover:text-brand-navy transition-colors mb-2 inline-block">
-          <h3 className="text-xl font-bold text-gray-900 leading-tight">{product.ureticiUrunKodu}</h3>
+
+        <h3 className="truncate font-mono text-sm font-bold text-metin">
+          <Link
+            href={`/urunler/${product.id}`}
+            className="transition-colors duration-[var(--sure-ipucu)] hover:text-vurgu"
+          >
+            {product.ureticiUrunKodu}
+          </Link>
+        </h3>
+
+        <p className="mt-0.5 truncate text-xs text-metin-ikincil">{product.kisaAciklama}</p>
+      </div>
+
+      {/* Sabit genişlikli sütunlar: satırlar arası hizalama karşılaştırmayı
+          mümkün kılan şey. Değişken genişlikte gözün takip edeceği bir eksen
+          kalmıyor. */}
+      <div className="hidden w-32 shrink-0 sm:block">
+        <StokRozeti miktar={product.toplamStok} />
+      </div>
+
+      <div className="w-28 shrink-0 text-right">
+        <div className="text-[10px] text-metin-ucuncul">Başlangıç</div>
+        <div className="font-mono text-sm font-bold tabular-nums text-metin">
+          {fiyatBicimle(product.baslangicFiyati, product.paraBirimi)}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1">
+        <FavoriButonu urunId={product.id} />
+        <Link
+          href={`/urunler/${product.id}`}
+          className="inline-flex items-center gap-1 rounded-[var(--radius-girdi)] border
+                     border-kenar-guclu px-2.5 py-1.5 text-xs font-semibold text-metin
+                     transition-[background-color,border-color,color,transform]
+                     duration-[var(--sure-basma)] ease-[var(--ease-cikis)]
+                     hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu active:scale-[0.97]"
+        >
+          İncele <ArrowRight size={13} />
         </Link>
-        
-        <p className="text-sm text-gray-500 mb-4 line-clamp-2 max-w-3xl">{product.kisaAciklama}</p>
-        
-        <div className="mt-auto flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-4 border-t border-gray-100">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1.5 text-sm text-green-600 font-medium bg-green-50 px-2 py-1 rounded-md self-start">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              Stokta {product.toplamStok.toLocaleString("tr-TR")} adet
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-xs text-gray-400 uppercase tracking-wide">Başlangıç fiyatı</div>
-              <div className="font-extrabold text-brand-navy text-2xl">{formatPrice(product.baslangicFiyati, product.paraBirimi)}</div>
-            </div>
-            
-            <button 
-              className="bg-brand-cyan hover:bg-opacity-90 text-white rounded-lg px-4 py-3 font-bold transition-colors shadow-sm flex items-center gap-2 flex-shrink-0" 
-              type="button" 
-            >
-              <ShoppingCart size={18} />
-              <span className="hidden sm:inline">Sepete Ekle</span>
-            </button>
-          </div>
-        </div>
       </div>
     </article>
   );
