@@ -28,13 +28,13 @@ export default async function CheckoutPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-yuzey">
       <SiteHeader categories={categories} />
       
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-8">
-          <ShieldCheck size={28} className="text-green-600" />
-          <h1 className="text-3xl font-extrabold text-brand-navy">Güvenli Ödeme</h1>
+          <ShieldCheck size={28} className="text-basari-600" />
+          <h1 className="text-3xl font-extrabold text-marka">Güvenli Ödeme</h1>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -43,18 +43,18 @@ export default async function CheckoutPage() {
           </div>
           
           <div className="w-full lg:w-1/3">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 border-b border-gray-100 pb-4">Sipariş Özeti</h3>
+            <div className="bg-yuzey-kart rounded-xl shadow-sm border border-kenar p-6 sticky top-24">
+              <h3 className="text-xl font-bold text-metin mb-4 border-b border-kenar pb-4">Sipariş Özeti</h3>
               
               <div className="max-h-60 overflow-y-auto custom-scrollbar mb-6 pr-2">
                 <ul className="divide-y divide-gray-100">
                   {cart.kalemler.map((item) => (
                     <li key={item.kalemId} className="py-3 flex justify-between">
                       <div className="flex-1 pr-4">
-                        <p className="text-sm font-bold text-gray-900 line-clamp-1">{item.urunKodu}</p>
-                        <p className="text-xs text-gray-500">{item.miktar} adet x {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cart.paraBirimi, maximumFractionDigits: 4 }).format(item.birimFiyat)}</p>
+                        <p className="text-sm font-bold text-metin line-clamp-1">{item.urunKodu}</p>
+                        <p className="text-xs text-metin-ucuncul">{item.miktar} adet x {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cart.paraBirimi, maximumFractionDigits: 4 }).format(item.birimFiyat)}</p>
                       </div>
-                      <div className="text-sm font-bold text-gray-900 text-right whitespace-nowrap">
+                      <div className="text-sm font-bold text-metin text-right whitespace-nowrap">
                         {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cart.paraBirimi }).format(item.toplamFiyat)}
                       </div>
                     </li>
@@ -62,26 +62,26 @@ export default async function CheckoutPage() {
                 </ul>
               </div>
 
-              <div className="space-y-3 mb-6 bg-gray-50 p-4 rounded-lg">
-                <div className="flex justify-between text-sm text-gray-600">
+              <div className="space-y-3 mb-6 bg-yuzey p-4 rounded-lg">
+                <div className="flex justify-between text-sm text-metin-ikincil">
                   <span>Ara Toplam</span>
                   <span className="font-medium">
                     {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cart.paraBirimi }).format(cart.genelToplam)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-metin-ikincil">
                   <span>KDV (%20)</span>
                   <span className="font-medium">
                     {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cart.paraBirimi }).format(cart.genelToplam * 0.20)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-metin-ikincil">
                   <span>Kargo</span>
-                  <span className="font-medium text-green-600">Ücretsiz</span>
+                  <span className="font-medium text-basari-600">Ücretsiz</span>
                 </div>
-                <div className="border-t border-gray-200 pt-3 flex justify-between items-end mt-3">
-                  <span className="text-base font-bold text-gray-900">Genel Toplam</span>
-                  <span className="text-2xl font-extrabold text-brand-navy">
+                <div className="border-t border-kenar pt-3 flex justify-between items-end mt-3">
+                  <span className="text-base font-bold text-metin">Genel Toplam</span>
+                  <span className="text-2xl font-extrabold text-marka">
                     {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cart.paraBirimi }).format(cart.genelToplam * 1.20)}
                   </span>
                 </div>

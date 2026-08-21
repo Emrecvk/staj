@@ -159,34 +159,32 @@
    @theme'in :root'a bastigi ayni degiskenler eziliyor. Camgobegi bir basamak
    aciliyor: 600 tonu koyu zeminde WCAG AA kontrastini tutturmuyor.
 
-   NEDEN prefers-color-scheme DEGIL, henuz: mevcut sayfalarin cogu hala sabit
-   bg-white / text-gray-900 kullaniyor. Sistem tercihine baglasaydik koyu
-   sistemli kullanici yarisi acik yarisi koyu bozuk bir sayfa gorurdu.
-   Yuzeyler token'lara tasindikca bu secici prefers-color-scheme ile
-   degistirilecek. O ana kadar test icin <html data-theme="dark">. */
-:root[data-theme="dark"] {
-  --color-yuzey: #071523;
-  --color-yuzey-kart: #0c1f34;
-  --color-yuzey-gomulu: #0a1a2b;
-  --color-yuzey-ters: #f1f5f9;
+   Yüzeyler token'lara taşındığı için karanlık modu aktif hale getirildi. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-yuzey: #071523;
+    --color-yuzey-kart: #0c1f34;
+    --color-yuzey-gomulu: #0a1a2b;
+    --color-yuzey-ters: #f1f5f9;
 
-  --color-kenar: #1c344c;
-  --color-kenar-guclu: #27496b;
+    --color-kenar: #1c344c;
+    --color-kenar-guclu: #27496b;
 
-  --color-metin: #f1f5f9;
-  --color-metin-ikincil: #94a3b8;
-  --color-metin-ucuncul: #64748b;
-  --color-metin-ters: #071523;
+    --color-metin: #f1f5f9;
+    --color-metin-ikincil: #94a3b8;
+    --color-metin-ucuncul: #64748b;
+    --color-metin-ters: #071523;
 
-  --color-vurgu: #22c9ee;
-  --color-vurgu-guclu: #67e0f9;
-  --color-vurgu-zemin: #063143;
+    --color-vurgu: #22c9ee;
+    --color-vurgu-guclu: #67e0f9;
+    --color-vurgu-zemin: #063143;
 
-  --color-marka: #0c1f34;
-  --color-marka-hover: #0f2740;
+    --color-marka: #0c1f34;
+    --color-marka-hover: #0f2740;
 
-  --color-brand-navy: #0c1f34;
-  --color-brand-cyan: #22c9ee;
+    --color-brand-navy: #0c1f34;
+    --color-brand-cyan: #22c9ee;
+  }
 }
 
 
