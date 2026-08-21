@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createQuote } from "@/lib/cart-actions";
+import type { Sepet } from "@/lib/sepet-tipler";
 import { Loader2, AlertCircle, FileText } from "lucide-react";
 
-export function QuoteRequestForm({ cart }: { cart: any }) {
+export function QuoteRequestForm({ cart }: { cart: Sepet }) {
   const [musteriNotu, setMusteriNotu] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -3,32 +3,38 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Trash2, AlertCircle, Loader2 } from "lucide-react";
-import { updateCartItem, removeCartItem, clearCart } from "@/lib/cart-actions";
+import { updateCartItem, removeCartItem, clearCart, getCart } from "@/lib/cart-actions";
+import type { Sepet } from "@/lib/sepet-tipler";
+import { OnayPenceresi } from "@/components/admin/onay-penceresi";
 
-export function CartItems({ initialCart }: { initialCart: any }) {
-  const [cart, setCart] = useState(initialCart);
+export function CartItems({ initialCart }: { initialCart: Sepet }) {
+  const [cart, setCart] = useState<Sepet>(initialCart);
   const [loadingItems, setLoadingItems] = useState<Record<number, boolean>>({});
   const [isClearing, setIsClearing] = useState(false);
-  
-  const handleQuantityChange = async (kalemId: number, newMiktar: number, step: number) => {
-    // If not a valid step, force to valid step? For UI simple, just step buttons.
+  const [bosaltOnayi, setBosaltOnayi] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
+
+  /**
+   * Sepeti sunucudan yeniden okur.
+   *
+   * Toplamlar yerelde HESAPLANMAZ: fiyat kademeli (miktar arttıkça birim fiyat
+   * düşer) ve KDV/kargo sunucuda uygulanır. "miktar × birimFiyat" ile yapılan
+   * yerel hesap, miktar bir kademe sınırını geçtiğinde yanlış toplam gösteriyordu.
+   */
+  const sepetiYenile = async () => {
+    const guncel = await getCart();
+    if (guncel) setCart(guncel);
+  };
+
+  const handleQuantityChange = async (kalemId: number, newMiktar: number) => {
+    if (newMiktar < 1) return;
+
     setLoadingItems(prev => ({ ...prev, [kalemId]: true }));
+    setHata(null);
     try {
       const res = await updateCartItem(kalemId, newMiktar);
-      if (res.success) {
-        // Ideally we would get the new cart from response or revalidate triggers a re-render.
-        // For local mock demonstration if no backend:
-        setCart((prev: any) => {
-          const updated = { ...prev };
-          const item = updated.kalemler.find((k: any) => k.kalemId === kalemId);
-          if (item) {
-            item.miktar = newMiktar;
-            item.toplamFiyat = item.miktar * item.birimFiyat;
-          }
-          updated.genelToplam = updated.kalemler.reduce((acc: number, k: any) => acc + k.toplamFiyat, 0);
-          return updated;
-        });
-      }
+      if (res.success) await sepetiYenile();
+      else setHata(res.message ?? "Miktar güncellenemedi.");
     } finally {
       setLoadingItems(prev => ({ ...prev, [kalemId]: false }));
     }
@@ -36,32 +42,26 @@ export function CartItems({ initialCart }: { initialCart: any }) {
 
   const handleRemove = async (kalemId: number) => {
     setLoadingItems(prev => ({ ...prev, [kalemId]: true }));
+    setHata(null);
     try {
       const res = await removeCartItem(kalemId);
-      if (res.success) {
-        setCart((prev: any) => {
-          const updated = { ...prev };
-          updated.kalemler = updated.kalemler.filter((k: any) => k.kalemId !== kalemId);
-          updated.genelToplam = updated.kalemler.reduce((acc: number, k: any) => acc + k.toplamFiyat, 0);
-          return updated;
-        });
-      }
+      if (res.success) await sepetiYenile();
+      else setHata("Ürün sepetten çıkarılamadı.");
     } finally {
       setLoadingItems(prev => ({ ...prev, [kalemId]: false }));
     }
   };
 
   const handleClear = async () => {
-    if (!confirm("Sepetinizi tamamen boşaltmak istediğinize emin misiniz?")) return;
-    
     setIsClearing(true);
+    setHata(null);
     try {
       const res = await clearCart();
-      if (res.success) {
-        setCart({ ...cart, kalemler: [], genelToplam: 0 });
-      }
+      if (res.success) await sepetiYenile();
+      else setHata("Sepet boşaltılamadı.");
     } finally {
       setIsClearing(false);
+      setBosaltOnayi(false);
     }
   };
 
@@ -75,10 +75,13 @@ export function CartItems({ initialCart }: { initialCart: any }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {hata && (
+        <p role="alert" className="border-b border-red-200 bg-red-50 p-4 text-sm text-red-800">{hata}</p>
+      )}
       <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
         <h3 className="font-bold text-gray-900">Ürünler ({cart.kalemler.length})</h3>
         <button 
-          onClick={handleClear}
+          onClick={() => setBosaltOnayi(true)}
           disabled={isClearing}
           className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1 font-medium disabled:opacity-50"
         >
@@ -88,7 +91,7 @@ export function CartItems({ initialCart }: { initialCart: any }) {
       </div>
       
       <div className="divide-y divide-gray-100">
-        {cart.kalemler.map((item: any) => (
+        {cart.kalemler.map((item) => (
           <div key={item.kalemId} className={`p-6 flex flex-col sm:flex-row gap-6 ${loadingItems[item.kalemId] ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="w-24 h-24 bg-gray-50 border border-gray-200 rounded-md flex-shrink-0 flex items-center justify-center text-xs text-gray-400 font-mono text-center break-all p-2">
               {item.urunKodu}
@@ -117,7 +120,7 @@ export function CartItems({ initialCart }: { initialCart: any }) {
                   <div className="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white">
                     <button 
                       type="button"
-                      onClick={() => handleQuantityChange(item.kalemId, Math.max(item.satistakiKatsayi, item.miktar - item.satistakiKatsayi), item.satistakiKatsayi)}
+                      onClick={() => handleQuantityChange(item.kalemId, Math.max(item.satistakiKatsayi, item.miktar - item.satistakiKatsayi))}
                       disabled={item.miktar <= item.satistakiKatsayi}
                       className="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold disabled:opacity-50"
                     >
@@ -131,7 +134,7 @@ export function CartItems({ initialCart }: { initialCart: any }) {
                     />
                     <button 
                       type="button"
-                      onClick={() => handleQuantityChange(item.kalemId, item.miktar + item.satistakiKatsayi, item.satistakiKatsayi)}
+                      onClick={() => handleQuantityChange(item.kalemId, item.miktar + item.satistakiKatsayi)}
                       className="px-3 py-1 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold"
                     >
                       +
@@ -160,6 +163,16 @@ export function CartItems({ initialCart }: { initialCart: any }) {
           </div>
         ))}
       </div>
+      <OnayPenceresi
+        acik={bosaltOnayi}
+        yikici
+        baslik="Sepeti boşalt"
+        mesaj="Sepetinizdeki tüm ürünler kaldırılacak. Bu işlem geri alınamaz."
+        onayMetni="Sepeti boşalt"
+        islemSuruyor={isClearing}
+        onOnayla={handleClear}
+        onIptal={() => setBosaltOnayi(false)}
+      />
     </div>
   );
 }

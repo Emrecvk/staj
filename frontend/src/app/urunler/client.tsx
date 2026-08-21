@@ -7,6 +7,68 @@ import { ProductCard } from "@/components/product-card";
 import { ProductListCard } from "@/components/product-list-card";
 import type { ProductResult, FacetGroup } from "@/lib/api";
 
+
+/**
+ * Filtre paneli.
+ *
+ * Modül seviyesinde tanımlıdır: bileşen fonksiyonunun İÇİNDE tanımlanırsa
+ * her render yeni bir bileşen TİPİ üretilir; React alt ağacı söküp yeniden
+ * kurar ve panelin kaydırma konumu ile odak her filtre tıklamasında sıfırlanır.
+ */
+function FiltrePaneli({ filtreler, activeFilters, updateFilters, clearFilters }: {
+  filtreler: FacetGroup[];
+  activeFilters: Record<string, string[]>;
+  updateFilters: (key: string, value: string, checked: boolean) => void;
+  clearFilters: () => void;
+}) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+        <h3 className="font-bold text-brand-navy flex items-center gap-2">
+          <SlidersHorizontal size={18} /> Filtreler
+        </h3>
+        {Object.keys(activeFilters).length > 0 && (
+          <button onClick={clearFilters} className="text-xs text-red-500 hover:underline">
+            Temizle
+          </button>
+        )}
+      </div>
+      
+      <div className="divide-y divide-gray-100 max-h-[calc(100vh-200px)] overflow-y-auto">
+        {filtreler.map((facetGroup: FacetGroup) => (
+          <div key={facetGroup.kod} className="p-4">
+            <h4 className="font-semibold text-gray-800 text-sm mb-3">{facetGroup.ad}</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+              {facetGroup.secenekler.map((option) => {
+                const isActive = activeFilters[facetGroup.kod]?.includes(option.hamDeger);
+                return (
+                  <label key={option.hamDeger} className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="peer appearance-none w-4 h-4 border border-gray-300 rounded-sm checked:bg-brand-cyan checked:border-brand-cyan transition-all"
+                        checked={isActive}
+                        onChange={(e) => updateFilters(facetGroup.kod, option.hamDeger, e.target.checked)}
+                      />
+                      <svg className="absolute w-4 h-4 pointer-events-none hidden peer-checked:block text-white p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <span className={`text-sm flex-grow ${isActive ? 'text-brand-navy font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                      {option.deger}
+                    </span>
+                    <span className="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+                      {option.urunSayisi}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ProductListingClient({ 
   initialData, 
   searchParams 
@@ -92,52 +154,6 @@ export function ProductListingClient({
 
   const { urunler, filtreler } = initialData;
 
-  const FilterPanel = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-        <h3 className="font-bold text-brand-navy flex items-center gap-2">
-          <SlidersHorizontal size={18} /> Filtreler
-        </h3>
-        {Object.keys(activeFilters).length > 0 && (
-          <button onClick={clearFilters} className="text-xs text-red-500 hover:underline">
-            Temizle
-          </button>
-        )}
-      </div>
-      
-      <div className="divide-y divide-gray-100 max-h-[calc(100vh-200px)] overflow-y-auto">
-        {filtreler.map((facetGroup: FacetGroup) => (
-          <div key={facetGroup.kod} className="p-4">
-            <h4 className="font-semibold text-gray-800 text-sm mb-3">{facetGroup.ad}</h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-              {facetGroup.secenekler.map((option) => {
-                const isActive = activeFilters[facetGroup.kod]?.includes(option.hamDeger);
-                return (
-                  <label key={option.hamDeger} className="flex items-center gap-3 cursor-pointer group">
-                    <div className="relative flex items-center">
-                      <input 
-                        type="checkbox" 
-                        className="peer appearance-none w-4 h-4 border border-gray-300 rounded-sm checked:bg-brand-cyan checked:border-brand-cyan transition-all"
-                        checked={isActive}
-                        onChange={(e) => updateFilters(facetGroup.kod, option.hamDeger, e.target.checked)}
-                      />
-                      <svg className="absolute w-4 h-4 pointer-events-none hidden peer-checked:block text-white p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <span className={`text-sm flex-grow ${isActive ? 'text-brand-navy font-medium' : 'text-gray-600 group-hover:text-gray-900'}`}>
-                      {option.deger}
-                    </span>
-                    <span className="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
-                      {option.urunSayisi}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -162,7 +178,7 @@ export function ProductListingClient({
               </button>
             </div>
             <div className="flex-grow overflow-hidden p-4">
-               <FilterPanel />
+               <FiltrePaneli filtreler={filtreler} activeFilters={activeFilters} updateFilters={updateFilters} clearFilters={clearFilters} />
             </div>
             <div className="p-4 border-t border-gray-200">
               <button 
@@ -178,7 +194,7 @@ export function ProductListingClient({
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-1/4 min-w-[280px] flex-shrink-0">
-        <FilterPanel />
+        <FiltrePaneli filtreler={filtreler} activeFilters={activeFilters} updateFilters={updateFilters} clearFilters={clearFilters} />
       </aside>
 
       {/* Main Content */}

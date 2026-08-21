@@ -69,6 +69,14 @@ public class ProfilController : ControllerBase
         return Ok();
     }
 
+    /// <summary>Kullanicinin bagli oldugu firma bilgisi.</summary>
+    [HttpGet("firma")]
+    public async Task<IActionResult> FirmaBilgisi()
+    {
+        var firma = await _profilServisi.FirmaBilgisiGetirAsync(GetUserId());
+        return firma is null ? NotFound("Bagli oldugunuz bir firma yok.") : Ok(firma);
+    }
+
     [HttpGet("musteri-urun-kodlari")]
     public async Task<IActionResult> MusteriUrunKodlariniGetir()
     {

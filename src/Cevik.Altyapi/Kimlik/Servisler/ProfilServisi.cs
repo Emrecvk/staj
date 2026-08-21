@@ -201,4 +201,33 @@ public class ProfilServisi : IProfilServisi
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<FirmaBilgiDto?> FirmaBilgisiGetirAsync(long kullaniciId)
+    {
+        var kullanici = await _context.Kullanicilar
+            .AsNoTracking()
+            .Where(k => k.Id == kullaniciId)
+            .Select(k => new { k.FirmaId, k.FirmaYetkilisiMi })
+            .FirstOrDefaultAsync();
+
+        if (kullanici?.FirmaId is null) return null;
+
+        return await _context.Firmalar
+            .AsNoTracking()
+            .Where(f => f.Id == kullanici.FirmaId)
+            .Select(f => new FirmaBilgiDto
+            {
+                Id = f.Id,
+                Unvan = f.Unvan,
+                VergiDairesi = f.VergiDairesi,
+                VergiNo = f.VergiNo,
+                KepAdresi = f.KepAdresi,
+                OnayDurumu = (short)f.OnayDurumu,
+                KrediLimiti = f.KrediLimiti,
+                OdemeVadesiGun = f.OdemeVadesiGun,
+                MusteriGrubu = f.MusteriGrubu != null ? f.MusteriGrubu.Ad : null,
+                YetkiliMi = kullanici.FirmaYetkilisiMi,
+            })
+            .FirstOrDefaultAsync();
+    }
 }

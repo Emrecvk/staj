@@ -1,93 +1,116 @@
-import { Package, Heart, CreditCard, Shield } from "lucide-react";
 import Link from "next/link";
+import { Package, Heart, FileText, Building2 } from "lucide-react";
+import {
+  siparisleriGetir, favorileriGetirTam, teklifleriGetir, firmaBilgisiGetir,
+} from "@/lib/profil-api";
+import { SIPARIS_DURUMLARI, TEKLIF_DURUMLARI, FIRMA_ONAY_DURUMLARI } from "@/lib/admin-tipler";
 
-export default function ProfileDashboard() {
+export const dynamic = "force-dynamic";
+
+function OzetKutusu({ ikon, renk, deger, etiket, link }: {
+  ikon: React.ReactNode; renk: string; deger: string; etiket: string; link: string;
+}) {
+  return (
+    <Link
+      href={link}
+      className="flex items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 transition-colors hover:border-brand-cyan"
+    >
+      <div className={`rounded-full p-3 ${renk}`}>{ikon}</div>
+      <div>
+        <div className="text-2xl font-bold text-gray-900">{deger}</div>
+        <div className="text-xs uppercase tracking-wide text-gray-500">{etiket}</div>
+      </div>
+    </Link>
+  );
+}
+
+export default async function ProfileDashboard() {
+  // Paralel çekiliyor; biri boş dönerse diğerleri yine gösterilir.
+  const [siparisler, favoriler, teklifler, firma] = await Promise.all([
+    siparisleriGetir(),
+    favorileriGetirTam(),
+    teklifleriGetir(),
+    firmaBilgisiGetir(),
+  ]);
+
+  const sonSiparisler = siparisler.slice(0, 5);
+  const acikTeklifler = teklifler.filter(t => ![5, 6, 7, 8].includes(t.durum));
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Hesap Özeti</h1>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="border border-gray-100 rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-          <div className="bg-blue-100 text-blue-600 p-3 rounded-full"><Package size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">12</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">Siparişler</div>
-          </div>
-        </div>
-        <div className="border border-gray-100 rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-          <div className="bg-red-100 text-red-600 p-3 rounded-full"><Heart size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">5</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">Favoriler</div>
-          </div>
-        </div>
-        <div className="border border-gray-100 rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-          <div className="bg-green-100 text-green-600 p-3 rounded-full"><CreditCard size={24} /></div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900">₺0</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">Bakiye</div>
-          </div>
-        </div>
-        <div className="border border-gray-100 rounded-lg p-4 bg-gray-50 flex items-center gap-4">
-          <div className="bg-purple-100 text-purple-600 p-3 rounded-full"><Shield size={24} /></div>
-          <div>
-            <div className="text-sm font-bold text-gray-900 leading-tight">Doğrulandı</div>
-            <div className="text-xs text-gray-500 uppercase tracking-wide">E-posta Durumu</div>
-          </div>
-        </div>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">Hesap Özeti</h1>
+
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <OzetKutusu
+          ikon={<Package size={24} />} renk="bg-blue-100 text-blue-600"
+          deger={String(siparisler.length)} etiket="Siparişler" link="/profil/siparisler"
+        />
+        <OzetKutusu
+          ikon={<Heart size={24} />} renk="bg-red-100 text-red-600"
+          deger={String(favoriler.length)} etiket="Favoriler" link="/profil/favoriler"
+        />
+        <OzetKutusu
+          ikon={<FileText size={24} />} renk="bg-purple-100 text-purple-600"
+          deger={String(acikTeklifler.length)} etiket="Açık Teklifler" link="/profil/teklifler"
+        />
+        <OzetKutusu
+          ikon={<Building2 size={24} />} renk="bg-green-100 text-green-600"
+          deger={firma ? (FIRMA_ONAY_DURUMLARI[firma.onayDurumu] ?? "—") : "Bireysel"}
+          etiket="Firma Durumu" link="/profil/firma"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Son Siparişler</h2>
-            <Link href="/profil/siparisler" className="text-sm font-medium text-brand-cyan hover:underline">Tümünü Gör</Link>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <section className="overflow-hidden rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 p-4">
+            <h2 className="font-bold text-gray-900">Son Siparişler</h2>
+            <Link href="/profil/siparisler" className="text-xs font-medium text-brand-cyan hover:underline">
+              Tümü
+            </Link>
           </div>
-          <div className="border border-gray-100 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">Sipariş No</th>
-                  <th className="px-4 py-3 text-left font-medium">Tarih</th>
-                  <th className="px-4 py-3 text-left font-medium">Durum</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                <tr>
-                  <td className="px-4 py-3">ORD-2026-0821</td>
-                  <td className="px-4 py-3 text-gray-500">21 Ağu 2026</td>
-                  <td className="px-4 py-3"><span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Hazırlanıyor</span></td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3">ORD-2026-0715</td>
-                  <td className="px-4 py-3 text-gray-500">15 Tem 2026</td>
-                  <td className="px-4 py-3"><span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Teslim Edildi</span></td>
-                </tr>
-              </tbody>
-            </table>
+          {sonSiparisler.length === 0 ? (
+            <p className="p-6 text-sm text-gray-500">Henüz siparişiniz yok.</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {sonSiparisler.map((s) => (
+                <li key={s.id} className="flex items-center justify-between p-4">
+                  <div>
+                    <p className="font-bold text-gray-900">{s.siparisNo}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(s.tarih).toLocaleDateString("tr-TR")} · {SIPARIS_DURUMLARI[s.durum] ?? "—"}
+                    </p>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {s.genelToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} {s.paraBirimi}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 p-4">
+            <h2 className="font-bold text-gray-900">Açık Teklifler</h2>
+            <Link href="/profil/teklifler" className="text-xs font-medium text-brand-cyan hover:underline">
+              Tümü
+            </Link>
           </div>
-        </div>
-        
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Kişisel Bilgiler</h2>
-            <button className="text-sm font-medium text-brand-cyan hover:underline">Düzenle</button>
-          </div>
-          <div className="border border-gray-100 rounded-lg p-5">
-            <div className="grid grid-cols-3 gap-4 mb-4 border-b border-gray-100 pb-4">
-              <div className="text-gray-500 text-sm">Ad Soyad</div>
-              <div className="col-span-2 font-medium text-sm text-gray-900">Kullanıcı</div>
-            </div>
-            <div className="grid grid-cols-3 gap-4 mb-4 border-b border-gray-100 pb-4">
-              <div className="text-gray-500 text-sm">E-posta</div>
-              <div className="col-span-2 font-medium text-sm text-gray-900">ornek@mail.com</div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-gray-500 text-sm">Telefon</div>
-              <div className="col-span-2 font-medium text-sm text-gray-900">+90 555 123 4567</div>
-            </div>
-          </div>
-        </div>
+          {acikTeklifler.length === 0 ? (
+            <p className="p-6 text-sm text-gray-500">Bekleyen teklifiniz yok.</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {acikTeklifler.slice(0, 5).map((t) => (
+                <li key={t.id} className="flex items-center justify-between p-4">
+                  <Link href={`/profil/teklifler/${t.id}`} className="font-bold text-brand-navy hover:underline">
+                    {t.talepNo}
+                  </Link>
+                  <span className="text-xs text-gray-500">{TEKLIF_DURUMLARI[t.durum] ?? "—"}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );

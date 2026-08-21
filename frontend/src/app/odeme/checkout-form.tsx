@@ -246,7 +246,7 @@ export function CheckoutForm({ addresses, cart }: { addresses: Adres[]; cart: un
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center justify-between">
         <p className="text-sm text-gray-500 max-w-sm">
-          Siparişi onayla butonuna basarak Mesafeli Satış Sözleşmesi'ni kabul etmiş sayılırsınız.
+          Siparişi onayla butonuna basarak Mesafeli Satış Sözleşmesi&apos;ni kabul etmiş sayılırsınız.
         </p>
         <button
           type="submit"

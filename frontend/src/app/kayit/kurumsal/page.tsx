@@ -113,7 +113,7 @@ export default function CompanyRegisterPage() {
               </div>
               <div className="ml-2 text-sm">
                 <label htmlFor="sozlesme" className="text-gray-500">
-                  <a href="/sozlesmeler/uyelik" className="text-brand-cyan hover:underline">Üyelik Sözleşmesi</a>'ni ve <a href="/sozlesmeler/kvkk" className="text-brand-cyan hover:underline">KVKK Aydınlatma Metni</a>'ni okudum, onaylıyorum.
+                  <a href="/sozlesmeler/uyelik" className="text-brand-cyan hover:underline">Üyelik Sözleşmesi</a>&apos;ni ve <a href="/sozlesmeler/kvkk" className="text-brand-cyan hover:underline">KVKK Aydınlatma Metni</a>&apos;ni okudum, onaylıyorum.
                 </label>
               </div>
             </div>

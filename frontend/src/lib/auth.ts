@@ -49,7 +49,7 @@ export async function login(prevState: ActionResponse, formData: FormData): Prom
 
     cookieStore.set("user", JSON.stringify({ ad: data.kullaniciAdi, firmaMi: data.firmaMi, firmaId: data.firmaId }), { path: "/" });
 
-  } catch (error) {
+  } catch {
     return { success: false, message: "Sunucuya bağlanılamadı." };
   }
   
@@ -73,7 +73,7 @@ export async function registerUser(prevState: ActionResponse, formData: FormData
       }
       return { success: false, message: "Kayıt işlemi sırasında bir hata oluştu." };
     }
-  } catch (error) {
+  } catch {
     return { success: false, message: "Sunucuya bağlanılamadı." };
   }
 
@@ -100,7 +100,7 @@ export async function registerCompany(prevState: ActionResponse, formData: FormD
       }
       return { success: false, message: "Başvuru işlemi sırasında bir hata oluştu." };
     }
-  } catch (error) {
+  } catch {
     return { success: false, message: "Sunucuya bağlanılamadı." };
   }
 
@@ -135,7 +135,7 @@ export async function resetPasswordRequest(prevState: ActionResponse, formData: 
     }
     
     return { success: true, message: "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi." };
-  } catch (error) {
+  } catch {
     return { success: false, message: "Sunucuya bağlanılamadı." };
   }
 }

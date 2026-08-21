@@ -18,7 +18,7 @@ function SuccessContent() {
       </div>
       <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Siparişiniz Alındı!</h1>
       <p className="text-gray-600 mb-8 max-w-md">
-        Siparişiniz başarıyla oluşturuldu. Siparişinizin durumunu "Siparişlerim" sayfasından takip edebilirsiniz.
+        Siparişiniz başarıyla oluşturuldu. Siparişinizin durumunu &ldquo;Siparişlerim&rdquo; sayfasından takip edebilirsiniz.
       </p>
       
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 w-full mb-8">

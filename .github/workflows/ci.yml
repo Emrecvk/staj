@@ -49,3 +49,36 @@ jobs:
 
     - name: Docker Build
       run: docker build -t cevik-api:${{ github.sha }} -f Dockerfile .
+
+  # Frontend ayri bir is: backend testleriyle paralel kossun, biri digerini
+  # beklemesin. Onceki surumde frontend hic denetlenmiyordu — lint 37 hatayla
+  # kirmizi oldugu halde CI yesil gorunuyordu.
+  frontend:
+    name: Frontend Lint and Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Lint
+      working-directory: frontend
+      run: npm run lint
+
+    - name: Build
+      working-directory: frontend
+      run: npm run build
+
+    - name: Docker Build
+      run: docker build -t cevik-frontend:${{ github.sha }} -f frontend/Dockerfile frontend

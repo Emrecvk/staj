@@ -10,15 +10,15 @@ function EmailVerificationContent() {
   const token = searchParams.get("token");
   const eposta = searchParams.get("eposta");
   
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  // Eksik parametre durumu efekt içinde setState ile değil, başlangıç
+  // değerinden türetilir; efekt içinde senkron setState basamaklı render
+  // tetikler ve React derleyicisi bunu hata olarak işaretler.
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    () => (token && eposta ? "loading" : "error"));
 
   useEffect(() => {
-    if (!token || !eposta) {
-      setStatus("error");
-      return;
-    }
+    if (!token || !eposta) return;
 
-    // Simulate API call
     const verifyEmail = async () => {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";

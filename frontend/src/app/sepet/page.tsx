@@ -12,37 +12,9 @@ export default async function CartPage() {
     getCart()
   ]);
 
-  // If no cart data, show empty state
-  // For demonstration, let's mock cart data if null because the backend might not be running
-  const cart = cartData || {
-    sepetId: 1,
-    kalemler: [
-      {
-        kalemId: 101,
-        urunId: 5,
-        urunKodu: "1N4148",
-        kisaAciklama: "Switching Diode, 100V, 200mA, DO-35",
-        urunAmbalajId: 10,
-        satistakiKatsayi: 100,
-        miktar: 1000,
-        birimFiyat: 0.15,
-        toplamFiyat: 150.00
-      },
-      {
-        kalemId: 102,
-        urunId: 12,
-        urunKodu: "LM358",
-        kisaAciklama: "Dual Operational Amplifier, SOIC-8",
-        urunAmbalajId: 21,
-        satistakiKatsayi: 50,
-        miktar: 500,
-        birimFiyat: 2.50,
-        toplamFiyat: 1250.00
-      }
-    ],
-    genelToplam: 1400.00,
-    paraBirimi: "TRY"
-  };
+  // Sahte sepet fallback'i kaldirildi: API dustugunde kullaniciya hayali
+  // urunler gostermek yerine bos sepet ekrani cizilir.
+  const cart = cartData;
 
   const isEmpty = !cart || !cart.kalemler || cart.kalemler.length === 0;
 

@@ -18,4 +18,7 @@ public interface IProfilServisi
     Task<MusteriUrunKoduDto> MusteriUrunKoduEkleAsync(long kullaniciId, MusteriUrunKoduEkleDto dto);
     Task<bool> MusteriUrunKoduGuncelleAsync(long kullaniciId, long id, MusteriUrunKoduGuncelleDto dto);
     Task<bool> MusteriUrunKoduSilAsync(long kullaniciId, long id);
+
+    /// <summary>Kullanıcının bağlı olduğu firma; firması yoksa null.</summary>
+    Task<FirmaBilgiDto?> FirmaBilgisiGetirAsync(long kullaniciId);
 }

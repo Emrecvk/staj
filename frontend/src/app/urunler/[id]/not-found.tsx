@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] py-20 text-center px-4">
@@ -6,9 +8,9 @@ export default function NotFound() {
       <p className="text-gray-500 max-w-md mx-auto mb-8">
         Aradığınız ürün yayından kaldırılmış veya URL hatalı olabilir. Lütfen arama özelliğini kullanarak diğer ürünleri keşfedin.
       </p>
-      <a href="/urunler" className="bg-brand-cyan text-white px-8 py-3 rounded-lg font-bold hover:bg-opacity-90 transition-colors">
+      <Link href="/urunler" className="bg-brand-cyan text-white px-8 py-3 rounded-lg font-bold hover:bg-opacity-90 transition-colors">
         Kataloğa Geri Dön
-      </a>
+      </Link>
     </div>
   );
 }
