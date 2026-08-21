@@ -304,7 +304,8 @@ public class KimlikServisi : IKimlikServisi
             RefreshToken = "", // Bu değer GirisYapAsync/TokenYenileAsync içinde atanacak
             KullaniciAdi = $"{kullanici.Ad} {kullanici.Soyad}",
             FirmaMi = kullanici.FirmaId.HasValue,
-            FirmaId = kullanici.FirmaId
+            FirmaId = kullanici.FirmaId,
+            Rol = kullanici.Rol
         };
     }
 

@@ -7,6 +7,10 @@ using Cevik.Uygulama.Kimlik.Dto;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Builder;
 
 namespace Cevik.EntegrasyonTestleri;
 
@@ -315,11 +319,23 @@ public class GuvenlikTestleri
     public async Task SaglikKontrolu_200OkVeHealthyDoner()
     {
         var yanit = await _istemci.GetAsync("/saglik");
-        
+
         yanit.StatusCode.Should().Be(HttpStatusCode.OK);
-        
-        var icerik = await yanit.Content.ReadAsStringAsync();
-        icerik.Should().Be("Healthy");
+
+        // Uc artik hangi bagimliligin dustugunu bildiren JSON dondurur.
+        // Duz "Healthy" metni PostgreSQL mi Redis mi coktugunu gizliyordu.
+        var rapor = await yanit.Content.ReadFromJsonAsync<JsonElement>();
+
+        rapor.GetProperty("durum").GetString().Should().Be("Healthy");
+
+        var kontroller = rapor.GetProperty("kontroller").EnumerateArray().ToList();
+        kontroller.Should().HaveCountGreaterThanOrEqualTo(2);
+
+        // Her iki bagimlilik da gercekten yoklanmali ve saglikli olmali.
+        kontroller.Select(k => k.GetProperty("ad").GetString())
+            .Should().Contain(["postgresql", "redis"]);
+
+        kontroller.Should().OnlyContain(k => k.GetProperty("durum").GetString() == "Healthy");
     }
 
     // -----------------------------------------------------------------------
@@ -388,5 +404,64 @@ public class GuvenlikTestleri
         problemDetails.GetProperty("title").GetString().Should().Be("Beklenmeyen bir hata olustu");
         problemDetails.TryGetProperty("detail", out var detail).Should().BeFalse("Detail alani uretimde hic olmamali veya null olmali");
     }
-}
 
+    // -----------------------------------------------------------------------
+    // Oran sinirlayici atlatma
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task OranSinirlamasi_SahteForwardedForIleAtlatilamaz()
+    {
+        // Guvenilen proxy YAPILANDIRILMAMIS hali — gercek uretim durusu.
+        using var sikiFabrika = _fabrika.WithWebHostBuilder(builder =>
+            builder.ConfigureAppConfiguration((_, yapilandirma) =>
+                yapilandirma.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ForwardedHeaders:TumProxylereGuven"] = "false"
+                })));
+
+        // Uygulamanin ayaga kalkmasini tetikle, sonra etkin secenekleri oku.
+        _ = sikiFabrika.CreateClient();
+        var secenekler = sikiFabrika.Services
+            .GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+
+        // ASIL REGRESYON KORUMASI:
+        // Onceki surumde burada KnownProxies.Clear() + KnownIPNetworks.Clear()
+        // vardi. Ikisi de bosken ForwardedHeadersMiddleware X-Forwarded-For'u
+        // HER kaynaktan kabul eder; oran sinirlayici istemciyi RemoteIpAddress'e
+        // gore bolumlendirdigi icin saldirgan her istekte sahte bir IP yazip
+        // giris ucundaki 5/dk limitini sinirsiz kez atlayabiliyordu.
+        //
+        // Allowlist'in DOLU olmasi, forwarded basliginin yalnizca taninan
+        // proxy'lerden kabul edildigi anlamina gelir.
+        (secenekler.KnownProxies.Count + secenekler.KnownIPNetworks.Count)
+            .Should().BeGreaterThan(0,
+                "guvenilen proxy listesi bosaltilirsa X-Forwarded-For her kaynaktan kabul edilir");
+
+        // Not: bu senaryo TestServer uzerinden uctan uca gosterilemez.
+        // TestServer baglantisi loopback gorunur, loopback ise ASP.NET Core'un
+        // varsayilan guvenilen proxy'sidir; yani test istemcisinin forwarded
+        // basligi MESRU olarak kabul edilir. Uretimde uzak bir saldirganin
+        // baglantisi loopback olmadigi icin baslik yok sayilir.
+    }
+
+    [Fact]
+    public async Task OranSinirlamasi_GelistirmeKacisKapisi_UretimVarsayilaninda_Kapali()
+    {
+        // TumProxylereGuven yalnizca gelistirme/test icin acilir; hicbir
+        // yapilandirma verilmediginde KAPALI olmalidir.
+        using var varsayilanFabrika = _fabrika.WithWebHostBuilder(builder =>
+            builder.ConfigureAppConfiguration((_, yapilandirma) =>
+                yapilandirma.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ForwardedHeaders:TumProxylereGuven"] = null
+                })));
+
+        _ = varsayilanFabrika.CreateClient();
+        var secenekler = varsayilanFabrika.Services
+            .GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+
+        (secenekler.KnownProxies.Count + secenekler.KnownIPNetworks.Count)
+            .Should().BeGreaterThan(0);
+    }
+}

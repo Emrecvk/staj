@@ -1,3 +1,5 @@
+using Cevik.Alan.Ortak;
+
 namespace Cevik.Uygulama.Kimlik.Dto;
 
 public class KullaniciGirisDto
@@ -30,6 +32,13 @@ public class TokenDto
     public required string KullaniciAdi { get; set; }
     public bool FirmaMi { get; set; }
     public long? FirmaId { get; set; }
+
+    /// <summary>
+    /// Kullanicinin rolu. Arayuzun yonetim menusunu gostermesi ve /yonetim
+    /// rotalarini korumasi icin gereklidir. Yetkinin ASIL denetimi sunucu
+    /// tarafindaki politikalardir; bu alan yalnizca gezinme icindir.
+    /// </summary>
+    public KullaniciRolu Rol { get; set; }
 }
 
 public class TokenYenileDto
