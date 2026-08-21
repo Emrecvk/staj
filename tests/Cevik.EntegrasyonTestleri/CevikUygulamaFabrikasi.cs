@@ -18,8 +18,10 @@ namespace Cevik.EntegrasyonTestleri;
 /// ltree yolu, jsonb ve xmin eşzamanlılık jetonu. InMemory bunların hiçbirini
 /// çalıştırmaz; yeşil test yanlış bir güven verir.
 ///
-/// Redis ise bellek içi IDistributedCache ile değiştirilir — testin harici bir
-/// servise bağlı olması gerekmiyor, önbellek davranışı yine de doğrulanabiliyor.
+/// Redis de gerçek konteyner olarak ayağa kalkar: /saglik ucu onu yokluyor ve
+/// sahte bir sağlık kontrolü koymaktansa bağımlılığı gerçekten çalıştırmak doğru.
+/// Dağıtık ÖNBELLEK yine bellek içi uygulamaya çevrilir; önbellek davranışı
+/// böylece belirlenimci kalır.
 /// </summary>
 public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLifetime
 {
@@ -82,8 +84,9 @@ public class CevikUygulamaFabrikasi : WebApplicationFactory<Program>, IAsyncLife
     protected override void ConfigureClient(HttpClient client)
     {
         base.ConfigureClient(client);
-        var randomIp = $"10.0.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}";
-        client.DefaultRequestHeaders.Add("X-Forwarded-For", randomIp);
+        // Cakismayan adres: ayni adrese dusen iki test oran sinirlama bolumunu
+        // paylasip 429 aliyor ve kararsiz sekilde dusuyordu.
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", TestIstemciAdresi.Uret());
     }
 
     Task IAsyncLifetime.InitializeAsync() =>

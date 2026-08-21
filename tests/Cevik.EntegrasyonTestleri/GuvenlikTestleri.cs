@@ -30,7 +30,6 @@ public class GuvenlikTestleri
     {
         _fabrika = fabrika;
         _istemci = fabrika.CreateClient();
-        _istemci.DefaultRequestHeaders.Add("X-Forwarded-For", $"192.168.1.{Random.Shared.Next(1, 255)}");
     }
 
     // -----------------------------------------------------------------------

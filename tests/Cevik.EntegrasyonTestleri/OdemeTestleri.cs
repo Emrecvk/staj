@@ -7,6 +7,7 @@ using Cevik.Altyapi.Odemeler.Servisler;
 using Cevik.Uygulama.Kimlik.Dto;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cevik.EntegrasyonTestleri;
 
@@ -30,7 +31,6 @@ public class OdemeTestleri
     {
         _fabrika = fabrika;
         _istemci = fabrika.CreateClient();
-        _istemci.DefaultRequestHeaders.Add("X-Forwarded-For", $"192.168.7.{Random.Shared.Next(1, 255)}");
     }
 
     [Fact]
@@ -172,11 +172,10 @@ public class OdemeTestleri
     /// <summary>Ödemeye hazır, kendine ait bir sipariş oluşturur.</summary>
     private async Task<(long SiparisId, string Token)> SiparisOlusturAsync()
     {
-        var ambalajId = await _fabrika.Veritabaniyla(db => db.UrunAmbalajlari
-            .Where(a => a.StokMiktari > 50 && a.Moq <= 5)
-            .OrderBy(a => a.Id)
-            .Select(a => a.Id)
-            .FirstAsync());
+        // Her test KENDI urun+ambalajini olusturur. Seed'deki ortak ambalajdan
+        // stok cekmek, ayni koleksiyondaki diger testlerle yarisa girip
+        // xmin eszamanlilik catismasi ve kararsiz (flaky) hata uretiyordu.
+        var ambalajId = await KendineAitAmbalajOlusturAsync();
 
         var token = await MusteriTokeniAlAsync($"odeme.{Guid.NewGuid():N}@test.com");
         var oturum = Guid.NewGuid().ToString("N");
@@ -210,6 +209,59 @@ public class OdemeTestleri
 
         var govde = await yanit.Content.ReadFromJsonAsync<JsonElement>();
         return (govde.GetProperty("id").GetInt64(), token);
+    }
+
+    /// <summary>
+    /// Teste özel ürün, ambalaj ve fiyat kademesi oluşturur.
+    /// Paylaşılan seed verisine dokunmadığı için testler birbirinin stoğunu
+    /// tüketmez.
+    /// </summary>
+    private async Task<long> KendineAitAmbalajOlusturAsync()
+    {
+        using var scope = _fabrika.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Cevik.Altyapi.Veritabani.CevikDbContext>();
+
+        var kategoriId = await db.Kategoriler.Where(k => k.YaprakMi).Select(k => k.Id).FirstAsync();
+        var ureticiId = await db.Ureticiler.Select(u => u.Id).FirstAsync();
+
+        var kod = $"ODM-{Guid.NewGuid():N}"[..16].ToUpperInvariant();
+        var urun = new Cevik.Alan.Katalog.Urun
+        {
+            KategoriId = kategoriId,
+            UreticiId = ureticiId,
+            UreticiUrunKodu = kod,
+            NormalizeKod = Cevik.Alan.Kurallar.UrunKoduNormalizeleyici.Normalize(kod),
+            KisaAciklama = "Odeme testi urunu",
+            Aktif = true,
+        };
+        db.Urunler.Add(urun);
+        await db.SaveChangesAsync();
+
+        var ambalaj = new Cevik.Alan.Fiyatlama.UrunAmbalaji
+        {
+            UrunId = urun.Id,
+            AmbalajTipi = AmbalajTipi.CutTape,
+            Ad = "Cut Tape",
+            Mpq = 1,
+            Moq = 1,
+            KatlamaMiktari = 1,
+            StokMiktari = 10_000,
+            VarsayilanMi = true,
+        };
+        db.UrunAmbalajlari.Add(ambalaj);
+        await db.SaveChangesAsync();
+
+        db.FiyatKademeleri.Add(new Cevik.Alan.Fiyatlama.FiyatKademesi
+        {
+            UrunAmbalajId = ambalaj.Id,
+            MinMiktar = 1,
+            MaxMiktar = null,
+            BirimFiyat = 2.50m,
+            ParaBirimi = "TRY",
+        });
+        await db.SaveChangesAsync();
+
+        return ambalaj.Id;
     }
 
     private async Task<long> AdresEkleAsync(string token)

@@ -1,3 +1,19 @@
+/**
+ * Katalog arama yuk testi (k6).
+ *
+ * DURUM: Bu senaryo yazilmistir ama HENUZ CALISTIRILMAMISTIR.
+ * docs/SEARCH_EVALUATION.md icindeki karar olcume degil, olcumun
+ * maliyet/fayda degerlendirmesine dayanir.
+ *
+ * Calistirmak icin:
+ *   1. k6 kurun            : winget install k6 --source winget
+ *   2. API ayakta olsun    : docker compose up -d
+ *   3. Testi calistirin    : k6 run tests/load-tests/catalog-search-test.js
+ *   4. Farkli adres icin   : k6 run -e API_URL=http://host:5000/api ...
+ *
+ * Sonuclari docs/SEARCH_EVALUATION.md 4. bolume islemeyi unutmayin.
+ */
+
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 

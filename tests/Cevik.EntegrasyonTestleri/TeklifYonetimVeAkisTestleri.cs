@@ -32,8 +32,6 @@ public class TeklifYonetimVeAkisTestleri : IClassFixture<CevikUygulamaFabrikasi>
     private async Task<(System.Net.Http.HttpClient Client, long UserId)> OturumAcAsync(KullaniciRolu rol)
     {
         var client = _fabrika.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Forwarded-For",
-            $"10.{Random.Shared.Next(1, 254)}.{Random.Shared.Next(1, 254)}.{Random.Shared.Next(1, 254)}");
 
         var eposta = $"teklif_{rol}_{Guid.NewGuid():N}@test.com".ToLowerInvariant();
         var sifre = "Sifre.123";
