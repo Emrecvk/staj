@@ -12,21 +12,9 @@ export default async function RequestQuotePage() {
     getCart()
   ]);
 
-  const cart = cartData || {
-    sepetId: 1,
-    kalemler: [
-      {
-        kalemId: 101,
-        urunId: 5,
-        urunKodu: "1N4148",
-        miktar: 10000,
-        birimFiyat: 0.15,
-        toplamFiyat: 1500.00
-      }
-    ],
-    genelToplam: 1500.00,
-    paraBirimi: "TRY"
-  };
+  // API dusunce sahte sepet uydurmak yok: kullanici hayali bir urun gormemeli.
+  // Sepet bos veya erisilemez ise sepet sayfasina donulur.
+  const cart = cartData;
 
   if (!cart || !cart.kalemler || cart.kalemler.length === 0) {
     redirect("/sepet");
@@ -53,7 +41,7 @@ export default async function RequestQuotePage() {
               
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar mb-6 pr-2">
                 <ul className="divide-y divide-gray-100">
-                  {cart.kalemler.map((item: any) => (
+                  {cart.kalemler.map((item) => (
                     <li key={item.kalemId} className="py-3 flex justify-between">
                       <div className="flex-1 pr-4">
                         <p className="text-sm font-bold text-gray-900 line-clamp-1">{item.urunKodu}</p>

@@ -34,7 +34,7 @@ export default async function UrunlerPage({ searchParams }: { searchParams: Prom
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-brand-navy">Ürün Kataloğu</h1>
           {resolvedParams.aramaMetni && (
-            <p className="text-gray-500 mt-1">"{resolvedParams.aramaMetni}" için sonuçlar gösteriliyor</p>
+            <p className="text-gray-500 mt-1">&ldquo;{resolvedParams.aramaMetni}&rdquo; için sonuçlar gösteriliyor</p>
           )}
         </div>
         

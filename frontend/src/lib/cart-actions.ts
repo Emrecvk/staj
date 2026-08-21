@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import type { Sepet, SiparisOlusturIstegi, TeklifOlusturIstegi } from "./sepet-tipler";
 
 const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -49,7 +50,7 @@ export async function addToCart(ambalajId: number, miktar: number) {
 
     revalidatePath("/sepet");
     return { success: true };
-  } catch (err) {
+  } catch {
     return { success: false, message: "Sunucu bağlantı hatası." };
   }
 }
@@ -69,7 +70,7 @@ export async function updateCartItem(kalemId: number, yeniMiktar: number) {
     
     revalidatePath("/sepet");
     return { success: true };
-  } catch (err) {
+  } catch {
     return { success: false, message: "Sunucu bağlantı hatası." };
   }
 }
@@ -86,7 +87,7 @@ export async function removeCartItem(kalemId: number) {
     
     revalidatePath("/sepet");
     return { success: true };
-  } catch (err) {
+  } catch {
     return { success: false };
   }
 }
@@ -103,12 +104,12 @@ export async function clearCart() {
     
     revalidatePath("/sepet");
     return { success: true };
-  } catch (err) {
+  } catch {
     return { success: false };
   }
 }
 
-export async function getCart() {
+export async function getCart(): Promise<Sepet | null> {
   try {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_URL}/Sepet`, {
@@ -117,13 +118,13 @@ export async function getCart() {
     });
     
     if (!res.ok) return null;
-    return await res.json();
-  } catch (err) {
+    return (await res.json()) as Sepet;
+  } catch {
     return null;
   }
 }
 
-export async function createOrder(data: any) {
+export async function createOrder(data: SiparisOlusturIstegi) {
   try {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_URL}/Siparis`, {
@@ -150,7 +151,7 @@ export async function createOrder(data: any) {
   }
 }
 
-export async function createQuote(data: any) {
+export async function createQuote(data: TeklifOlusturIstegi) {
   try {
     const headers = await getAuthHeaders();
     const res = await fetch(`${API_URL}/Teklif`, {
@@ -165,7 +166,7 @@ export async function createQuote(data: any) {
     
     const teklif = await res.json();
     return { success: true, talepNo: teklif.talepNo };
-  } catch (err) {
+  } catch {
     return { success: false, message: "Sunucu bağlantı hatası." };
   }
 }

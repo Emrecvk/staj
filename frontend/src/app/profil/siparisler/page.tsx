@@ -1,41 +1,62 @@
-import { Package } from "lucide-react";
+import { siparisleriGetir } from "@/lib/profil-api";
+import { SIPARIS_DURUMLARI } from "@/lib/admin-tipler";
+import { DurumRozeti } from "@/components/admin/durum-bildirimi";
 
-export default function OrdersPage() {
+export const dynamic = "force-dynamic";
+
+function durumTonu(durum: number) {
+  if (durum === 6) return "yesil" as const;
+  if (durum === 7 || durum === 8) return "kirmizi" as const;
+  if (durum === 1 || durum === 2) return "sari" as const;
+  return "mavi" as const;
+}
+
+export default async function SiparislerPage() {
+  const siparisler = await siparisleriGetir();
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Siparişlerim</h1>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">Siparişlerim</h1>
 
-      <div className="space-y-4">
-        {[1, 2].map(i => (
-          <div key={i} className="border border-gray-200 rounded-lg p-5">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4 border-b border-gray-100 pb-4">
-              <div>
-                <div className="text-sm text-gray-500 mb-1">Sipariş Tarihi: <span className="text-gray-900 font-medium">21 Ağu 2026</span></div>
-                <div className="text-sm text-gray-500">Sipariş Özeti: <span className="text-gray-900 font-medium">2 Ürün</span></div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="text-xs text-gray-500 uppercase">Toplam</div>
-                  <div className="text-lg font-bold text-brand-navy">₺450,00</div>
-                </div>
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">Hazırlanıyor</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-gray-100 p-3 rounded-lg text-gray-400">
-                  <Package size={24} />
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-gray-900">Sipariş No: ORD-2026-08{i}1</div>
-                  <a href="#" className="text-sm text-brand-cyan hover:underline">Sipariş Detayı</a>
-                </div>
-              </div>
-            </div>
+      {siparisler.length === 0 ? (
+        <div className="rounded-xl border border-gray-200 p-12 text-center">
+          <p className="text-gray-500">Henüz bir siparişiniz bulunmuyor.</p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-4 py-3">Sipariş No</th>
+                  <th className="px-4 py-3">Tarih</th>
+                  <th className="px-4 py-3">Durum</th>
+                  <th className="px-4 py-3 text-right">Tutar</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {siparisler.map((s) => (
+                  <tr key={s.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 font-bold text-brand-navy">{s.siparisNo}</td>
+                    <td className="px-4 py-4 text-gray-600">
+                      {new Date(s.tarih).toLocaleDateString("tr-TR")}
+                    </td>
+                    <td className="px-4 py-4">
+                      <DurumRozeti
+                        metin={SIPARIS_DURUMLARI[s.durum] ?? `#${s.durum}`}
+                        ton={durumTonu(s.durum)}
+                      />
+                    </td>
+                    <td className="px-4 py-4 text-right font-medium text-gray-900">
+                      {s.genelToplam.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} {s.paraBirimi}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

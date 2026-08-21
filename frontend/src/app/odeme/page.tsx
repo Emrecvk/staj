@@ -1,4 +1,5 @@
-import { getCart, createOrder } from "@/lib/cart-actions";
+import { getCart } from "@/lib/cart-actions";
+import { adresleriGetir } from "@/lib/profil-api";
 import { getCategories } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -7,37 +8,24 @@ import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 
 export default async function CheckoutPage() {
-  const [categories, cartData] = await Promise.all([
+  const [categories, cartData, addresses] = await Promise.all([
     getCategories(),
-    getCart()
+    getCart(),
+    adresleriGetir(),
   ]);
 
-  const cart = cartData || {
-    sepetId: 1,
-    kalemler: [
-      {
-        kalemId: 101,
-        urunId: 5,
-        urunKodu: "1N4148",
-        kisaAciklama: "Switching Diode, 100V, 200mA, DO-35",
-        miktar: 1000,
-        birimFiyat: 0.15,
-        toplamFiyat: 150.00
-      }
-    ],
-    genelToplam: 150.00,
-    paraBirimi: "TRY"
-  };
+  // API dusunce sahte sepet uydurmak yok: kullanici hayali bir urun gormemeli.
+  // Sepet bos veya erisilemez ise sepet sayfasina donulur.
+  const cart = cartData;
 
   if (!cart || !cart.kalemler || cart.kalemler.length === 0) {
     redirect("/sepet");
   }
 
-  // Mock addresses - typically fetched from profile API
-  const addresses = [
-    { id: 1, baslik: "Ev Adresi", sehir: "Ankara", ilce: "Çankaya", acikAdres: "Tepe Prime A Blok Kat 2" },
-    { id: 2, baslik: "İş Adresi", sehir: "İstanbul", ilce: "Şişli", acikAdres: "Perpa Ticaret Merkezi B Blok" }
-  ];
+  // Adres yoksa siparis verilemez; kullaniciyi adres eklemeye yonlendir.
+  if (addresses.length === 0) {
+    redirect("/profil/adresler?hata=adres-gerekli");
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -60,7 +48,7 @@ export default async function CheckoutPage() {
               
               <div className="max-h-60 overflow-y-auto custom-scrollbar mb-6 pr-2">
                 <ul className="divide-y divide-gray-100">
-                  {cart.kalemler.map((item: any) => (
+                  {cart.kalemler.map((item) => (
                     <li key={item.kalemId} className="py-3 flex justify-between">
                       <div className="flex-1 pr-4">
                         <p className="text-sm font-bold text-gray-900 line-clamp-1">{item.urunKodu}</p>

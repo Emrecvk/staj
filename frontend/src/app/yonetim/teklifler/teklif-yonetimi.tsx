@@ -189,8 +189,11 @@ function FiyatlandirmaPaneli({ teklif, onKapat, onTamam, onHata }: {
     () => Object.fromEntries(teklif.kalemler.map(k => [k.id, girdiyeCevir(k)])));
 
   // Varsayılan geçerlilik: bugünden 14 gün sonra.
-  const varsayilanGecerlilik = new Date(Date.now() + 14 * 86_400_000)
-    .toISOString().slice(0, 10);
+  // Date.now() saf olmadığı için render sırasında değil, state başlatıcısında
+  // bir kez hesaplanır — aksi hâlde her render farklı değer üretir.
+  const [varsayilanGecerlilik] = useState(() =>
+    new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10));
+  const [enErkenTarih] = useState(() => new Date().toISOString().slice(0, 10));
 
   const guncelle = (id: number, alan: keyof KalemGirdisi, deger: string) =>
     setKalemler(d => ({ ...d, [id]: { ...d[id], [alan]: deger } }));
@@ -298,7 +301,7 @@ function FiyatlandirmaPaneli({ teklif, onKapat, onTamam, onHata }: {
               <span className="mb-1 block text-sm font-medium text-gray-700">Geçerlilik Tarihi</span>
               <input name="gecerlilikTarihi" type="date" required
                 defaultValue={varsayilanGecerlilik}
-                min={new Date().toISOString().slice(0, 10)}
+                min={enErkenTarih}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </label>
             <label className="block">
