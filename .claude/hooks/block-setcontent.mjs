@@ -20,13 +20,23 @@ process.stdin.on("end", () => {
   const cmd = payload?.tool_input?.command ?? "";
   if (typeof cmd !== "string" || cmd.length === 0) process.exit(0);
 
-  // Set-Content / Out-File / Add-Content (alias: sc, ac) kullanımı.
-  const cmdletHit = /\b(Set-Content|Add-Content|Out-File)\b|(^|[;|&\s])(sc|ac)\s+/i.test(cmd);
-  if (!cmdletHit) process.exit(0);
+  const KAYNAK = "cs|csproj|tsx|ts|jsx|mjs|json|md|razor|cshtml";
 
-  // Kaynak uzantılarını hedefliyor mu?
-  const kaynakUzanti = /\.(cs|csproj|tsx|ts|jsx|mjs|json|md|razor|cshtml)\b/i.test(cmd);
-  if (!kaynakUzanti) process.exit(0);
+  // İfade sınırı: komut başı ya da ; | & { ( \n sonrası. Salt "bahis"leri
+  // (commit mesajı, echo, yorum) elemek için cmdlet'in GERÇEK bir çağrı
+  // konumunda olması gerekir; bir sonraki sınıra kadarki argüman parçasında
+  // da kaynak-dosya yolu bulunmalı.
+  const SINIR = "(?:^|[;|&{(\\n])";
+  const ARG = "[^;|&}\\n]*";
+  const cmdletYazma = new RegExp(
+    `${SINIR}\\s*(?:Set-Content|Add-Content|Out-File|sc|ac)\\b${ARG}\\.(?:${KAYNAK})\\b`,
+    "i"
+  );
+
+  // Yönlendirme ile kaynak dosyaya yazma: ... > foo.cs / >> bar.tsx
+  const yonlendirmeYazma = new RegExp(`>>?\\s*['"]?[^'"\\s|;&<>]*\\.(?:${KAYNAK})\\b`, "i");
+
+  if (!cmdletYazma.test(cmd) && !yonlendirmeYazma.test(cmd)) process.exit(0);
 
   process.stderr.write(
     "ENGELLENDI: PowerShell Set-Content/Out-File/Add-Content, Türkçe karakter " +
