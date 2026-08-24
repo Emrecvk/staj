@@ -23,9 +23,10 @@ import { logout } from "@/lib/auth";
 
 interface SiteHeaderProps {
   categories?: Category[];
+  initialCurrency?: "TRY" | "USD";
 }
 
-export function SiteHeader({ categories = [] }: SiteHeaderProps) {
+export function SiteHeader({ categories = [], initialCurrency = "TRY" }: SiteHeaderProps) {
   // Client state from stores
   const {
     itemCount: cartCount,
@@ -38,10 +39,21 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
   // Dropdown states
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [cartPreviewOpen, setCartPreviewOpen] = useState(false);
-  const [siteCurrency, setSiteCurrency] = useState("TRY");
+  const [siteCurrency, setSiteCurrency] = useState(initialCurrency);
+  let displayCartTotal = cartTotal;
+  let displayCartCur = paraBirimi;
+  if (paraBirimi === "USD" && siteCurrency === "TRY") {
+    displayCartTotal = cartTotal * 35.24;
+    displayCartCur = "TRY";
+  } else if (paraBirimi === "TRY" && siteCurrency === "USD") {
+    displayCartTotal = cartTotal / 35.24;
+    displayCartCur = "USD";
+  } else if (siteCurrency) {
+    displayCartCur = siteCurrency;
+  }
   const [localePanelOpen, setLocalePanelOpen] = useState(false);
   const [draftLanguage, setDraftLanguage] = useState("tr");
-  const [draftCurrency, setDraftCurrency] = useState("TRY");
+  const [draftCurrency, setDraftCurrency] = useState<"TRY" | "USD">(initialCurrency);
 
   const accountRef = useRef<HTMLDivElement>(null);
   const cartRef = useRef<HTMLDivElement>(null);
@@ -346,7 +358,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                                 </div>
                               </div>
                               <div className="font-mono font-bold text-right shrink-0">
-                                {item.toplamFiyat.toFixed(2)} {item.paraBirimi}
+                                {((item.paraBirimi === "USD" && siteCurrency === "TRY") ? item.toplamFiyat * 35.24 : (item.paraBirimi === "TRY" && siteCurrency === "USD") ? item.toplamFiyat / 35.24 : item.toplamFiyat).toFixed(2)} {siteCurrency || item.paraBirimi}
                               </div>
                             </div>
                           ))}
@@ -357,7 +369,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                           <div className="flex justify-between text-xs text-metin-ikincil">
                             <span>Ara Toplam:</span>
                             <span className="font-mono font-bold text-metin-marka tabular-nums">
-                              {cartTotal.toFixed(2)} {paraBirimi}
+                              {displayCartTotal.toFixed(2)} {displayCartCur}
                             </span>
                           </div>
                           <div className="text-[10px] text-metin-ucuncul">

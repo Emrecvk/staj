@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   ArrowRight,
   Boxes,
@@ -13,14 +13,18 @@ import {
 } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
 import type { Category } from "@/lib/api";
+import {
+  VITRIN_KATEGORI_AGACI,
+  type VitrinKategoriDali,
+} from "@/components/home/vitrin-kategori-verisi";
 
-const IKON_ESLEME: Record<string, LucideIcon> = {
-  "elektronik-komponentler": Cpu,
-  "led-aydinlatma": Lightbulb,
-  "maker-iot": Layers,
-  "uretim-ekipmanlari": ToggleRight,
-  otomasyon: Boxes,
-};
+const VITRIN_KATEGORI_IKONLARI: LucideIcon[] = [
+  Cpu,
+  Lightbulb,
+  Layers,
+  ToggleRight,
+  Boxes,
+];
 
 interface HeroProps {
   categories?: Category[];
@@ -28,10 +32,30 @@ interface HeroProps {
   stoktakiUrun?: number;
 }
 
-export function HeroB2B({ categories = [], kategoriSayilari = {}, stoktakiUrun }: HeroProps) {
+export function HeroB2B({ categories = [], stoktakiUrun }: HeroProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
-  const [hoveredSubCategory, setHoveredSubCategory] = useState<Category | null>(null);
+  const [hoveredSubCategory, setHoveredSubCategory] = useState<VitrinKategoriDali | null>(null);
+  const [hoveredThirdCategory, setHoveredThirdCategory] = useState<VitrinKategoriDali | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleCategoryHover = (id: number) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredCategory(id);
+      setHoveredSubCategory(null);
+      setHoveredThirdCategory(null);
+    }, 150);
+  };
+
+  const handleNavLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredCategory(null);
+      setHoveredSubCategory(null);
+      setHoveredThirdCategory(null);
+    }, 200);
+  };
   const slides = [
     ["Duyuru", "Component by Çevik 26. sayısı yayında!", "Elektronik sektörünün güncel gelişmeleri, yeni ürünler ve teknoloji trendleri sizi bekliyor.", "Şimdi Keşfet!", "COMPONENT."],
     ["Workshop", "Yeni nesil kontrolcü atölyesi", "MCU, HMI ve gömülü sistemler için teknik içerikleri ve uygulama örneklerini keşfedin.", "Videoyu İzle", "WORKSHOP"],
@@ -42,101 +66,96 @@ export function HeroB2B({ categories = [], kategoriSayilari = {}, stoktakiUrun }
     return () => window.clearInterval(timer);
   }, [slides.length]);
   const slide = slides[activeSlide];
+
+  const tumGercekKategoriler = (dallar: Category[]): Category[] =>
+    dallar.flatMap((dal) => [dal, ...tumGercekKategoriler(dal.altKategoriler ?? [])]);
+
+  const kategoriBaglantisi = (ad: string) => {
+    const normalize = (deger: string) =>
+      deger.toLocaleLowerCase("tr-TR").replace(/[^a-z0-9çğıöşü]/g, "");
+    const eslesen = tumGercekKategoriler(categories).find(
+      (kategori) => normalize(kategori.ad) === normalize(ad),
+    );
+    return eslesen
+      ? `/urunler?kategoriId=${eslesen.id}`
+      : `/urunler?aramaMetni=${encodeURIComponent(ad)}`;
+  };
+
   return (
-    <section className="border-b border-kenar bg-yuzey" aria-label="Ana giriş">
+    <section className="bg-yuzey" aria-label="Ana giriş">
       <Kapsayici className="py-6 md:py-8">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           {categories.length > 0 && (
-          <nav
-            aria-label="Ana kategoriler"
-            className="relative z-20 hidden rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart px-6 py-7 lg:col-span-4 lg:block"
-            onMouseLeave={() => { setHoveredCategory(null); setHoveredSubCategory(null); }}
-          >
-            <h2 className="sr-only">Kategoriler</h2>
-            <ul>
-              {categories.map((kategori) => {
-                const Icon = IKON_ESLEME[kategori.slug] ?? Boxes;
-                const altKategoriler = kategori.altKategoriler ?? [];
-                const urunSayisi = kategoriSayilari[kategori.id];
-                return (
-                  <li
-                    key={kategori.id}
-                    onMouseEnter={() => {
-                      setHoveredCategory(kategori.id);
-                      setHoveredSubCategory(null);
-                    }}
-                  >
-                    <Link
-                      href={`/urunler?kategoriId=${kategori.id}`}
-                      className="group flex items-center gap-4 rounded-[var(--radius-girdi)] px-2 py-4 transition-colors hover:bg-vurgu-zemin"
-                    >
-                      <span className="flex h-13 w-13 shrink-0 items-center justify-center rounded-lg bg-[#eeeff7]">
-                        <Icon size={21} className="text-vurgu" aria-hidden="true" />
-                      </span>
-                      <span className="flex-1 text-base font-medium text-metin group-hover:text-vurgu-guclu">
-                        {kategori.ad}
-                      </span>
-                      {typeof urunSayisi === "number" && urunSayisi > 0 && (
-                        <span className="text-xs font-semibold text-metin-ucuncul tabular-nums">
-                          {urunSayisi.toLocaleString("tr-TR")}
+            <nav
+              aria-label="Ana kategoriler"
+              className="relative z-20 hidden h-full rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart px-3 py-3 lg:col-span-3 lg:block"
+              onMouseLeave={handleNavLeave}
+            >
+              <h2 className="sr-only">Kategoriler</h2>
+              <ul className="mx-auto flex h-full w-full max-w-[300px] flex-col justify-center gap-1">
+                {VITRIN_KATEGORI_AGACI.map((kategori, index) => {
+                  const Icon = VITRIN_KATEGORI_IKONLARI[index] ?? Boxes;
+                  return (
+                    <li key={kategori.ad} onMouseEnter={() => handleCategoryHover(index)}>
+                      <Link href={kategoriBaglantisi(kategori.ad)} className="group flex items-center gap-3 rounded-[var(--radius-girdi)] px-1.5 py-2 transition-colors hover:bg-vurgu-zemin">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#eeeff7]">
+                          <Icon size={19} className="text-vurgu" aria-hidden="true" />
                         </span>
-                      )}
-                      <ArrowRight size={14} className="text-metin-ucuncul ml-2" aria-hidden="true" />
-                    </Link>
-                    {hoveredCategory === kategori.id && altKategoriler.length > 0 && (
-                      <div
-                        className="absolute top-0 left-full z-30 h-[590px] pl-4"
-                        onMouseEnter={() => setHoveredCategory(kategori.id)}
-                      >
-                        <div className={`flex h-full rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart p-7 shadow-[var(--shadow-katman)] transition-[width] duration-300 overflow-hidden ${hoveredSubCategory ? "w-[600px]" : "w-[360px]"}`}>
-
-                          <div className="w-[304px] shrink-0 overflow-y-auto pr-6">
-                            <h3 className="text-2xl font-extrabold leading-tight text-metin-marka">{kategori.ad}</h3>
-                            <ul className="mt-5 space-y-1">
-                              {altKategoriler.map((alt) => (
-                                <li key={alt.id} onMouseEnter={() => setHoveredSubCategory(alt)}>
-                                  <Link
-                                    href={`/urunler?kategoriId=${alt.id}`}
-                                    className={`flex items-center py-1.5 text-base transition-colors ${hoveredSubCategory?.id === alt.id ? "text-vurgu font-medium" : "text-metin"}`}
-                                  >
-                                    <span>{alt.ad}</span>
-                                    <ArrowRight size={15} className={`ml-2 ${hoveredSubCategory?.id === alt.id ? "text-vurgu" : "text-kenar-guclu"}`} />
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          {hoveredSubCategory && (hoveredSubCategory.altKategoriler?.length ?? 0) > 0 && (
-                            <div className="w-[220px] shrink-0 overflow-y-auto border-l border-kenar px-6">
-                              <h4 className="text-lg font-bold text-metin-marka">{hoveredSubCategory.ad}</h4>
-                              <ul className="mt-5 space-y-2 text-base text-metin-ikincil">
-                                {(hoveredSubCategory.altKategoriler ?? []).map((item) => (
-                                  <li key={item.id}>
-                                    <Link
-                                      href={`/urunler?kategoriId=${item.id}`}
-                                      className="flex items-center py-1 hover:text-vurgu transition-colors"
-                                    >
-                                      <span>{item.ad}</span>
-                                      <ArrowRight size={15} className="text-kenar-guclu ml-2" />
+                        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-metin">{kategori.ad}</span>
+                        <ArrowRight size={14} className="shrink-0 text-metin-ucuncul opacity-40" aria-hidden="true" />
+                      </Link>
+                      {hoveredCategory === index && kategori.altlar.length > 0 && (
+                        <div className="absolute left-[calc(100%+1rem)] top-0 z-30 min-h-full">
+                          <div className={`flex min-h-[620px] items-stretch overflow-visible rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart shadow-[var(--shadow-katman)] transition-[width] duration-200 ${hoveredThirdCategory?.altlar.length ? "w-[990px]" : hoveredSubCategory?.altlar.length ? "w-[660px]" : "w-[330px]"}`}>
+                            <div className="w-[330px] shrink-0 p-6">
+                              <h3 className="flex h-14 items-start text-2xl font-extrabold leading-tight text-metin-marka">{kategori.ad}</h3>
+                              <ul className="mt-5">
+                                {kategori.altlar.map((alt) => (
+                                  <li key={alt.ad} onMouseEnter={() => { setHoveredSubCategory(alt); setHoveredThirdCategory(null); }}>
+                                    <Link href={kategoriBaglantisi(alt.ad)} className={`flex min-h-10 items-center justify-between gap-3 px-3 py-2 text-[15px] transition-colors ${hoveredSubCategory?.ad === alt.ad ? "bg-[#e5eaee] font-semibold text-metin-marka" : "text-metin hover:bg-yuzey-gomulu"}`}>
+                                      <span>{alt.ad}</span>
+                                      {alt.altlar.length > 0 && <ArrowRight size={15} className={hoveredSubCategory?.ad === alt.ad ? "text-vurgu" : "text-kenar-guclu"} />}
                                     </Link>
                                   </li>
                                 ))}
                               </ul>
                             </div>
-                          )}
-
+                            {hoveredSubCategory && hoveredSubCategory.altlar.length > 0 && (
+                              <div className="w-[330px] shrink-0 border-l border-kenar px-6 pb-6 pt-[100px]">
+                                <ul>
+                                  {hoveredSubCategory.altlar.map((alt) => (
+                                    <li key={alt.ad} onMouseEnter={() => setHoveredThirdCategory(alt)}>
+                                      <Link href={kategoriBaglantisi(alt.ad)} className={`flex min-h-10 items-center justify-between gap-3 px-3 py-2 text-[15px] transition-colors ${hoveredThirdCategory?.ad === alt.ad ? "bg-[#e5eaee] font-semibold text-metin-marka" : "text-metin hover:bg-yuzey-gomulu"}`}>
+                                        <span>{alt.ad}</span>
+                                        {alt.altlar.length > 0 && <ArrowRight size={15} className={hoveredThirdCategory?.ad === alt.ad ? "text-vurgu" : "text-kenar-guclu"} />}
+                                      </Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {hoveredThirdCategory && hoveredThirdCategory.altlar.length > 0 && (
+                              <div className="w-[330px] shrink-0 border-l border-kenar px-6 pb-6 pt-[100px]">
+                                <ul>
+                                  {hoveredThirdCategory.altlar.map((alt) => (
+                                    <li key={alt.ad}>
+                                      <Link href={kategoriBaglantisi(alt.ad)} className="block min-h-10 px-3 py-2 text-[15px] text-metin transition-colors hover:bg-yuzey-gomulu hover:text-vurgu">{alt.ad}</Link>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
           )}
 
-          <div className={`relative min-h-[440px] overflow-hidden rounded-[var(--radius-panel)] border border-kenar bg-[#faf9f7] p-8 md:p-12 ${categories.length > 0 ? "lg:col-span-8" : "lg:col-span-12"}`}>
+          <div className={`relative h-[520px] overflow-hidden rounded-[var(--radius-panel)] border border-kenar bg-[#faf9f7] p-8 md:p-10 ${categories.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}`}>
             <div
               className="pointer-events-none absolute inset-0 opacity-[0.06]"
               style={{

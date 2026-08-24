@@ -65,15 +65,26 @@ const TABS: TabConfig[] = [
   },
 ];
 
-function formatPrice(val: number, cur: string) {
+function formatPrice(val: number, cur: string, siteCur?: string) {
+  let displayValue = val;
+  let displayCur = cur;
+  if (cur === "USD" && siteCur === "TRY") {
+    displayValue = val * 35.24;
+    displayCur = "TRY";
+  } else if (cur === "TRY" && siteCur === "USD") {
+    displayValue = val / 35.24;
+    displayCur = "USD";
+  } else if (siteCur) {
+    displayCur = siteCur;
+  }
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",
-    currency: cur || "USD",
+    currency: displayCur || "USD",
     maximumFractionDigits: 4,
-  }).format(val);
+  }).format(displayValue);
 }
 
-export function VitrinSekmeleri({ urunler = [], baslangicSekmesi }: { urunler?: ProductSummary[]; baslangicSekmesi?: TabId }) {
+export function VitrinSekmeleri({ urunler = [], baslangicSekmesi, siteParaBirimi }: { urunler?: ProductSummary[]; baslangicSekmesi?: TabId; siteParaBirimi?: string }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>(baslangicSekmesi ?? "yeni");
   const [startIndex, setStartIndex] = useState(0);
@@ -278,7 +289,7 @@ export function VitrinSekmeleri({ urunler = [], baslangicSekmesi }: { urunler?: 
                        {fiyatKademeleri(product).map((kademe) => (
                          <Fragment key={kademe.miktar}>
                            <span className="text-metin-ikincil">{kademe.miktar}:</span>
-                           <span className="font-bold text-[#12ae8c]">{formatPrice(kademe.fiyat, kademe.paraBirimi)}</span>
+                           <span className="font-bold text-[#12ae8c]">{formatPrice(kademe.fiyat, kademe.paraBirimi, siteParaBirimi)}</span>
                          </Fragment>
                        ))}
                      </div>

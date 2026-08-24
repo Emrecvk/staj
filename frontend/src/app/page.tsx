@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HeroB2B } from "@/components/home/hero-b2b";
@@ -16,6 +17,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const cookieStore = await cookies();
+  const seciliParaBirimi = cookieStore.get("site_para_birimi")?.value === "USD" ? "USD" : "TRY";
   const [categories, productResult, ozet] = await Promise.all([
     getCategories(),
     getProducts({ sayfaNo: 1, sayfaBoyutu: 12, sadeceStoktakiler: true }),
@@ -30,7 +33,7 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-yuzey">
       {/* 1. Sade header */}
-      <SiteHeader categories={categories} />
+      <SiteHeader categories={categories} initialCurrency={seciliParaBirimi as "TRY" | "USD"} />
 
       <main id="icerik" className="flex-grow">
         {/* 2. Kategori + kampanya + hızlı işlemler (açık temalı 3 kolon) */}
@@ -42,14 +45,14 @@ export default async function Home() {
           />
         </Suspense>
 
-        <AltPromos />
+        <AltPromos siteParaBirimi={seciliParaBirimi} />
 
         {/* 3. Stoktan teslim edilebilen ürünler */}
         <div>
-          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="coksatan" />
-          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="yeni" />
-          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="onecikan" />
-          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="firsat" />
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="coksatan" siteParaBirimi={seciliParaBirimi} />
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="yeni" siteParaBirimi={seciliParaBirimi} />
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="onecikan" siteParaBirimi={seciliParaBirimi} />
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="firsat" siteParaBirimi={seciliParaBirimi} />
         </div>
 
         {/* BOM/RFQ çözümleri ve iletişim alanı */}

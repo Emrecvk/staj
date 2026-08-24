@@ -69,13 +69,20 @@ export type ProductDetail = {
   birlikteKullanilanlar: RelatedProductSummary[];
 };
 
-async function safeFetch<T>(path: string, fallback: T): Promise<T> {
-  try { 
-    const response = await fetch(`${API_URL}${path}`, { cache: "no-store" }); 
-    if (!response.ok) return fallback; 
-    return await response.json() as T; 
-  } catch { 
-    return fallback; 
+export async function safeFetch<T>(path: string, fallback: T): Promise<T> {
+  try {
+    console.log(`[API] Fetching ${API_URL}${path}`);
+    const response = await fetch(`${API_URL}${path}`, { cache: "no-store" });
+    if (!response.ok) {
+      console.error(`[API] Fetch failed for ${path}: ${response.status} ${response.statusText}`);
+      return fallback;
+    }
+    const data = await response.json() as T;
+    console.log(`[API] Fetch success for ${path}:`, Array.isArray(data) ? `${data.length} items` : 'object');
+    return data;
+  } catch (error) {
+    console.error(`[API] Fetch exception for ${path}:`, error);
+    return fallback;
   }
 }
 
