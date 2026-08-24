@@ -12,7 +12,6 @@ interface SupplierBrand {
   logoText: string;
   logo?: string;
   authorized: boolean;
-  productCount: number;
   origin: string;
   specialty: string;
 }
@@ -25,7 +24,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "STMicroelectronics",
     logo: "/brands/st.svg",
     authorized: true,
-    productCount: 4500,
     origin: "İsviçre / Fransa",
     specialty: "MCU, Güç Yarı İletkenleri & Sensörler",
   },
@@ -36,7 +34,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Texas Instruments",
     logo: "/brands/ti.svg",
     authorized: true,
-    productCount: 6200,
     origin: "ABD",
     specialty: "Analog, Güç Yönetimi & DSP",
   },
@@ -47,7 +44,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Murata",
     logo: "/brands/murata.svg",
     authorized: true,
-    productCount: 8900,
     origin: "Japonya",
     specialty: "MLCC Seramik Kapasitör & RF Filtreler",
   },
@@ -58,7 +54,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "GigaDevice",
     logo: "/brands/gigadevice.svg",
     authorized: true,
-    productCount: 1200,
     origin: "Çin",
     specialty: "Flash Bellek & Yüksek Hızlı MCU",
   },
@@ -69,7 +64,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Yageo",
     logo: "/brands/yageo.svg",
     authorized: true,
-    productCount: 15000,
     origin: "Tayvan",
     specialty: "SMD Çip Direnç & İndüktör",
   },
@@ -80,7 +74,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Vishay",
     logo: "/brands/vishay.svg",
     authorized: true,
-    productCount: 7400,
     origin: "ABD",
     specialty: "Ayrık Yarı İletkenler & Pasifler",
   },
@@ -91,7 +84,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Microchip",
     logo: "/brands/microchip.svg",
     authorized: true,
-    productCount: 5100,
     origin: "ABD",
     specialty: "PIC & AVR MCU, EEPROM",
   },
@@ -102,7 +94,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Omron",
     logo: "/brands/omron.svg",
     authorized: true,
-    productCount: 3200,
     origin: "Japonya",
     specialty: "Endüstriyel Röleler & Anahtarlar",
   },
@@ -113,7 +104,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Phoenix Contact",
     logo: "/brands/phoenix.svg",
     authorized: true,
-    productCount: 4100,
     origin: "Almanya",
     specialty: "PCB Klemens & Endüstriyel Bağlantı",
   },
@@ -124,7 +114,6 @@ const AUTHORIZED_SUPPLIERS: SupplierBrand[] = [
     logoText: "Mean Well",
     logo: "/brands/meanwell.svg",
     authorized: true,
-    productCount: 2800,
     origin: "Tayvan",
     specialty: "DIN Ray & SMPS Güç Kaynakları",
   },
@@ -195,7 +184,7 @@ export function DistributorVitrini() {
               href="/urunler"
               className="hidden text-xs font-bold text-vurgu hover:underline sm:inline-block"
             >
-              Tüm 85+ Markayı Gör ➔
+              Tüm Markaları Gör ➔
             </Link>
 
             <div className="flex items-center gap-1.5">
@@ -263,13 +252,11 @@ export function DistributorVitrini() {
                   </p>
                 </div>
 
-                {/* Bottom Product Count & Link */}
-                <div className="mt-4 flex items-center justify-between border-t border-kenar/60 pt-2.5 text-[11px]">
-                  <span className="font-mono font-semibold tabular-nums text-metin-ikincil">
-                    {supplier.productCount.toLocaleString("tr-TR")} Ürün
-                  </span>
+                {/* Alt link — uydurma "X Ürün" sayaci kaldirildi (marka bazli
+                    gercek sayim veren API ucu yok). */}
+                <div className="mt-4 flex items-center justify-end border-t border-kenar/60 pt-2.5 text-[11px]">
                   <span className="inline-flex items-center font-bold text-vurgu transition-transform group-hover:translate-x-0.5">
-                    İncele <ArrowRight size={12} className="ml-0.5" />
+                    Ürünleri Gör <ArrowRight size={12} className="ml-0.5" />
                   </span>
                 </div>
               </Link>

@@ -68,198 +68,6 @@ const TABS: TabConfig[] = [
   },
 ];
 
-// High-fidelity fallback items for showcase tabs when database has fewer items
-const MOCK_SHOWCASE_PRODUCTS: Record<TabId, ProductSummary[]> = {
-  yeni: [
-    {
-      id: 101,
-      ureticiUrunKodu: "STM32F407VGT6",
-      ureticiAd: "STMicroelectronics",
-      kisaAciklama: "ARM Cortex-M4 32-Bit MCU, 168 MHz, 1024 KB Flash, LQFP-100",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 6850,
-      baslangicFiyati: 12.50,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 102,
-      ureticiUrunKodu: "GD32F407VGT6",
-      ureticiAd: "GigaDevice",
-      kisaAciklama: "ARM Cortex-M4 168 MHz MCU, 1MB Flash, Pin-to-pin uyumlu, LQFP-100",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 15000,
-      baslangicFiyati: 6.40,
-      paraBirimi: "USD",
-      kampanyaliMi: true,
-    },
-    {
-      id: 103,
-      ureticiUrunKodu: "STM32F429ZIT6",
-      ureticiAd: "STMicroelectronics",
-      kisaAciklama: "ARM Cortex-M4 180 MHz MCU, 2MB Flash, LCD-TFT kontrolcü, LQFP-144",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 120,
-      baslangicFiyati: 16.50,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 301,
-      ureticiUrunKodu: "LM358DR",
-      ureticiAd: "Texas Instruments",
-      kisaAciklama: "Dual Low Power Operational Amplifier, 3V-32V, SOIC-8",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 50000,
-      baslangicFiyati: 0.18,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 201,
-      ureticiUrunKodu: "GRM188R71C104KA01D",
-      ureticiAd: "Murata Electronics",
-      kisaAciklama: "CAP CER 100nF 16V X7R 0603 ±10% SMD",
-      anaGorselUrl: null,
-      gorselTemsiliMi: true,
-      toplamStok: 250000,
-      baslangicFiyati: 0.045,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-  ],
-  coksatan: [
-    {
-      id: 301,
-      ureticiUrunKodu: "LM358DR",
-      ureticiAd: "Texas Instruments",
-      kisaAciklama: "Dual Low Power Operational Amplifier, 3V-32V, SOIC-8",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 50000,
-      baslangicFiyati: 0.18,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 201,
-      ureticiUrunKodu: "GRM188R71C104KA01D",
-      ureticiAd: "Murata Electronics",
-      kisaAciklama: "CAP CER 100nF 16V X7R 0603 ±10% SMD",
-      anaGorselUrl: null,
-      gorselTemsiliMi: true,
-      toplamStok: 250000,
-      baslangicFiyati: 0.045,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 101,
-      ureticiUrunKodu: "STM32F407VGT6",
-      ureticiAd: "STMicroelectronics",
-      kisaAciklama: "ARM Cortex-M4 32-Bit MCU, 168 MHz, 1024 KB Flash, LQFP-100",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 6850,
-      baslangicFiyati: 12.50,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 102,
-      ureticiUrunKodu: "GD32F407VGT6",
-      ureticiAd: "GigaDevice",
-      kisaAciklama: "ARM Cortex-M4 168 MHz MCU, 1MB Flash, Pin-to-pin uyumlu, LQFP-100",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 15000,
-      baslangicFiyati: 6.40,
-      paraBirimi: "USD",
-      kampanyaliMi: true,
-    },
-  ],
-  firsat: [
-    {
-      id: 102,
-      ureticiUrunKodu: "GD32F407VGT6",
-      ureticiAd: "GigaDevice",
-      kisaAciklama: "ARM Cortex-M4 168 MHz MCU, 1MB Flash, Pin-to-pin uyumlu, LQFP-100",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 15000,
-      baslangicFiyati: 6.40,
-      paraBirimi: "USD",
-      kampanyaliMi: true,
-    },
-    {
-      id: 201,
-      ureticiUrunKodu: "GRM188R71C104KA01D",
-      ureticiAd: "Murata Electronics",
-      kisaAciklama: "CAP CER 100nF 16V X7R 0603 ±10% SMD",
-      anaGorselUrl: null,
-      gorselTemsiliMi: true,
-      toplamStok: 250000,
-      baslangicFiyati: 0.045,
-      paraBirimi: "USD",
-      kampanyaliMi: true,
-    },
-    {
-      id: 301,
-      ureticiUrunKodu: "LM358DR",
-      ureticiAd: "Texas Instruments",
-      kisaAciklama: "Dual Low Power Operational Amplifier, 3V-32V, SOIC-8",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 50000,
-      baslangicFiyati: 0.18,
-      paraBirimi: "USD",
-      kampanyaliMi: true,
-    },
-  ],
-  onecikan: [
-    {
-      id: 101,
-      ureticiUrunKodu: "STM32F407VGT6",
-      ureticiAd: "STMicroelectronics",
-      kisaAciklama: "ARM Cortex-M4 32-Bit MCU, 168 MHz, 1024 KB Flash, LQFP-100",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 6850,
-      baslangicFiyati: 12.50,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 103,
-      ureticiUrunKodu: "STM32F429ZIT6",
-      ureticiAd: "STMicroelectronics",
-      kisaAciklama: "ARM Cortex-M4 180 MHz MCU, 2MB Flash, LCD-TFT kontrolcü, LQFP-144",
-      anaGorselUrl: null,
-      gorselTemsiliMi: false,
-      toplamStok: 120,
-      baslangicFiyati: 16.50,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-    {
-      id: 201,
-      ureticiUrunKodu: "GRM188R71C104KA01D",
-      ureticiAd: "Murata Electronics",
-      kisaAciklama: "CAP CER 100nF 16V X7R 0603 ±10% SMD",
-      anaGorselUrl: null,
-      gorselTemsiliMi: true,
-      toplamStok: 250000,
-      baslangicFiyati: 0.045,
-      paraBirimi: "USD",
-      kampanyaliMi: false,
-    },
-  ],
-};
-
 function formatPrice(val: number, cur: string) {
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",
@@ -277,15 +85,14 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
 
   const activeTabConfig = TABS.find((t) => t.id === activeTab) || TABS[0];
 
-  // Resolve products for active tab
+  // Yalnizca gercek urunler. API bos donduyse sahte urun UYDURULMAZ,
+  // asagida durust bir bos durum gosterilir.
   const tabProducts =
-    urunler.length > 0
-      ? activeTab === "firsat"
-        ? urunler.filter((u) => u.kampanyaliMi).length > 0
-          ? urunler.filter((u) => u.kampanyaliMi)
-          : urunler
+    activeTab === "firsat"
+      ? urunler.filter((u) => u.kampanyaliMi).length > 0
+        ? urunler.filter((u) => u.kampanyaliMi)
         : urunler
-      : MOCK_SHOWCASE_PRODUCTS[activeTab] || MOCK_SHOWCASE_PRODUCTS.yeni;
+      : urunler;
 
   // Carousel navigation bounds
   const totalItems = tabProducts.length;
@@ -419,6 +226,22 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
           aria-labelledby={`tab-${activeTab}`}
           className="mt-6"
         >
+          {tabProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-[var(--radius-kart)] border border-dashed border-kenar bg-yuzey-gomulu py-14 text-center">
+              <p className="text-sm font-semibold text-metin">
+                Bu sekmede şu an gösterilecek ürün yok.
+              </p>
+              <p className="mt-1 text-xs text-metin-ucuncul">
+                Tüm kataloğu inceleyerek stoktaki parçalara ulaşabilirsiniz.
+              </p>
+              <Link
+                href="/urunler"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-[var(--radius-girdi)] bg-vurgu px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-vurgu-guclu"
+              >
+                Kataloğu Aç
+              </Link>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {tabProducts.slice(startIndex, startIndex + 4).map((product) => {
               const isAdding = addingId === product.id && isPending;
@@ -505,6 +328,7 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
               );
             })}
           </div>
+          )}
         </div>
       </Kapsayici>
     </section>

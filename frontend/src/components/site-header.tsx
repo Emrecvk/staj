@@ -84,20 +84,8 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               </a>
               <span className="text-[11px] text-metin-ucuncul">(08:30 – 18:00)</span>
             </div>
-
-            <div className="hidden lg:flex items-center gap-3 border-l border-kenar pl-6">
-              <span className="flex items-center gap-1 font-semibold text-[11px] uppercase tracking-wider text-metin-ucuncul">
-                <span className="w-2 h-2 rounded-full bg-basari-500 animate-pulse" />
-                TCMB Kurları:
-              </span>
-              <span className="font-mono text-xs font-semibold text-metin-marka">
-                USD/TRY: <span className="tabular-nums">34.25 ₺</span>
-              </span>
-              <span className="text-kenar-guclu">|</span>
-              <span className="font-mono text-xs font-semibold text-metin-marka">
-                EUR/TRY: <span className="tabular-nums">37.10 ₺</span>
-              </span>
-            </div>
+            {/* Sahte "TCMB Kurları" tiker'i kaldirildi: canli doviz API'si
+                bagli degil, sabit rakam gostermek guven sorunu yaratiyordu. */}
           </div>
 
           {/* Right: Fast BOM, About, Contact, Language/Currency Picker */}

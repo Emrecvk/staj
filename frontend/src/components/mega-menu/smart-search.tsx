@@ -173,21 +173,9 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
         setProductSuggestions(records);
         setTotalCount(data.urunler?.toplamKayit || records.length);
       } else {
-        // Fallback demo/mock matching if API is down
-        const mockProducts: ProductSuggestion[] = [
-          {
-            id: 101,
-            ureticiUrunKodu: trimmed.toUpperCase(),
-            ureticiAd: "STMicroelectronics",
-            kisaAciklama: "Yüksek performanslı 32-bit ARM Cortex Mikrodenetleyici",
-            anaGorselUrl: null,
-            toplamStok: 4850,
-            baslangicFiyati: 2.45,
-            paraBirimi: "USD",
-          },
-        ];
-        setProductSuggestions(mockProducts);
-        setTotalCount(1);
+        // API hata donduyse sahte urun UYDURULMAZ; bos sonuc gosterilir.
+        setProductSuggestions([]);
+        setTotalCount(0);
       }
     } catch {
       // Fallback graceful

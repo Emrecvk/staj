@@ -54,10 +54,10 @@ export function SiteFooter() {
               </div>
               <div>
                 <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
-                  ISO 9001:2015 Belgeli
+                  KVKK Uyumlu
                 </h4>
                 <p className="text-[11px] text-metin-ikincil">
-                  Uluslararası standartlarda kalite yönetimi
+                  Kişisel verileriniz KVKK kapsamında korunur
                 </p>
               </div>
             </div>
