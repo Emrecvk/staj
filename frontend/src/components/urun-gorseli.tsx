@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Package } from "lucide-react";
+import { gercekGorselVarMi } from "@/lib/gorsel";
 
 export function UrunGorseli({
   src,
@@ -13,8 +14,8 @@ export function UrunGorseli({
   className?: string;
 }) {
   const [hataKaynak, setHataKaynak] = useState<string | null>(null);
-  const eskiSeedYolu = src?.startsWith("/gorseller/komponent/") ?? false;
-  const yuklenemedi = eskiSeedYolu || Boolean(src && hataKaynak === src);
+  const gercek = gercekGorselVarMi(src);
+  const yuklenemedi = !gercek || Boolean(src && hataKaynak === src);
 
   if (!src || yuklenemedi) {
     return (

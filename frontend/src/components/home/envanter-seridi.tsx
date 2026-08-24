@@ -1,4 +1,3 @@
-import { PackageCheck, Layers, FolderTree, Truck } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
 
 interface KatalogOzetProps {
@@ -9,98 +8,37 @@ interface KatalogOzetProps {
   } | null;
 }
 
+/**
+ * Sakin tek satir guven seridi. Onceki 4 buyuk sayac "dashboard" hissi
+ * veriyordu; artik gercek rakamlar tek satirda, olculu bir bicimde.
+ */
 export function EnvanterSeridi({ ozet }: KatalogOzetProps) {
-  // If no summary is available, render a resilient null-safe fallback state
-  if (!ozet) {
-    return (
-      <section className="border-y border-kenar bg-yuzey-gomulu py-4 md:py-5" aria-label="Envanter Durumu">
-        <Kapsayici>
-          <div className="flex items-center justify-center gap-2 text-xs text-metin-ucuncul">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-vurgu" />
-            <span>Envanter bilgileri güncelleniyor...</span>
-          </div>
-        </Kapsayici>
-      </section>
-    );
-  }
+  if (!ozet) return null;
 
-  // Yalnizca API'den gelen gercek degerler. Uydurma fallback YOK.
-  const toplamUrun = ozet.toplamUrun;
-  const stoktakiUrun = ozet.stoktakiUrun;
-  const kategoriSayisi = ozet.kategoriSayisi;
-
-  const metrikler = [
-    {
-      id: "toplam",
-      ikon: Layers,
-      etiket: "Katalogda Toplam Parça",
-      deger: toplamUrun.toLocaleString("tr-TR"),
-      aciklama: "Aktif parametrik katalog",
-    },
-    {
-      id: "stok",
-      ikon: PackageCheck,
-      etiket: "Stoktan Hemen Teslim",
-      deger: stoktakiUrun.toLocaleString("tr-TR"),
-      aciklama: "Merkez depoda hazır",
-    },
-    // Kategori sayisi da API'den; yoksa metrik gizlenir.
-    ...(typeof kategoriSayisi === "number" && kategoriSayisi > 0
-      ? [
-          {
-            id: "kategori",
-            ikon: FolderTree,
-            etiket: "Ürün Kategorisi",
-            deger: kategoriSayisi.toLocaleString("tr-TR"),
-            aciklama: "Parametrik katalog ağacı",
-          },
-        ]
-      : []),
-    {
-      id: "kargo",
-      ikon: Truck,
-      etiket: "Aynı Gün Kargo",
-      deger: "16:00",
-      aciklama: "16:00'a kadar verilen siparişler aynı gün kargoda",
-      isBadge: true,
-    },
-  ];
+  const parcalar = [
+    `${ozet.toplamUrun.toLocaleString("tr-TR")} ürün`,
+    `${ozet.stoktakiUrun.toLocaleString("tr-TR")} stoklu parça`,
+    typeof ozet.kategoriSayisi === "number" && ozet.kategoriSayisi > 0
+      ? `${ozet.kategoriSayisi.toLocaleString("tr-TR")} teknik kategori`
+      : null,
+  ].filter(Boolean) as string[];
 
   return (
-    <section
-      className="border-y border-kenar bg-yuzey-gomulu py-4 md:py-6"
-      aria-label="Canlı B2B Envanter ve Dağıtım Metrikleri"
-    >
+    <section className="border-b border-kenar bg-yuzey-kart" aria-label="Katalog Özeti">
       <Kapsayici>
-        <dl className="grid grid-cols-2 gap-4 divide-y divide-kenar sm:divide-y-0 sm:divide-x sm:divide-kenar md:grid-cols-4">
-          {metrikler.map((m, index) => {
-            const Icon = m.ikon;
-            return (
-              <div
-                key={m.id}
-                className={`flex items-center gap-3.5 ${
-                  index > 0 ? "pt-4 sm:pt-0 sm:pl-5 lg:pl-8" : ""
-                }`}
-              >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-girdi)] bg-yuzey-kart text-vurgu shadow-xs">
-                  <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <dd className="font-mono text-xl font-bold tracking-tight text-metin-marka sayisal tabular-nums lg:text-2xl">
-                    {m.deger}
-                  </dd>
-                  <dt className="text-xs font-semibold text-metin">
-                    {m.etiket}
-                  </dt>
-                  <p className="line-clamp-1 text-[11px] text-metin-ucuncul">
-                    {m.aciklama}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </dl>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2.5 text-xs font-medium text-metin-ikincil sm:text-sm">
+          {parcalar.map((p, i) => (
+            <span key={p} className="flex items-center gap-3">
+              {i > 0 && <span className="text-kenar-guclu" aria-hidden="true">•</span>}
+              <span>
+                <span className="font-mono font-bold tabular-nums text-metin-marka">
+                  {p.split(" ")[0]}
+                </span>{" "}
+                {p.split(" ").slice(1).join(" ")}
+              </span>
+            </span>
+          ))}
+        </div>
       </Kapsayici>
     </section>
   );

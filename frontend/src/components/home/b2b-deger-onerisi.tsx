@@ -56,31 +56,33 @@ const B2B_SOLUTIONS: CorporateSolution[] = [
 export function B2BDegerOnerisi() {
   return (
     <section
-      className="border-t border-kenar bg-yuzey-kart py-14 md:py-20"
+      className="border-t border-kenar bg-yuzey py-10 md:py-14"
       aria-label="Kurumsal B2B Çözümleri ve Değer Önerileri"
     >
       <Kapsayici>
         {/* Section Header */}
-        <div className="mb-12 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-vurgu-zemin px-3 py-1 text-xs font-bold text-vurgu-guclu">
-            <Sparkles size={14} /> Kurumsal Tedarik Ekosistemi
+        <div className="mb-8 flex flex-col justify-between gap-3 border-b border-kenar pb-5 sm:flex-row sm:items-end">
+          <div>
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-vurgu">
+            <Sparkles size={14} /> B2B Tedarik Çözümleri
           </span>
-          <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-metin sm:text-3xl md:text-4xl">
+          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-metin sm:text-3xl">
             Mühendislik ve Üretim Şirketleri İçin B2B Çözümler
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-metin-ikincil sm:text-base">
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-metin-ikincil">
             Ar-Ge aşamasından seri üretime kadar işletmenizin tüm elektronik komponent tedarik süreçlerini hızlandıran kurumsal altyapı.
           </p>
+          </div>
         </div>
 
         {/* Corporate Solutions 3-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {B2B_SOLUTIONS.map((solution) => {
             const Icon = solution.icon;
             return (
               <div
                 key={solution.id}
-                className="group relative flex flex-col justify-between rounded-[var(--radius-panel)] border border-kenar bg-yuzey p-6 transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:bg-yuzey-kart hover:shadow-[var(--shadow-yukselti)]"
+                className="group relative flex min-h-[220px] flex-col justify-between rounded-2xl border border-kenar bg-white p-5 transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:shadow-[var(--shadow-yukselti)]"
               >
                 <div>
                   <div className="mb-4 flex items-center justify-between">
@@ -115,16 +117,16 @@ export function B2BDegerOnerisi() {
         </div>
 
         {/* Bottom Fast B2B Account CTA */}
-        <div className="mt-10 rounded-[var(--radius-panel)] border border-navy-800 bg-marka p-6 text-white sm:p-8">
+        <div className="mt-6 rounded-2xl border border-[#183653] bg-[#0F2740] p-5 text-white sm:p-6">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div className="max-w-2xl">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-300">
                 <Building size={16} /> Kurumsal B2B Üyeliği
               </div>
-              <h3 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+              <h3 className="mt-1 text-xl font-bold tracking-tight text-white sm:text-2xl">
                 Firmanıza Özel İskontolu Fiyatlar ve Teklif Yönetimi
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-navy-200">
+              <p className="mt-2 text-sm leading-relaxed text-slate-200">
                 Kurumsal hesap açarak malzeme listeleriniz (BOM) için özel proje iskontosu talep edin, siparişlerinizi ve cari bakiyenizi tek ekrandan yönetin.
               </p>
             </div>
@@ -132,13 +134,13 @@ export function B2BDegerOnerisi() {
             <div className="flex shrink-0 flex-wrap items-center gap-3">
               <Link
                 href="/kayit/kurumsal"
-                className="inline-flex items-center gap-2 rounded-[var(--radius-girdi)] bg-cyan-500 px-6 py-3 text-sm font-bold text-navy-950 transition-all hover:bg-cyan-400 active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-sm font-bold text-[#0F2740] transition-all hover:bg-cyan-300 active:scale-[0.98]"
               >
                 Kurumsal Hesap Aç <ArrowRight size={16} />
               </Link>
               <Link
                 href="/teklif-iste"
-                className="inline-flex items-center gap-2 rounded-[var(--radius-girdi)] border border-navy-600 bg-navy-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-navy-800"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-500 bg-[#173552] px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-cyan-300 hover:text-cyan-200"
               >
                 <Headphones size={16} /> Teklif İste
               </Link>
