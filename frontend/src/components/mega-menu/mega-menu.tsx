@@ -100,8 +100,8 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
         aria-label="Tüm Kategoriler Menüsü"
         className={`flex items-center gap-2.5 px-5 py-3 font-bold text-sm uppercase tracking-wider transition-all select-none ${
           isOpen
-            ? "bg-vurgu text-marka shadow-md"
-            : "bg-vurgu text-marka hover:bg-cyan-400"
+            ? "bg-vurgu-dolgu text-metin-marka shadow-md"
+            : "bg-vurgu-dolgu text-metin-marka hover:bg-cyan-400"
         }`}
       >
         <Menu size={18} className="stroke-[2.5]" />
@@ -177,7 +177,7 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
               {/* Category Breadcrumb & Header */}
               <div className="flex items-center justify-between pb-3 mb-5 border-b border-kenar">
                 <div>
-                  <h3 className="text-lg font-bold text-marka flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-metin-marka flex items-center gap-2">
                     {activeCategory.ad}
                   </h3>
                   <span className="text-xs text-metin-ikincil font-mono">
@@ -201,7 +201,7 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
                     <Link
                       href={`/urunler?aramaMetni=${encodeURIComponent(sub.ad)}`}
                       onClick={() => setIsOpen(false)}
-                      className="block font-bold text-xs text-marka hover:text-vurgu pb-1 border-b border-kenar transition-colors group"
+                      className="block font-bold text-xs text-metin-marka hover:text-vurgu pb-1 border-b border-kenar transition-colors group"
                     >
                       <span className="group-hover:translate-x-0.5 inline-block transition-transform">
                         {sub.ad}
@@ -254,10 +254,10 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
                       className="flex items-center justify-between p-2.5 rounded-[var(--radius-girdi)] bg-yuzey-kart border border-kenar hover:border-vurgu hover:bg-vurgu-zemin transition-all group"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded bg-navy-100 text-marka font-bold text-[10px] font-mono flex items-center justify-center border border-navy-200">
+                        <div className="w-7 h-7 rounded bg-navy-100 text-metin-marka font-bold text-[10px] font-mono flex items-center justify-center border border-navy-200">
                           {brand.logoMetin}
                         </div>
-                        <span className="text-xs font-semibold text-marka group-hover:text-vurgu">
+                        <span className="text-xs font-semibold text-metin-marka group-hover:text-vurgu">
                           {brand.ad}
                         </span>
                       </div>
@@ -291,7 +291,7 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
                 </div>
               ) : (
                 <div className="mt-5 p-4 rounded-[var(--radius-kart)] bg-yuzey-kart border border-kenar text-center">
-                  <span className="text-xs font-bold text-marka block mb-1">
+                  <span className="text-xs font-bold text-metin-marka block mb-1">
                     Hızlı BOM ve Teklif
                   </span>
                   <p className="text-[11px] text-metin-ikincil mb-3">
@@ -300,7 +300,7 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
                   <Link
                     href="/bom"
                     onClick={() => setIsOpen(false)}
-                    className="inline-block w-full py-1.5 px-3 rounded-[var(--radius-girdi)] bg-vurgu text-marka font-bold text-xs text-center hover:bg-opacity-90 transition-colors"
+                    className="inline-block w-full py-1.5 px-3 rounded-[var(--radius-girdi)] bg-vurgu-dolgu text-metin-marka font-bold text-xs text-center hover:bg-opacity-90 transition-colors"
                   >
                     BOM Yükle
                   </Link>

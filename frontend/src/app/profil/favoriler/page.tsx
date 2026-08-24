@@ -36,7 +36,7 @@ export default async function FavorilerPage() {
             <div className="min-w-0">
               <Link
                 href={`/urunler/${f.urunId}`}
-                className="font-bold text-marka hover:text-vurgu hover:underline"
+                className="font-bold text-metin-marka hover:text-vurgu hover:underline"
               >
                 {f.urunKodu}
               </Link>

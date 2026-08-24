@@ -335,7 +335,7 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
         <button
           type="submit"
           aria-label="Ara"
-          className="h-10 px-4 bg-marka hover:bg-marka-hover text-metin-ters font-medium flex items-center justify-center gap-1.5 transition-colors shrink-0"
+          className="h-10 px-4 bg-marka hover:bg-marka-hover text-dolgu-uzeri font-medium flex items-center justify-center gap-1.5 transition-colors shrink-0"
         >
           <Search size={17} />
           <span className="hidden md:inline text-xs font-semibold">Ara</span>
@@ -391,7 +391,7 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-sm text-marka group-hover:text-vurgu truncate">
+                              <span className="font-mono font-bold text-sm text-metin-marka group-hover:text-vurgu truncate">
                                 {prod.ureticiUrunKodu}
                               </span>
                               <span className="text-xs text-metin-ikincil truncate">
@@ -460,7 +460,7 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
                         key={idx}
                         href={`/urunler?aramaMetni=${encodeURIComponent(brand.ad)}`}
                         onClick={() => setIsOpen(false)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-kenar bg-yuzey-kart hover:border-vurgu hover:bg-vurgu-zemin text-xs font-semibold text-marka transition-all"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-kenar bg-yuzey-kart hover:border-vurgu hover:bg-vurgu-zemin text-xs font-semibold text-metin-marka transition-all"
                       >
                         <span>{brand.ad}</span>
                         {brand.yetkiliDistribitor && (

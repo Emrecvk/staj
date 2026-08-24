@@ -102,7 +102,7 @@ export default async function ProfileDashboard() {
             <ul className="divide-y divide-kenar">
               {acikTeklifler.slice(0, 5).map((t) => (
                 <li key={t.id} className="flex items-center justify-between p-4">
-                  <Link href={`/profil/teklifler/${t.id}`} className="font-bold text-marka hover:underline">
+                  <Link href={`/profil/teklifler/${t.id}`} className="font-bold text-metin-marka hover:underline">
                     {t.talepNo}
                   </Link>
                   <span className="text-xs text-metin-ucuncul">{TEKLIF_DURUMLARI[t.durum] ?? "—"}</span>

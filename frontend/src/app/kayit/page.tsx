@@ -18,9 +18,9 @@ export default function RegisterPage() {
         <Link href="/" className="flex justify-center mb-6">
           <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-marka">Yeni Hesap Oluşturun</h2>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">Yeni Hesap Oluşturun</h2>
         <p className="mt-2 text-center text-sm text-metin-ikincil">
-          Zaten hesabınız var mı? <Link href="/giris" className="font-medium text-vurgu hover:text-marka transition-colors">Giriş yapın</Link>
+          Zaten hesabınız var mı? <Link href="/giris" className="font-medium text-vurgu hover:text-metin-marka transition-colors">Giriş yapın</Link>
         </p>
       </div>
 
@@ -28,10 +28,10 @@ export default function RegisterPage() {
         <div className="bg-yuzey-kart py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-kenar">
           
           <div className="flex bg-yuzey-gomulu p-1 rounded-lg mb-8">
-            <Link href="/kayit" className="flex-1 text-center py-2 text-sm font-bold bg-yuzey-kart rounded-md shadow-sm text-marka flex items-center justify-center gap-2">
+            <Link href="/kayit" className="flex-1 text-center py-2 text-sm font-bold bg-yuzey-kart rounded-md shadow-sm text-metin-marka flex items-center justify-center gap-2">
               <User size={16} /> Bireysel Kayıt
             </Link>
-            <Link href="/kayit/kurumsal" className="flex-1 text-center py-2 text-sm font-medium text-metin-ucuncul hover:text-marka flex items-center justify-center gap-2">
+            <Link href="/kayit/kurumsal" className="flex-1 text-center py-2 text-sm font-medium text-metin-ucuncul hover:text-metin-marka flex items-center justify-center gap-2">
               <Building2 size={16} /> Firma Başvurusu
             </Link>
           </div>

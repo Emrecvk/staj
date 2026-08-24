@@ -82,7 +82,7 @@ export function EnvanterSeridi({ ozet }: KatalogOzetProps) {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <dd className="font-mono text-xl font-bold tracking-tight text-marka sayisal tabular-nums lg:text-2xl">
+                  <dd className="font-mono text-xl font-bold tracking-tight text-metin-marka sayisal tabular-nums lg:text-2xl">
                     {m.deger}
                   </dd>
                   <dt className="text-xs font-semibold text-metin">

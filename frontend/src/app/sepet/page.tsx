@@ -33,7 +33,7 @@ export default async function CartPage() {
           <span className="text-metin font-medium">Alışveriş Sepeti</span>
         </nav>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-marka mb-6 flex items-center gap-3">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-metin-marka mb-6 flex items-center gap-3">
           <ShoppingCart size={28} /> B2B Alışveriş Sepeti & Sipariş
         </h1>
 

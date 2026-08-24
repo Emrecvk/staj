@@ -47,7 +47,7 @@ export default async function TekliflerPage() {
               <tbody className="divide-y divide-kenar">
                 {teklifler.map((t) => (
                   <tr key={t.id} className="hover:bg-yuzey">
-                    <td className="px-4 py-4 font-bold text-marka">
+                    <td className="px-4 py-4 font-bold text-metin-marka">
                       <Link href={`/profil/teklifler/${t.id}`} className="hover:underline">
                         {t.talepNo}
                       </Link>

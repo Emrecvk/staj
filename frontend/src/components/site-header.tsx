@@ -78,7 +78,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               <span>Kurumsal Destek:</span>
               <a
                 href="tel:08503044400"
-                className="font-bold text-marka hover:text-vurgu transition-colors font-mono"
+                className="font-bold text-metin-marka hover:text-vurgu transition-colors font-mono"
               >
                 0850 304 44 00
               </a>
@@ -90,11 +90,11 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                 <span className="w-2 h-2 rounded-full bg-basari-500 animate-pulse" />
                 TCMB Kurları:
               </span>
-              <span className="font-mono text-xs font-semibold text-marka">
+              <span className="font-mono text-xs font-semibold text-metin-marka">
                 USD/TRY: <span className="tabular-nums">34.25 ₺</span>
               </span>
               <span className="text-kenar-guclu">|</span>
-              <span className="font-mono text-xs font-semibold text-marka">
+              <span className="font-mono text-xs font-semibold text-metin-marka">
                 EUR/TRY: <span className="tabular-nums">37.10 ₺</span>
               </span>
             </div>
@@ -125,7 +125,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               <button
                 type="button"
                 onClick={() => setCurrencyMenuOpen(!currencyMenuOpen)}
-                className="flex items-center gap-1 font-bold text-marka hover:text-vurgu transition-colors px-1 py-0.5 rounded"
+                className="flex items-center gap-1 font-bold text-metin-marka hover:text-vurgu transition-colors px-1 py-0.5 rounded"
                 aria-expanded={currencyMenuOpen}
               >
                 <span>TR · {selectedCurrency}</span>
@@ -188,7 +188,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
 
           {/* Right: Header Action Center & Badges */}
           <nav
-            className="flex items-center gap-3 lg:gap-6 text-marka shrink-0"
+            className="flex items-center gap-3 lg:gap-6 text-metin-marka shrink-0"
             aria-label="Kullanıcı İşlemleri ve Sepet"
           >
             {/* 1. RFQ / Teklif Listesi */}
@@ -200,7 +200,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               <div className="relative p-1">
                 <FileText size={22} className="group-hover:scale-105 transition-transform" />
                 {rfqCount > 0 && (
-                  <span className="absolute -top-1 -right-1.5 bg-vurgu text-metin-ters text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono">
+                  <span className="absolute -top-1 -right-1.5 bg-vurgu text-dolgu-uzeri text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono">
                     {rfqCount}
                   </span>
                 )}
@@ -217,7 +217,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               <div className="relative p-1">
                 <Heart size={22} className="group-hover:scale-105 transition-transform" />
                 {favoritesCount > 0 && (
-                  <span className="absolute -top-1 -right-1.5 bg-vurgu text-metin-ters text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono">
+                  <span className="absolute -top-1 -right-1.5 bg-vurgu text-dolgu-uzeri text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono">
                     {favoritesCount}
                   </span>
                 )}
@@ -234,7 +234,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               <div className="relative p-1">
                 <ArrowLeftRight size={22} className="group-hover:scale-105 transition-transform" />
                 {comparisonItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1.5 bg-cyan-600 text-metin-ters text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono animate-in zoom-in-50 duration-100">
+                  <span className="absolute -top-1 -right-1.5 bg-cyan-600 text-dolgu-uzeri text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono animate-in zoom-in-50 duration-100">
                     {comparisonItems.length}
                   </span>
                 )}
@@ -266,7 +266,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                   {isLoggedIn ? (
                     <div className="space-y-2">
                       <div className="p-2 bg-yuzey-gomulu rounded-[var(--radius-girdi)] border border-kenar">
-                        <div className="font-bold text-xs text-marka truncate">{user?.ad}</div>
+                        <div className="font-bold text-xs text-metin-marka truncate">{user?.ad}</div>
                         {user?.firmaMi && (
                           <div className="flex items-center gap-1 text-[10px] text-vurgu-guclu font-semibold mt-0.5">
                             <Building2 size={11} /> Kurumsal B2B Hesabı
@@ -334,7 +334,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                         <Link
                           href="/giris"
                           onClick={() => setAccountMenuOpen(false)}
-                          className="block w-full py-2 px-3 text-center text-xs font-bold bg-marka text-metin-ters rounded-[var(--radius-girdi)] hover:bg-marka-hover transition-colors"
+                          className="block w-full py-2 px-3 text-center text-xs font-bold bg-marka text-dolgu-uzeri rounded-[var(--radius-girdi)] hover:bg-marka-hover transition-colors"
                         >
                           Giriş Yap
                         </Link>
@@ -371,7 +371,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               >
                 <div className="relative">
                   <ShoppingCart size={24} className="group-hover:scale-105 transition-transform" />
-                  <span className="absolute -top-1.5 -right-2 bg-vurgu text-metin-ters text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono tabular-nums shadow-xs">
+                  <span className="absolute -top-1.5 -right-2 bg-vurgu text-dolgu-uzeri text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center font-mono tabular-nums shadow-xs">
                     {cartCount}
                   </span>
                 </div>
@@ -379,7 +379,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                   <span className="text-[10px] text-metin-ucuncul uppercase font-bold tracking-wider">
                     Sepetim
                   </span>
-                  <span className="text-xs font-bold font-mono text-marka tabular-nums">
+                  <span className="text-xs font-bold font-mono text-metin-marka tabular-nums">
                     {cartTotal.toFixed(2)} {paraBirimi}
                   </span>
                 </div>
@@ -389,7 +389,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
               {cartPreviewOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-yuzey-kart border border-kenar rounded-[var(--radius-kart)] shadow-[var(--shadow-katman)] z-50 p-4 text-metin animate-in fade-in duration-150">
                   <div className="flex items-center justify-between pb-3 border-b border-kenar">
-                    <span className="text-xs font-bold text-marka uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-metin-marka uppercase tracking-wider flex items-center gap-1.5">
                       <ShoppingCart size={15} className="text-vurgu" /> Sepet Özeti ({cartCount} Ürün)
                     </span>
                     <button
@@ -416,7 +416,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                         {cartItems.map((item) => (
                           <div key={item.id} className="py-2 flex items-center justify-between gap-3 text-xs">
                             <div className="min-w-0">
-                              <div className="font-mono font-bold text-marka truncate">{item.mpn}</div>
+                              <div className="font-mono font-bold text-metin-marka truncate">{item.mpn}</div>
                               <div className="text-[11px] text-metin-ikincil truncate">
                                 {item.miktar} Adet · {item.baslik}
                               </div>
@@ -432,7 +432,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                       <div className="pt-3 border-t border-kenar space-y-1">
                         <div className="flex justify-between text-xs text-metin-ikincil">
                           <span>Ara Toplam:</span>
-                          <span className="font-mono font-bold text-marka tabular-nums">
+                          <span className="font-mono font-bold text-metin-marka tabular-nums">
                             {cartTotal.toFixed(2)} {paraBirimi}
                           </span>
                         </div>
@@ -446,14 +446,14 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
                         <Link
                           href="/sepet"
                           onClick={() => setCartPreviewOpen(false)}
-                          className="py-2 px-3 text-center text-xs font-bold border border-marka text-marka rounded-[var(--radius-girdi)] hover:bg-yuzey-gomulu transition-colors"
+                          className="py-2 px-3 text-center text-xs font-bold border border-marka text-metin-marka rounded-[var(--radius-girdi)] hover:bg-yuzey-gomulu transition-colors"
                         >
                           Sepete Git
                         </Link>
                         <Link
                           href="/odeme"
                           onClick={() => setCartPreviewOpen(false)}
-                          className="py-2 px-3 text-center text-xs font-bold bg-vurgu text-marka rounded-[var(--radius-girdi)] hover:bg-cyan-400 transition-colors"
+                          className="py-2 px-3 text-center text-xs font-bold bg-vurgu-dolgu text-metin-marka rounded-[var(--radius-girdi)] hover:bg-cyan-400 transition-colors"
                         >
                           Siparişi Tamamla
                         </Link>

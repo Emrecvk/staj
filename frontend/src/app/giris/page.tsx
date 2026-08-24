@@ -21,9 +21,9 @@ function LoginContent() {
         <Link href="/" className="flex justify-center mb-6">
           <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-marka">Hesabınıza Giriş Yapın</h2>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">Hesabınıza Giriş Yapın</h2>
         <p className="mt-2 text-center text-sm text-metin-ikincil">
-          Veya <Link href="/kayit" className="font-medium text-vurgu hover:text-marka transition-colors">yeni bir hesap oluşturun</Link>
+          Veya <Link href="/kayit" className="font-medium text-vurgu hover:text-metin-marka transition-colors">yeni bir hesap oluşturun</Link>
         </p>
       </div>
 
@@ -86,7 +86,7 @@ function LoginContent() {
               </div>
 
               <div className="text-sm">
-                <Link href="/sifre-sifirlama" className="font-medium text-vurgu hover:text-marka">Şifrenizi mi unuttunuz?</Link>
+                <Link href="/sifre-sifirlama" className="font-medium text-vurgu hover:text-metin-marka">Şifrenizi mi unuttunuz?</Link>
               </div>
             </div>
             

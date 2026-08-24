@@ -508,7 +508,7 @@ export function B2BSayfalama({
                         font-mono text-xs sm:text-sm tabular-nums transition-[background-color,color]
                         duration-[var(--sure-ipucu)] ${
                           n === sayfaNo
-                            ? "bg-marka font-bold text-metin-ters shadow-2xs"
+                            ? "bg-marka font-bold text-dolgu-uzeri shadow-2xs"
                             : "border border-kenar text-metin-ikincil hover:bg-yuzey-gomulu hover:text-metin"
                         }`}
           >

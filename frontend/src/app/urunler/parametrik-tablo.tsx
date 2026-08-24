@@ -269,7 +269,7 @@ function TabloSatiri({
         <div className="flex items-center gap-1.5">
           <Link
             href={`/urunler/${urun.id}`}
-            className="font-mono font-semibold text-marka transition-colors hover:text-vurgu hover:underline line-clamp-1"
+            className="font-mono font-semibold text-metin-marka transition-colors hover:text-vurgu hover:underline line-clamp-1"
             title={urun.ureticiUrunKodu}
           >
             {urun.ureticiUrunKodu}
