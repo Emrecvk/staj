@@ -95,7 +95,7 @@ export function B2BDegerOnerisi() {
                     <div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu-guclu transition-colors group-hover:bg-vurgu group-hover:text-white">
                       <Icon size={24} strokeWidth={1.8} />
                     </div>
-                    <span className="rounded-full bg-yuzey-gomulu px-2.5 py-1 font-mono text-[11px] font-semibold text-marka">
+                    <span className="rounded-full bg-yuzey-gomulu px-2.5 py-1 font-mono text-[11px] font-semibold text-metin-marka">
                       {solution.badge}
                     </span>
                   </div>

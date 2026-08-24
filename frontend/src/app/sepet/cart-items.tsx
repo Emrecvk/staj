@@ -246,7 +246,7 @@ export function CartItems({ initialCart }: { initialCart: Sepet }) {
             <div className="flex h-6 w-6 items-center justify-center rounded bg-vurgu-zemin text-vurgu">
               <Plus size={14} />
             </div>
-            <h2 className="text-sm font-bold text-marka">Hızlı Parça Ekleme (Quick Add Line)</h2>
+            <h2 className="text-sm font-bold text-metin-marka">Hızlı Parça Ekleme (Quick Add Line)</h2>
           </div>
           <span className="text-xs text-metin-ucuncul hidden sm:inline">
             Doğrudan MPN ve miktar girerek sepete hızlı kalem ekleyin
@@ -439,7 +439,7 @@ export function CartItems({ initialCart }: { initialCart: Sepet }) {
                             <div>
                               <Link
                                 href={`/urunler/${item.urunId}`}
-                                className="text-sm sm:text-base font-mono font-bold text-marka hover:text-vurgu transition-colors"
+                                className="text-sm sm:text-base font-mono font-bold text-metin-marka hover:text-vurgu transition-colors"
                               >
                                 {item.urunKodu}
                               </Link>
@@ -449,7 +449,7 @@ export function CartItems({ initialCart }: { initialCart: Sepet }) {
                             </div>
 
                             <div className="text-right">
-                              <div className="text-sm sm:text-base font-mono font-bold tabular-nums text-marka">
+                              <div className="text-sm sm:text-base font-mono font-bold tabular-nums text-metin-marka">
                                 {fiyatBicimle(item.toplamFiyat, cart.paraBirimi)}
                               </div>
                               <div className="text-[11px] font-mono text-metin-ucuncul">
@@ -570,7 +570,7 @@ export function CartItems({ initialCart }: { initialCart: Sepet }) {
           {/* Sağ Kolon: B2B Sipariş & RFQ Özeti (%30) */}
           <div className="w-full lg:w-1/3">
             <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-5 sm:p-6 shadow-sm sticky top-24 space-y-6">
-              <h3 className="text-lg font-bold text-marka border-b border-kenar pb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-metin-marka border-b border-kenar pb-3 flex items-center justify-between">
                 <span>Sipariş & Teklif Özeti</span>
                 <span className="text-xs font-normal text-metin-ucuncul">
                   {cart.kalemler.length} Kalem
@@ -600,7 +600,7 @@ export function CartItems({ initialCart }: { initialCart: Sepet }) {
 
                 <div className="border-t border-kenar pt-3 flex justify-between items-end">
                   <span className="text-sm font-bold text-metin">Toplam Tutar</span>
-                  <span className="text-xl font-mono font-extrabold tabular-nums text-marka">
+                  <span className="text-xl font-mono font-extrabold tabular-nums text-metin-marka">
                     {fiyatBicimle(grandTotal, cart.paraBirimi)}
                   </span>
                 </div>

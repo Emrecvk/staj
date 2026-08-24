@@ -86,9 +86,9 @@ export function QuoteRequestForm({ cart }: { cart: Sepet }) {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-basari-100 text-basari-600">
           <CheckCircle2 size={36} />
         </div>
-        <h2 className="text-2xl font-bold text-marka mb-2">Teklif Talebiniz Alındı</h2>
+        <h2 className="text-2xl font-bold text-metin-marka mb-2">Teklif Talebiniz Alındı</h2>
         <p className="text-sm text-metin-ikincil mb-4">
-          Resmi teklif takip numaranız: <span className="font-mono font-bold text-marka text-base">{talepNo}</span>
+          Resmi teklif takip numaranız: <span className="font-mono font-bold text-metin-marka text-base">{talepNo}</span>
         </p>
         <p className="text-xs text-metin-ucuncul max-w-md mx-auto mb-6">
           Satış mühendislerimiz talebinizi inceleyerek özel fiyatlandırma çalışmasını tamamlayacak ve teklif onayınıza sunulacaktır.
@@ -118,7 +118,7 @@ export function QuoteRequestForm({ cart }: { cart: Sepet }) {
       {/* Proje ve Genel Not Kartı */}
       <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart overflow-hidden shadow-sm">
         <div className="p-4 border-b border-kenar bg-yuzey">
-          <h3 className="font-bold text-marka text-sm sm:text-base flex items-center gap-2">
+          <h3 className="font-bold text-metin-marka text-sm sm:text-base flex items-center gap-2">
             <FileText size={18} className="text-vurgu" />
             Proje ve Teklif Bilgileri
           </h3>
@@ -157,7 +157,7 @@ export function QuoteRequestForm({ cart }: { cart: Sepet }) {
       {/* Kalem Kalem Hedef Fiyat & Termin Matrisi */}
       <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart overflow-hidden shadow-sm">
         <div className="p-4 border-b border-kenar bg-yuzey flex items-center justify-between">
-          <h3 className="font-bold text-marka text-sm sm:text-base flex items-center gap-2">
+          <h3 className="font-bold text-metin-marka text-sm sm:text-base flex items-center gap-2">
             <DollarSign size={18} className="text-vurgu" />
             Kalem Bazlı Hedef Fiyat ve Termin Talebi
           </h3>
@@ -171,7 +171,7 @@ export function QuoteRequestForm({ cart }: { cart: Sepet }) {
             <div key={item.kalemId} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-bold text-marka">{item.urunKodu}</span>
+                  <span className="font-mono text-sm font-bold text-metin-marka">{item.urunKodu}</span>
                   <span className="rounded bg-yuzey-gomulu px-1.5 py-0.5 text-[10px] font-mono text-metin">
                     {item.miktar.toLocaleString("tr-TR")} Adet
                   </span>
@@ -201,7 +201,7 @@ export function QuoteRequestForm({ cart }: { cart: Sepet }) {
                         [item.kalemId]: parseFloat(e.target.value) || 0,
                       }))
                     }
-                    className="w-full rounded-[var(--radius-girdi)] border border-kenar-guclu bg-yuzey px-2.5 py-1.5 text-xs font-mono font-bold text-marka focus:border-vurgu focus:outline-none"
+                    className="w-full rounded-[var(--radius-girdi)] border border-kenar-guclu bg-yuzey px-2.5 py-1.5 text-xs font-mono font-bold text-metin-marka focus:border-vurgu focus:outline-none"
                   />
                 </div>
 

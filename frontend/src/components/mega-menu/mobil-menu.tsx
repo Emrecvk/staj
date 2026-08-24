@@ -85,7 +85,7 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
         <button
           type="button"
           aria-label="Menüyü Aç"
-          className="p-2 text-metin-ters hover:text-vurgu rounded-[var(--radius-girdi)] transition-colors"
+          className="p-2 text-metin hover:text-vurgu rounded-[var(--radius-girdi)] transition-colors"
         >
           <Menu size={24} />
         </button>
@@ -148,7 +148,7 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
               <div className="p-4 space-y-5 animate-in fade-in duration-150">
                 <div className="pb-3 border-b border-kenar flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-base text-marka">{selectedCategory.ad}</h3>
+                    <h3 className="font-bold text-base text-metin-marka">{selectedCategory.ad}</h3>
                     <span className="text-xs text-metin-ikincil font-mono">
                       {selectedCategory.toplamUrun.toLocaleString("tr-TR")} Ürün
                     </span>
@@ -169,7 +169,7 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
                       <Link
                         href={`/urunler?aramaMetni=${encodeURIComponent(sub.ad)}`}
                         onClick={handleClose}
-                        className="block font-bold text-xs text-marka hover:text-vurgu py-1 border-b border-kenar"
+                        className="block font-bold text-xs text-metin-marka hover:text-vurgu py-1 border-b border-kenar"
                       >
                         {sub.ad}
                       </Link>
@@ -207,7 +207,7 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
                           key={i}
                           href={`/urunler?aramaMetni=${encodeURIComponent(b.ad)}`}
                           onClick={handleClose}
-                          className="px-2 py-1 bg-yuzey-gomulu rounded text-xs font-semibold text-marka border border-kenar"
+                          className="px-2 py-1 bg-yuzey-gomulu rounded text-xs font-semibold text-metin-marka border border-kenar"
                         >
                           {b.ad}
                         </Link>
@@ -256,21 +256,21 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
                     <Link
                       href="/bom"
                       onClick={handleClose}
-                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-marka hover:bg-vurgu-zemin transition-colors"
+                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-metin-marka hover:bg-vurgu-zemin transition-colors"
                     >
                       <FileText size={16} className="text-vurgu" /> BOM Yükle (Excel/CSV)
                     </Link>
                     <Link
                       href="/teklif-iste"
                       onClick={handleClose}
-                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-marka hover:bg-vurgu-zemin transition-colors"
+                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-metin-marka hover:bg-vurgu-zemin transition-colors"
                     >
                       <Building2 size={16} className="text-vurgu" /> Resmi Teklif Talebi (RFQ)
                     </Link>
                     <Link
                       href="/karsilastirma"
                       onClick={handleClose}
-                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-marka hover:bg-vurgu-zemin transition-colors"
+                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-metin-marka hover:bg-vurgu-zemin transition-colors"
                     >
                       <Layers size={16} className="text-vurgu" /> Ürün Karşılaştırma
                     </Link>
@@ -299,7 +299,7 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
               <span className="flex items-center gap-1">
                 <Phone size={12} className="text-vurgu" /> 0850 304 44 00
               </span>
-              <span className="font-mono font-bold text-marka">TR · USD</span>
+              <span className="font-mono font-bold text-metin-marka">TR · USD</span>
             </div>
             <div className="text-[11px] text-metin-ucuncul">
               Hafta içi 08:30 – 18:00 Müşteri Desteği

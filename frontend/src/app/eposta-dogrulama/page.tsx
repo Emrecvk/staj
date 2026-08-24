@@ -47,7 +47,7 @@ function EmailVerificationContent() {
         <Link href="/" className="flex justify-center mb-6">
           <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-marka">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">
           E-posta Doğrulama
         </h2>
       </div>

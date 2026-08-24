@@ -18,7 +18,7 @@ export default function PasswordResetPage() {
         <Link href="/" className="flex justify-center mb-6">
           <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-marka">Şifrenizi mi unuttunuz?</h2>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">Şifrenizi mi unuttunuz?</h2>
         <p className="mt-2 text-center text-sm text-metin-ikincil">
           E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.
         </p>
@@ -34,7 +34,7 @@ export default function PasswordResetPage() {
               </div>
               <h3 className="text-lg font-medium text-metin mb-2">E-posta Gönderildi</h3>
               <p className="text-sm text-metin-ucuncul mb-6">{state.message}</p>
-              <Link href="/giris" className="text-vurgu hover:text-marka font-medium text-sm">
+              <Link href="/giris" className="text-vurgu hover:text-metin-marka font-medium text-sm">
                 Giriş sayfasına dön
               </Link>
             </div>
@@ -77,7 +77,7 @@ export default function PasswordResetPage() {
               </form>
               
               <div className="mt-6 text-center">
-                <Link href="/giris" className="text-sm font-medium text-metin-ikincil hover:text-marka">
+                <Link href="/giris" className="text-sm font-medium text-metin-ikincil hover:text-metin-marka">
                   Vazgeç ve giriş sayfasına dön
                 </Link>
               </div>

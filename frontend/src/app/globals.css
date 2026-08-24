@@ -67,12 +67,12 @@
      parlak renkler taramayı zorlaştırıyor. */
   --color-basari-50: #ecfdf3;
   --color-basari-500: #12a150;
-  --color-basari-600: #0d8a43;
+  --color-basari-600: #0a7538;
   --color-basari-900: #0a3b21;
 
   --color-uyari-50: #fffaeb;
   --color-uyari-500: #d97b06;
-  --color-uyari-600: #b45f05;
+  --color-uyari-600: #9a5104;
   --color-uyari-900: #4a2708;
 
   --color-hata-50: #fef3f2;
@@ -130,19 +130,36 @@
 
   --color-metin: #0f172a;
   --color-metin-ikincil: #475569;
-  --color-metin-ucuncul: #64748b;
+  --color-metin-ucuncul: #5b6b7f;
   --color-metin-ters: #ffffff;
 
-  --color-vurgu: #0389b0;
-  --color-vurgu-guclu: #0a6e8f;
+  /* Marka renkli BAŞLIK METNİ. `marka` ile ayrı tutuluyor: `marka` bir dolgu
+     rengi, bu ise bir metin rengi. Koyu temada biri koyu kalmak, digeri
+     acilmak zorunda; tek token ikisini birden yapamaz. */
+  --color-metin-marka: #0f2740;
+
+  /* Koyu dolgu (marka/vurgu zemini) uzerindeki metin. Temayla DEGISMEZ:
+     altindaki dolgu da degismiyor. `metin-ters` bu is icin kullanilirsa
+     koyu temada lacivert-uzerine-lacivert cikiyor. */
+  --color-dolgu-uzeri: #ffffff;
+
+  /* Camgobegi iki role ayrildi (docs/marka/tokens.css'teki kurala uygun):
+       vurgu       → METIN ve LINK. #00728c beyazda 5.6:1, AA gecer.
+                     Eski #0389b0 yalnizca 4.08:1 idi, gecmiyordu.
+       vurgu-dolgu → BUTON ZEMINI, ikon, kenarlik. Metin icin kullanma. */
+  --color-vurgu: #00728c;
+  --color-vurgu-guclu: #005a70;
+  --color-vurgu-dolgu: #00b4d8;
   --color-vurgu-zemin: #ecfdff;
 
+  /* Yalnizca DOLGU rolu: header, footer, buton zemini. Metin icin
+     `metin-marka` kullan. */
   --color-marka: #0f2740;
   --color-marka-hover: #2b4a6d;
 
   /* Mevcut rotalarda brand-navy / brand-cyan kullanimda; kirmamak icin kopru. */
   --color-brand-navy: #0f2740;
-  --color-brand-cyan: #0389b0;
+  --color-brand-cyan: #00728c;
 }
 
 :root {
@@ -159,9 +176,16 @@
    @theme'in :root'a bastigi ayni degiskenler eziliyor. Camgobegi bir basamak
    aciliyor: 600 tonu koyu zeminde WCAG AA kontrastini tutturmuyor.
 
-   Yüzeyler token'lara taşındığı için karanlık modu aktif hale getirildi. */
-@media (prefers-color-scheme: dark) {
-  :root {
+   DIKKAT — bu blok bilerek `prefers-color-scheme` DEGIL. Isletim sistemi
+   koyu temadayken otomatik devreye girdiginde /bom gibi hala ciplak
+   `gray-*` sinifiyla yazilmis sayfalar acik ada olarak kaliyor ve arayuz
+   yarisi koyu yarisi acik gorunuyor. Tum ekranlar token'lara tasinip tek tek
+   test edilene kadar opt-in: <html data-theme="dark">.
+
+   `marka` ve `dolgu-uzeri` BILEREK ezilmiyor: ikisi de dolgu rolu, altindaki
+   zemin zaten her iki temada koyu lacivert. Ezilirlerse lacivert uzerine
+   lacivert metin cikiyor. */
+:root[data-theme="dark"] {
     --color-yuzey: #071523;
     --color-yuzey-kart: #0c1f34;
     --color-yuzey-gomulu: #0a1a2b;
@@ -175,16 +199,16 @@
     --color-metin-ucuncul: #64748b;
     --color-metin-ters: #071523;
 
-    --color-vurgu: #22c9ee;
-    --color-vurgu-guclu: #67e0f9;
+    /* Koyu zeminde marka renkli baslik: laciverdin acik basamagi. */
+    --color-metin-marka: #9bbad4;
+
+    --color-vurgu: #38c9e6;
+    --color-vurgu-guclu: #7bdcf0;
+    --color-vurgu-dolgu: #00b4d8;
     --color-vurgu-zemin: #063143;
 
-    --color-marka: #0c1f34;
-    --color-marka-hover: #0f2740;
-
     --color-brand-navy: #0c1f34;
-    --color-brand-cyan: #22c9ee;
-  }
+    --color-brand-cyan: #38c9e6;
 }
 
 

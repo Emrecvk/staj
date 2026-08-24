@@ -34,7 +34,7 @@ export default async function CheckoutPage() {
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-8">
           <ShieldCheck size={28} className="text-basari-600" />
-          <h1 className="text-3xl font-extrabold text-marka">Güvenli Ödeme</h1>
+          <h1 className="text-3xl font-extrabold text-metin-marka">Güvenli Ödeme</h1>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -81,7 +81,7 @@ export default async function CheckoutPage() {
                 </div>
                 <div className="border-t border-kenar pt-3 flex justify-between items-end mt-3">
                   <span className="text-base font-bold text-metin">Genel Toplam</span>
-                  <span className="text-2xl font-extrabold text-marka">
+                  <span className="text-2xl font-extrabold text-metin-marka">
                     {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: cart.paraBirimi }).format(cart.genelToplam * 1.20)}
                   </span>
                 </div>

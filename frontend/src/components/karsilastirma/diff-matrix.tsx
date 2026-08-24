@@ -203,7 +203,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-vurgu-zemin text-vurgu">
           <ArrowLeftRight size={36} />
         </div>
-        <h2 className="text-2xl font-bold text-marka mb-2">
+        <h2 className="text-2xl font-bold text-metin-marka mb-2">
           {products.length === 1 ? "1 Ürün Seçili (En Az 2 Ürün Gereklidir)" : "Karşılaştırma Listeniz Boş"}
         </h2>
         <p className="text-metin-ikincil max-w-md mx-auto mb-8 text-sm leading-relaxed">
@@ -214,7 +214,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
         
         {products.length === 1 && (
           <div className="max-w-sm mx-auto mb-8 p-3 bg-yuzey rounded-lg border border-kenar flex items-center justify-between">
-            <span className="font-mono font-bold text-sm text-marka">{products[0].ureticiUrunKodu}</span>
+            <span className="font-mono font-bold text-sm text-metin-marka">{products[0].ureticiUrunKodu}</span>
             <button
               onClick={() => removeItem(products[0].id)}
               className="text-xs text-hata-600 hover:underline flex items-center gap-1"
@@ -295,7 +295,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
           {/* Ürün Başlık Kartları (Sticky / Top Header) */}
           <thead>
             <tr className="border-b border-kenar bg-yuzey-gomulu">
-              <th scope="col" className="w-1/4 p-4 align-top font-bold text-marka">
+              <th scope="col" className="w-1/4 p-4 align-top font-bold text-metin-marka">
                 <div className="text-xs uppercase tracking-wider text-metin-ucuncul mb-1">
                   Özellik / Parametre
                 </div>
@@ -368,7 +368,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
                       <div className="flex items-center gap-1.5 mb-2">
                         <Link
                           href={`/urunler/${product.id}`}
-                          className="font-mono text-sm font-bold text-marka hover:text-vurgu transition-colors line-clamp-1"
+                          className="font-mono text-sm font-bold text-metin-marka hover:text-vurgu transition-colors line-clamp-1"
                         >
                           {product.ureticiUrunKodu}
                         </Link>
@@ -503,7 +503,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
                       {orderedProducts.map((p) => {
                         const cellVal = values[p.id] || "-";
                         const cellClass = isDifferent
-                          ? "bg-uyari-50 font-semibold text-marka"
+                          ? "bg-uyari-50 font-semibold text-metin-marka"
                           : "bg-transparent text-metin";
 
                         return (

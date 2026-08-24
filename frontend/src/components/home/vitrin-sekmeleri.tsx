@@ -401,7 +401,7 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
                 }}
                 className={`flex items-center gap-2 pb-3.5 text-sm font-semibold transition-all duration-[var(--sure-ipucu)] ${
                   isActive
-                    ? "border-b-2 border-vurgu text-marka font-bold"
+                    ? "border-b-2 border-vurgu text-metin-marka font-bold"
                     : "border-b-2 border-transparent text-metin-ikincil hover:border-kenar hover:text-metin"
                 }`}
               >
@@ -432,7 +432,7 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
                   <div>
                     <div className="mb-3 flex items-start justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-[var(--radius-girdi)] bg-yuzey-gomulu px-2 py-0.5 text-[11px] font-bold text-marka">
+                        <span className="rounded-[var(--radius-girdi)] bg-yuzey-gomulu px-2 py-0.5 text-[11px] font-bold text-metin-marka">
                           {product.ureticiAd}
                         </span>
                         {product.kampanyaliMi && (
@@ -479,7 +479,7 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
                         <div className="text-[10px] font-medium text-metin-ucuncul">
                           Başlangıç Fiyatı (1+):
                         </div>
-                        <div className="font-mono text-base font-bold tracking-tight text-marka sayisal tabular-nums">
+                        <div className="font-mono text-base font-bold tracking-tight text-metin-marka sayisal tabular-nums">
                           {formatPrice(product.baslangicFiyati, product.paraBirimi)}
                         </div>
                       </div>

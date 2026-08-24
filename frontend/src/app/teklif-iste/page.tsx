@@ -39,7 +39,7 @@ export default async function RequestQuotePage() {
             <FileText size={22} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-marka">Resmi Teklif Talebi (RFQ)</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-metin-marka">Resmi Teklif Talebi (RFQ)</h1>
             <p className="text-xs sm:text-sm text-metin-ikincil mt-0.5">
               Sepetinizdeki ürünler için proje bazlı hedef birim fiyat ve talep termin süresi belirleyin.
             </p>
@@ -53,7 +53,7 @@ export default async function RequestQuotePage() {
           
           <div className="w-full lg:w-1/3">
             <div className="bg-yuzey-kart rounded-[var(--radius-kart)] shadow-sm border border-kenar p-6 sticky top-24">
-              <h3 className="text-lg font-bold text-marka mb-4 border-b border-kenar pb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-metin-marka mb-4 border-b border-kenar pb-3 flex items-center justify-between">
                 <span>Teklif Edilecek Kalemler</span>
                 <span className="text-xs font-mono text-metin-ucuncul">({cart.kalemler.length})</span>
               </h3>
@@ -62,7 +62,7 @@ export default async function RequestQuotePage() {
                 {cart.kalemler.map((item) => (
                   <div key={item.kalemId} className="py-3 flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-mono font-bold text-marka truncate">{item.urunKodu}</p>
+                      <p className="text-xs font-mono font-bold text-metin-marka truncate">{item.urunKodu}</p>
                       <p className="text-[11px] text-metin-ucuncul font-mono mt-0.5">
                         {item.miktar.toLocaleString("tr-TR")} adet talep edildi
                       </p>
@@ -72,7 +72,7 @@ export default async function RequestQuotePage() {
               </div>
 
               <div className="bg-vurgu-zemin/60 border border-vurgu/20 p-4 rounded-[var(--radius-girdi)] text-xs text-metin">
-                <p className="font-bold text-marka mb-1">Teklif Süreci Nasıl İşler?</p>
+                <p className="font-bold text-metin-marka mb-1">Teklif Süreci Nasıl İşler?</p>
                 <ol className="list-decimal pl-4 space-y-1 mt-2 text-metin-ikincil">
                   <li>Talebiniz kurumsal satış temsilcimize iletilir.</li>
                   <li>Özel hacim iskontosu çalışılarak teklif oluşturulur.</li>

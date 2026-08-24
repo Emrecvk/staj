@@ -39,7 +39,7 @@ export function KarsilastirmaDock() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-marka">Karşılaştırma</span>
+                  <span className="text-xs font-bold text-metin-marka">Karşılaştırma</span>
                   <span className="rounded-full bg-marka px-1.5 py-0.2 text-[11px] font-bold text-white font-mono">
                     {items.length}/{maxItems}
                   </span>

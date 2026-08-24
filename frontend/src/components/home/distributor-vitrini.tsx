@@ -237,7 +237,7 @@ export function DistributorVitrini() {
                 {/* Brand Logo Box / Monogram */}
                 <div>
                   <div className="mb-3 flex h-14 w-full items-center justify-center rounded-[var(--radius-girdi)] border border-kenar/50 bg-yuzey-gomulu px-3 py-2 transition-colors group-hover:border-vurgu/40 group-hover:bg-vurgu-zemin/40">
-                    <span className="font-mono text-base font-extrabold tracking-wider text-marka transition-colors group-hover:text-vurgu-guclu">
+                    <span className="font-mono text-base font-extrabold tracking-wider text-metin-marka transition-colors group-hover:text-vurgu-guclu">
                       {supplier.shortCode}
                     </span>
                   </div>

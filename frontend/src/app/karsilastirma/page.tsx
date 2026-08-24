@@ -68,7 +68,7 @@ export default async function KarsilastirmaPage({ searchParams }: PageProps) {
             <ArrowLeftRight size={22} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-marka">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-metin-marka">
               Ürün Karşılaştırma Matrisi
             </h1>
             <p className="text-xs sm:text-sm text-metin-ikincil mt-0.5">

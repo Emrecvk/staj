@@ -21,7 +21,7 @@ type Boyut = "kucuk" | "orta" | "buyuk";
 const gorunumler: Record<Gorunum, string> = {
   // Lacivert: sayfa başına bir ana eylem.
   birincil:
-    "bg-marka text-metin-ters hover:bg-marka-hover disabled:bg-notr-300 disabled:text-notr-500",
+    "bg-marka text-dolgu-uzeri hover:bg-marka-hover disabled:bg-notr-300 disabled:text-notr-500",
   // Camgöbeği: dönüşüm eylemleri (sepete ekle, teklif iste).
   vurgu:
     "bg-vurgu text-white hover:bg-vurgu-guclu disabled:bg-notr-300 disabled:text-notr-500",

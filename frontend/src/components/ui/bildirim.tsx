@@ -31,7 +31,7 @@ export function Bildirimler() {
           toast:
             "!rounded-[var(--radius-kart)] !border-kenar !bg-yuzey-kart !text-metin !shadow-[var(--shadow-katman)]",
           description: "!text-metin-ikincil",
-          actionButton: "!bg-marka !text-metin-ters",
+          actionButton: "!bg-marka !text-dolgu-uzeri",
           cancelButton: "!bg-yuzey-gomulu !text-metin-ikincil",
         },
       }}

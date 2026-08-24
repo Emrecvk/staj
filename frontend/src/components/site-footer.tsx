@@ -25,7 +25,7 @@ export function SiteFooter() {
                 <ShieldCheck size={22} />
               </div>
               <div>
-                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
                   %100 Orijinal Ürün
                 </h4>
                 <p className="text-[11px] text-metin-ikincil">
@@ -39,7 +39,7 @@ export function SiteFooter() {
                 <Lock size={22} />
               </div>
               <div>
-                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
                   256-Bit SSL Güvenlik
                 </h4>
                 <p className="text-[11px] text-metin-ikincil">
@@ -53,7 +53,7 @@ export function SiteFooter() {
                 <Award size={22} />
               </div>
               <div>
-                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
                   ISO 9001:2015 Belgeli
                 </h4>
                 <p className="text-[11px] text-metin-ikincil">
@@ -67,7 +67,7 @@ export function SiteFooter() {
                 <FileCheck size={22} />
               </div>
               <div>
-                <h4 className="font-bold text-xs text-marka uppercase tracking-wider">
+                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
                   Hızlı B2B Teklif (RFQ)
                 </h4>
                 <p className="text-[11px] text-metin-ikincil">
@@ -123,7 +123,7 @@ export function SiteFooter() {
 
           {/* Col 2: Komponent Kategorileri */}
           <div>
-            <h3 className="font-bold text-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
+            <h3 className="font-bold text-metin-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
               Komponent Kataloğu
             </h3>
             <ul className="space-y-2.5 text-xs text-metin-ikincil">
@@ -162,7 +162,7 @@ export function SiteFooter() {
 
           {/* Col 3: Müşteri Hizmetleri & B2B */}
           <div>
-            <h3 className="font-bold text-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
+            <h3 className="font-bold text-metin-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
               Müşteri & Hizmetler
             </h3>
             <ul className="space-y-2.5 text-xs text-metin-ikincil">
@@ -201,7 +201,7 @@ export function SiteFooter() {
 
           {/* Col 4: Kurumsal & E-Bülten */}
           <div>
-            <h3 className="font-bold text-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
+            <h3 className="font-bold text-metin-marka mb-4 uppercase tracking-wider text-xs border-b border-kenar pb-1.5">
               Kurumsal & Destek
             </h3>
             <ul className="space-y-2.5 text-xs text-metin-ikincil mb-5">
@@ -234,7 +234,7 @@ export function SiteFooter() {
 
             {/* Newsletter Subscription Box */}
             <div className="p-3 bg-yuzey-kart rounded-[var(--radius-girdi)] border border-kenar space-y-2">
-              <span className="text-[11px] font-bold text-marka uppercase block">
+              <span className="text-[11px] font-bold text-metin-marka uppercase block">
                 Teknik E-Bülten
               </span>
               <p className="text-[10px] text-metin-ucuncul">
@@ -256,7 +256,7 @@ export function SiteFooter() {
                 <button
                   type="submit"
                   aria-label="Kaydol"
-                  className="px-2 py-1 bg-marka text-metin-ters rounded text-xs font-bold hover:bg-marka-hover transition-colors shrink-0"
+                  className="px-2 py-1 bg-marka text-dolgu-uzeri rounded text-xs font-bold hover:bg-marka-hover transition-colors shrink-0"
                 >
                   <ArrowRight size={12} />
                 </button>

@@ -37,7 +37,7 @@ export default async function SiparislerPage() {
               <tbody className="divide-y divide-kenar">
                 {siparisler.map((s) => (
                   <tr key={s.id} className="hover:bg-yuzey">
-                    <td className="px-4 py-4 font-bold text-marka">{s.siparisNo}</td>
+                    <td className="px-4 py-4 font-bold text-metin-marka">{s.siparisNo}</td>
                     <td className="px-4 py-4 text-metin-ikincil">
                       {new Date(s.tarih).toLocaleDateString("tr-TR")}
                     </td>
