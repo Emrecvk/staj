@@ -135,3 +135,24 @@ export async function getKatalogOzeti(): Promise<{
     kategoriSayisi: kategoriSay(kategoriler),
   };
 }
+
+/**
+ * Verilen kategoriler icin gercek urun sayilarini dondurur (id -> adet).
+ * ltree sayesinde bir kok kategori sorgusu tum alt dallarini kapsar.
+ * Sayfa boyutu 1: yalnizca toplamKayit'e ihtiyac var, kayit cekilmiyor.
+ * Ana sayfa kategori izgarasi burayi kullanir; uydurma SKU sayisi YOK.
+ */
+export async function getKategoriUrunSayilari(
+  kategoriler: Category[],
+): Promise<Record<number, number>> {
+  const sonuc = await Promise.all(
+    kategoriler.map(async (k) => {
+      const r = await safeFetch<ProductResult | null>(
+        `/Katalog/urunler?sayfaNo=1&sayfaBoyutu=1&kategoriId=${k.id}`,
+        null,
+      );
+      return [k.id, r?.urunler?.toplamKayit ?? 0] as const;
+    }),
+  );
+  return Object.fromEntries(sonuc);
+}

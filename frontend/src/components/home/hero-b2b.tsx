@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -22,20 +22,30 @@ import {
 } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
 
-const HERO_SLIDES = [
+// Slide 1'in stok ifadesi gercek veriden gelir; veri yoksa sayisiz nitel
+// ifadeye duser. Uydurma "100.000+" YOK.
+function buildSlides(stoktakiUrun?: number) {
+  const stokVar = typeof stoktakiUrun === "number" && stoktakiUrun > 0;
+  const stokIfade = stokVar
+    ? `${stoktakiUrun.toLocaleString("tr-TR")} stoklu parça`
+    : "geniş stoklu parça envanteri";
+  const stokDeger = stokVar ? stoktakiUrun.toLocaleString("tr-TR") : "Stokta";
+
+  return [
   {
     id: 1,
-    badge: "%100 Yetkili Distribütör",
+    badge: "Yetkili Distribütör",
     badgeIcon: ShieldCheck,
     title: "Türkiye'nin Güvenilir Elektronik Komponent Dağıtıcısı",
-    subtitle:
-      "100.000+ stoklu parça, aynı gün kargo ve resmi üretici garantisi.",
-    highlight: "100.000+ stoklu parça",
+    subtitle: `${
+      stokVar ? stokIfade.charAt(0).toUpperCase() + stokIfade.slice(1) : "Geniş stoklu parça envanteri"
+    }, aynı gün kargo ve resmi üretici garantisi.`,
+    highlight: stokIfade,
     ctaText: "Kataloğu İncele",
     ctaHref: "/urunler",
     secondaryText: "Hızlı Teklif",
     secondaryHref: "/teklif-iste",
-    stat: { label: "Aktif Stoklu Parça", value: "100.000+" },
+    stat: { label: "Aktif Stoklu Parça", value: stokDeger },
   },
   {
     id: 2,
@@ -79,7 +89,8 @@ const HERO_SLIDES = [
     secondaryHref: "/urunler",
     stat: { label: "Uzman FAE Kadrosu", value: "%100 Destek" },
   },
-];
+  ];
+}
 
 const POPULER_ARAMALAR = ["STM32", "LM358", "ESP32", "1N4148", "NE555", "GRM188"];
 
@@ -88,8 +99,9 @@ LM358DR 2500
 GRM188R71C104KA01D 4000
 1N4148 5000`;
 
-export function HeroB2B() {
+export function HeroB2B({ stoktakiUrun }: { stoktakiUrun?: number }) {
   const router = useRouter();
+  const HERO_SLIDES = useMemo(() => buildSlides(stoktakiUrun), [stoktakiUrun]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [activeTab, setActiveTab] = useState<"upload" | "paste">("upload");

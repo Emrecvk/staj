@@ -3,8 +3,6 @@ import {
   CreditCard,
   Code2,
   Cpu,
-  ShieldCheck,
-  CheckCircle,
   ArrowRight,
   Sparkles,
   Building,
@@ -37,11 +35,11 @@ const B2B_SOLUTIONS: CorporateSolution[] = [
     id: "edi",
     title: "API & EDI Sistem Entegrasyonu",
     description:
-      "ERP sisteminize doğrudan entegre envanter ve otomatik sipariş akışı.",
-    cta: "Teknik Doküman",
-    href: "/entegrasyon",
+      "Sipariş ve envanter akışınız için API/EDI entegrasyon desteği talep edin.",
+    cta: "Bilgi Al",
+    href: "/iletisim",
     icon: Code2,
-    badge: "Canlı ERP / SAP",
+    badge: "Talep Üzerine",
   },
   {
     id: "fae",
@@ -53,12 +51,6 @@ const B2B_SOLUTIONS: CorporateSolution[] = [
     icon: Cpu,
     badge: "Uzman Donanım Ekibi",
   },
-];
-
-const ISO_CERTIFICATES = [
-  "ISO 9001:2015",
-  "ISO 14001:2015",
-  "ESD Koruma Standardı (ANSI/ESD S20.20)",
 ];
 
 export function B2BDegerOnerisi() {
@@ -120,35 +112,6 @@ export function B2BDegerOnerisi() {
               </div>
             );
           })}
-        </div>
-
-        {/* ISO Quality & Standards Banner */}
-        <div className="mt-12 rounded-[var(--radius-panel)] border border-kenar bg-yuzey-gomulu p-6 sm:p-8">
-          <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-            <div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={22} className="text-vurgu" />
-                <h4 className="text-base font-bold text-metin sm:text-lg">
-                  Akredite Kalite Güvencesi ve Sertifikasyonlar
-                </h4>
-              </div>
-              <p className="mt-1 text-xs text-metin-ikincil sm:text-sm">
-                Tüm depolama, sevkiyat ve paketleme süreçlerimiz uluslararası endüstri standartlarına uygundur.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {ISO_CERTIFICATES.map((cert) => (
-                <div
-                  key={cert}
-                  className="flex items-center gap-1.5 rounded-full border border-kenar bg-yuzey-kart px-3.5 py-1.5 text-xs font-semibold text-metin shadow-xs"
-                >
-                  <CheckCircle size={14} className="text-basari-600" />
-                  <span>{cert}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Bottom Fast B2B Account CTA */}

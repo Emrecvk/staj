@@ -7,7 +7,12 @@ import { KategoriIzgarasi } from "@/components/home/kategori-izgarasi";
 import { VitrinSekmeleri } from "@/components/home/vitrin-sekmeleri";
 import { DistributorVitrini } from "@/components/home/distributor-vitrini";
 import { B2BDegerOnerisi } from "@/components/home/b2b-deger-onerisi";
-import { getCategories, getProducts, getKatalogOzeti } from "@/lib/api";
+import {
+  getCategories,
+  getProducts,
+  getKatalogOzeti,
+  getKategoriUrunSayilari,
+} from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +22,9 @@ export default async function Home() {
     getProducts({ sayfaNo: 1, sayfaBoyutu: 12, sadeceStoktakiler: true }),
     getKatalogOzeti(),
   ]);
+
+  // Kategori urun sayilari: kategoriler geldikten sonra gercek sayimla.
+  const kategoriSayilari = await getKategoriUrunSayilari(categories);
 
   const urunler = productResult?.urunler?.kayitlar ?? [];
 
@@ -28,14 +36,14 @@ export default async function Home() {
       <main id="icerik" className="flex-grow">
         {/* 2. Split B2B Hero Section (Slider 65% + Quick BOM Widget 35%) */}
         <Suspense fallback={<div className="h-[480px] bg-marka animate-pulse" />}>
-          <HeroB2B />
+          <HeroB2B stoktakiUrun={ozet?.stoktakiUrun} />
         </Suspense>
 
         {/* 3. Live Inventory Metrics Strip */}
         <EnvanterSeridi ozet={ozet} />
 
-        {/* 4. Category Icon Grid with Live SKU Counts (6x2) */}
-        <KategoriIzgarasi categories={categories} />
+        {/* 4. Category Grid — gercek kategoriler ve gercek urun sayilari */}
+        <KategoriIzgarasi categories={categories} urunSayilari={kategoriSayilari} />
 
         {/* 5. Tabbed Product Showcase Carousels (New, Bestsellers, Stock Deals, Featured) */}
         <VitrinSekmeleri urunler={urunler} />

@@ -1,4 +1,4 @@
-import { PackageCheck, Layers, Building2, Truck } from "lucide-react";
+import { PackageCheck, Layers, FolderTree, Truck } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
 
 interface KatalogOzetProps {
@@ -6,7 +6,6 @@ interface KatalogOzetProps {
     toplamUrun: number;
     stoktakiUrun: number;
     kategoriSayisi?: number;
-    yetkiliMarkaSayisi?: number;
   } | null;
 }
 
@@ -25,9 +24,10 @@ export function EnvanterSeridi({ ozet }: KatalogOzetProps) {
     );
   }
 
-  const toplamUrun = ozet.toplamUrun || 125000;
-  const stoktakiUrun = ozet.stoktakiUrun || 98400;
-  const yetkiliMarkaSayisi = ozet.yetkiliMarkaSayisi || 85;
+  // Yalnizca API'den gelen gercek degerler. Uydurma fallback YOK.
+  const toplamUrun = ozet.toplamUrun;
+  const stoktakiUrun = ozet.stoktakiUrun;
+  const kategoriSayisi = ozet.kategoriSayisi;
 
   const metrikler = [
     {
@@ -44,18 +44,23 @@ export function EnvanterSeridi({ ozet }: KatalogOzetProps) {
       deger: stoktakiUrun.toLocaleString("tr-TR"),
       aciklama: "Merkez depoda hazır",
     },
-    {
-      id: "marka",
-      ikon: Building2,
-      etiket: "Yetkili Üretici Markası",
-      deger: `${yetkiliMarkaSayisi}+`,
-      aciklama: "Doğrudan fabrika tedariği",
-    },
+    // Kategori sayisi da API'den; yoksa metrik gizlenir.
+    ...(typeof kategoriSayisi === "number" && kategoriSayisi > 0
+      ? [
+          {
+            id: "kategori",
+            ikon: FolderTree,
+            etiket: "Ürün Kategorisi",
+            deger: kategoriSayisi.toLocaleString("tr-TR"),
+            aciklama: "Parametrik katalog ağacı",
+          },
+        ]
+      : []),
     {
       id: "kargo",
       ikon: Truck,
-      etiket: "Aynı Gün Kargo Garantisi",
-      deger: "16:00 Cutoff",
+      etiket: "Aynı Gün Kargo",
+      deger: "16:00",
       aciklama: "16:00'a kadar verilen siparişler aynı gün kargoda",
       isBadge: true,
     },
