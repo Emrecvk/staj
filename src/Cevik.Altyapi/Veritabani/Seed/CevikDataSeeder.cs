@@ -424,7 +424,8 @@ public class CevikDataSeeder
                         ? $"{uretici.Ad} component in the {sablon.AdEn} category. " +
                           "Widely used in industrial applications. RoHS compliant."
                         : null,
-                    AnaGorselUrl = $"/gorseller/komponent/{sablon.Slug}.svg",
+                    // Gerçek dosya sağlanana kadar istemciye 404 üreten bir yol vermeyiz.
+                    AnaGorselUrl = null,
                     GorselTemsiliMi = true, // Sentetik katalog: tüm görseller temsilidir
                     RohsDurumu = f.Random.WeightedRandom(
                         [RohsDurumu.Belgeli, RohsDurumu.Belgesiz, RohsDurumu.Bilinmiyor],
@@ -463,7 +464,6 @@ public class CevikDataSeeder
                 }
 
                 AmbalajVeFiyatEkle(f, urun);
-                DokumanEkle(f, urun);
 
                 toplam++;
                 if (toplam % 500 == 0)
@@ -548,21 +548,6 @@ public class CevikDataSeeder
 
             ilkMi = false;
         }
-    }
-
-    private void DokumanEkle(Faker f, Urun urun)
-    {
-        if (!f.Random.Bool(0.75f)) return;
-
-        _context.UrunDokumanlari.Add(new UrunDokumani
-        {
-            Urun = urun,
-            Tip = DokumanTipi.Datasheet,
-            Baslik = $"{urun.UreticiUrunKodu} Datasheet",
-            Url = $"/belgeler/{urun.NormalizeKod}.pdf",
-            Dil = "en",
-            DosyaBoyutuKb = f.Random.Int(180, 4200)
-        });
     }
 
     // -----------------------------------------------------------------------

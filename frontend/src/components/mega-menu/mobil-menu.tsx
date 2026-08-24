@@ -284,7 +284,7 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-1 px-2 text-xs text-metin-ikincil">
                     <Link href="/hakkimizda" onClick={handleClose} className="hover:text-vurgu">Hakkımızda</Link>
-                    <Link href="/iletisim" onClick={handleClose} className="hover:text-vurgu">İletişim</Link>
+                    <a href="mailto:destek@cevik.com.tr" onClick={handleClose} className="hover:text-vurgu">İletişim</a>
                     <Link href="/kayit/kurumsal" onClick={handleClose} className="hover:text-vurgu">Kurumsal Üyelik</Link>
                     <Link href="/sss" onClick={handleClose} className="hover:text-vurgu">S.S.S.</Link>
                   </div>

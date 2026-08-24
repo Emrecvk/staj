@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
 import { StokRozeti } from "@/components/ui/rozet";
+import { UrunGorseli } from "@/components/urun-gorseli";
 import type { ProductSummary } from "@/lib/api";
 
 function fiyatBicimle(deger: number, paraBirimi: string) {
@@ -29,9 +30,11 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           className="flex aspect-[4/3] items-center justify-center p-4"
           aria-label={`${product.ureticiUrunKodu} ürün detayı`}
         >
-          <span className="break-all text-center font-mono text-sm font-medium text-metin-ucuncul">
-            {product.ureticiUrunKodu}
-          </span>
+          <UrunGorseli
+            src={product.anaGorselUrl}
+            urunKodu={product.ureticiUrunKodu}
+            className="p-2"
+          />
         </Link>
 
         {product.kampanyaliMi && (

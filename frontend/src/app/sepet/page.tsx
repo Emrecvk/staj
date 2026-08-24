@@ -28,7 +28,7 @@ export default async function CartPage() {
       <main className="flex-grow container mx-auto px-4 py-8" id="icerik">
         {/* Breadcrumb & Başlık */}
         <nav aria-label="Gezinti" className="mb-4 text-xs text-metin-ucuncul flex items-center gap-1.5">
-          <a href="/" className="hover:text-vurgu transition-colors">Ana Sayfa</a>
+          <Link href="/" className="hover:text-vurgu transition-colors">Ana Sayfa</Link>
           <span>&gt;</span>
           <span className="text-metin font-medium">Alışveriş Sepeti</span>
         </nav>
