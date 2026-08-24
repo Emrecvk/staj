@@ -3,6 +3,7 @@ import { getCategories } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { FileText } from "lucide-react";
 import { QuoteRequestForm } from "./quote-form";
 
@@ -27,9 +28,9 @@ export default async function RequestQuotePage() {
       <main className="flex-grow container mx-auto px-4 py-8" id="icerik">
         {/* Breadcrumb & Başlık */}
         <nav aria-label="Gezinti" className="mb-4 text-xs text-metin-ucuncul flex items-center gap-1.5">
-          <a href="/" className="hover:text-vurgu transition-colors">Ana Sayfa</a>
+          <Link href="/" className="hover:text-vurgu transition-colors">Ana Sayfa</Link>
           <span>&gt;</span>
-          <a href="/sepet" className="hover:text-vurgu transition-colors">Sepet</a>
+          <Link href="/sepet" className="hover:text-vurgu transition-colors">Sepet</Link>
           <span>&gt;</span>
           <span className="text-metin font-medium">Resmi Teklif Talebi</span>
         </nav>

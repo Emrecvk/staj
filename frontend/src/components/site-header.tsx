@@ -69,7 +69,7 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
       {/* =========================================================================
           TIER 1: TOP UTILITY BAR (B2B Ticker, Support Hotline, Currency, BOM Link)
           ========================================================================= */}
-      <div className="bg-yuzey-gomulu text-xs text-metin-ikincil border-b border-kenar py-1.5 hidden md:block">
+      <div className="hidden">
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Left: Support hotline & Live Exchange Rate Ticker */}
           <div className="flex items-center gap-6">
@@ -102,9 +102,9 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
             <Link href="/hakkimizda" className="hover:text-vurgu transition-colors">
               Hakkımızda
             </Link>
-            <Link href="/iletisim" className="hover:text-vurgu transition-colors">
+            <a href="mailto:destek@cevik.com.tr" className="hover:text-vurgu transition-colors">
               İletişim
-            </Link>
+            </a>
 
             <span className="text-kenar-guclu">|</span>
 
@@ -472,12 +472,11 @@ export function SiteHeader({ categories = [] }: SiteHeaderProps) {
             {/* Popular Component Categories Horizontal Bar */}
             <nav className="flex items-center ml-2 text-xs font-semibold tracking-wide" aria-label="Popüler Kategoriler">
               {[
-                { ad: "Yarı İletkenler", href: "/urunler?kategoriId=1" },
-                { ad: "Pasif Komponentler", href: "/urunler?kategoriId=2" },
-                { ad: "Elektromekanik", href: "/urunler?kategoriId=3" },
-                { ad: "Konnektörler", href: "/urunler?kategoriId=4" },
-                { ad: "Güç Kaynakları", href: "/urunler?kategoriId=5" },
-                { ad: "Sensörler", href: "/urunler?kategoriId=6" },
+                ...categories.slice(0, 4).map((kategori) => ({
+                  ad: kategori.ad,
+                  href: `/urunler?kategoriId=${kategori.id}`,
+                  highlight: false,
+                })),
                 { ad: "Stok Fırsatları", href: "/urunler?sadeceStoktakiler=true", highlight: true },
               ].map((item) => (
                 <Link

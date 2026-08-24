@@ -147,16 +147,6 @@ export function SiteFooter() {
                   Konnektörler & Klemens
                 </Link>
               </li>
-              <li>
-                <Link href="/urunler?kategoriId=5" className="hover:text-vurgu transition-colors">
-                  Güç Kaynakları & DIN Ray
-                </Link>
-              </li>
-              <li>
-                <Link href="/urunler?kategoriId=6" className="hover:text-vurgu transition-colors">
-                  Sensörler & Dönüştürücüler
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -187,11 +177,6 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/teslimat" className="hover:text-vurgu transition-colors">
-                  Teslimat ve İade Şartları
-                </Link>
-              </li>
-              <li>
                 <Link href="/sss" className="hover:text-vurgu transition-colors">
                   Sıkça Sorulan Sorular
                 </Link>
@@ -216,19 +201,9 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/iletisim" className="hover:text-vurgu transition-colors">
+                <a href="mailto:destek@cevik.com.tr" className="hover:text-vurgu transition-colors">
                   İletişim & Lokasyonlar
-                </Link>
-              </li>
-              <li>
-                <Link href="/sozlesmeler" className="hover:text-vurgu transition-colors">
-                  Mesafeli Satış Sözleşmesi
-                </Link>
-              </li>
-              <li>
-                <Link href="/kvkk" className="hover:text-vurgu transition-colors">
-                  KVKK ve Gizlilik Politikası
-                </Link>
+                </a>
               </li>
             </ul>
 

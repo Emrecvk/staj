@@ -52,6 +52,10 @@ import type {
   RelatedProductSummary,
 } from "@/lib/api";
 
+function dokumanKullanilabilirMi(dokuman: DocumentType) {
+  return /^https?:\/\//i.test(dokuman.url);
+}
+
 /* ==========================================================================
    1. PDP BREADCRUMB
    ========================================================================== */
@@ -391,18 +395,22 @@ export function PdpGallery({
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [hataKaynak, setHataKaynak] = useState<string | null>(null);
 
   const currentImage = allImages[activeIdx] || allImages[0];
   const isBrokenOrMock =
+    hataKaynak === currentImage ||
     !currentImage ||
     currentImage.includes("placeholder") ||
+    currentImage.includes("/gorseller/komponent/") ||
     currentImage.includes("/products/");
 
-  const datasheet = documents?.find((d) => d.tip === 1 || d.url.endsWith(".pdf"));
-  const cadDoc = documents?.find(
+  const kullanilabilirDokumanlar = documents?.filter(dokumanKullanilabilirMi);
+  const datasheet = kullanilabilirDokumanlar?.find((d) => d.tip === 1 || d.url.endsWith(".pdf"));
+  const cadDoc = kullanilabilirDokumanlar?.find(
     (d) => d.tip === 2 || d.url.endsWith(".step") || d.baslik.includes("CAD")
   );
-  const rohsDoc = documents?.find((d) => d.tip === 3 || d.baslik.includes("RoHS"));
+  const rohsDoc = kullanilabilirDokumanlar?.find((d) => d.tip === 3 || d.baslik.includes("RoHS"));
 
   return (
     <div className="space-y-4">
@@ -419,7 +427,8 @@ export function PdpGallery({
         <button
           type="button"
           onClick={() => setZoomOpen(true)}
-          className="absolute right-3 top-3 z-10 rounded-full bg-yuzey-kart/90 p-2 text-metin-ucuncul shadow-xs backdrop-blur-xs transition-colors hover:bg-yuzey hover:text-vurgu border border-kenar"
+          disabled={isBrokenOrMock}
+          className="absolute right-3 top-3 z-10 rounded-full border border-kenar bg-yuzey-kart/90 p-2 text-metin-ucuncul shadow-xs backdrop-blur-xs transition-colors hover:bg-yuzey hover:text-vurgu disabled:hidden"
           aria-label="Görseli büyüt"
           title="Büyüt"
         >
@@ -428,32 +437,21 @@ export function PdpGallery({
 
         {/* Görsel / Schematic Placeholder Render */}
         <div
-          className="flex aspect-square sm:aspect-[4/3] w-full items-center justify-center cursor-zoom-in"
-          onClick={() => setZoomOpen(true)}
+          className={`flex aspect-[4/3] max-h-[460px] w-full items-center justify-center ${isBrokenOrMock ? "" : "cursor-zoom-in"}`}
+          onClick={() => !isBrokenOrMock && setZoomOpen(true)}
         >
           {isBrokenOrMock ? (
             <div className="flex h-full w-full flex-col items-center justify-center rounded-lg border border-dashed border-kenar-guclu bg-yuzey-gomulu/60 p-6 text-center">
-              <div className="relative mb-4 flex h-28 w-28 items-center justify-center rounded-xl bg-marka shadow-md text-white">
-                <Box size={44} className="text-cyan-400" />
-                <div className="absolute inset-x-2 bottom-1.5 flex justify-between px-1">
-                  <div className="h-1 w-2 bg-cyan-400 rounded-xs" />
-                  <div className="h-1 w-2 bg-cyan-400 rounded-xs" />
-                  <div className="h-1 w-2 bg-cyan-400 rounded-xs" />
-                </div>
-                <div className="absolute inset-y-2 left-1.5 flex flex-col justify-between py-1">
-                  <div className="h-2 w-1 bg-cyan-400 rounded-xs" />
-                  <div className="h-2 w-1 bg-cyan-400 rounded-xs" />
-                  <div className="h-2 w-1 bg-cyan-400 rounded-xs" />
-                </div>
-              </div>
+              <Box size={42} strokeWidth={1.5} className="mb-3 text-metin-ucuncul" />
               <span className="font-mono text-sm font-bold text-metin">{mpn}</span>
-              <span className="mt-1 text-xs text-metin-ucuncul">Endüstriyel Komponent Görseli</span>
+              <span className="mt-1 text-xs text-metin-ucuncul">Ürün görseli mevcut değil</span>
             </div>
           ) : (
             <img
               src={currentImage}
               alt={mpn}
               className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
+              onError={() => setHataKaynak(currentImage)}
             />
           )}
         </div>
@@ -554,7 +552,7 @@ export function PdpGallery({
       </div>
 
       {/* Zoom Modal */}
-      {zoomOpen && (
+      {zoomOpen && !isBrokenOrMock && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/80 p-4 backdrop-blur-xs"
           onClick={() => setZoomOpen(false)}
@@ -572,11 +570,9 @@ export function PdpGallery({
             </button>
             <h3 className="mb-4 font-mono text-lg font-bold text-metin">{mpn}</h3>
             <div className="flex max-h-[70vh] items-center justify-center overflow-auto">
-              <div className="p-8 text-center font-mono text-metin">
-                <Box size={120} className="mx-auto mb-4 text-cyan-600" />
-                <p className="text-lg font-bold">{mpn}</p>
-                <p className="mt-1 text-xs text-metin-ucuncul">Yüksek çözünürlüklü teknik ürün görseli</p>
-              </div>
+              {/* Yönetim paneli farklı alan adlarından görsel kabul eder. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={currentImage} alt={`${mpn} büyütülmüş ürün görseli`} className="max-h-[70vh] max-w-full object-contain" />
             </div>
           </div>
         </div>
@@ -1286,9 +1282,9 @@ export function PdpTeknikSekmeler({
             )}
           </div>
 
-          {product.dokumanlar && product.dokumanlar.length > 0 ? (
+          {product.dokumanlar?.some(dokumanKullanilabilirMi) ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {product.dokumanlar.map((dokuman) => (
+              {product.dokumanlar.filter(dokumanKullanilabilirMi).map((dokuman) => (
                 <div
                   key={dokuman.url}
                   className="flex flex-col justify-between rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-xs transition-all hover:border-vurgu hover:shadow-md"

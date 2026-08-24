@@ -72,7 +72,7 @@ function buildSlides(stoktakiUrun?: number) {
     ctaText: "Stoklu Ürünler",
     ctaHref: "/urunler?sadeceStoktakiler=true",
     secondaryText: "Depo Durumu",
-    secondaryHref: "/iletisim",
+    secondaryHref: "mailto:destek@cevik.com.tr?subject=Kurumsal%20satış%20görüşmesi",
     stat: { label: "Sipariş Kesim Saati", value: "16:00" },
   },
   {

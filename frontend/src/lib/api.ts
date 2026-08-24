@@ -5,6 +5,8 @@ export type DocumentType = { tip: number; url: string; baslik: string; boyutByte
 export type PriceTier = { minMiktar: number; maxMiktar: number | null; birimFiyat: number; paraBirimi: string; musteriGrubuId?: number | null };
 export type PackagingOption = { ambalajId: number; ad: string; ambalajTipi?: number; mpq: number; moq: number; katlamaMiktari: number; stokMiktari: number; gelecekStokMiktari: number; gelecekStokTarihi: string | null; fiyatlar: PriceTier[]; varsayilanMi?: boolean };
 export type WarehouseStock = { depoKodu: string; depoAdi: string; stokMiktari: number; teslimSuresiGun: number };
+export type PublicPage = { slug: string; baslik: string; icerikHtml: string; seoBaslik?: string | null; seoAciklama?: string | null };
+export type PublicFaq = { id: number; kategoriId: number | null; soru: string; cevap: string; sira: number };
 
 export type ProductSummary = {
   id: number;
@@ -97,6 +99,14 @@ export async function getProducts(params: Record<string, string | number | boole
 
 export async function getProduct(id: string) {
   return safeFetch<ProductDetail | null>(`/Katalog/urunler/${id}`, null);
+}
+
+export function getPublicPage(slug: string) {
+  return safeFetch<PublicPage | null>(`/icerik/sayfalar/${encodeURIComponent(slug)}`, null);
+}
+
+export function getFaqs() {
+  return safeFetch<PublicFaq[]>("/icerik/sss", []);
 }
 
 // Favori ve karsilastirma islemleri lib/katalog-actions.ts icinde,

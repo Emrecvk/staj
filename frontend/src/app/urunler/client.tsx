@@ -372,7 +372,7 @@ export function ProductListingClient({ initialData }: { initialData: ProductResu
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
               {urunler.kayitlar.map((urun) => (
                 <ProductCard key={urun.id} product={urun} />
               ))}

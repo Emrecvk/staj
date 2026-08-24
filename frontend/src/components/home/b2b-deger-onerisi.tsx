@@ -37,7 +37,7 @@ const B2B_SOLUTIONS: CorporateSolution[] = [
     description:
       "Sipariş ve envanter akışınız için API/EDI entegrasyon desteği talep edin.",
     cta: "Bilgi Al",
-    href: "/iletisim",
+    href: "mailto:destek@cevik.com.tr?subject=API%20ve%20EDI%20entegrasyonu",
     icon: Code2,
     badge: "Talep Üzerine",
   },

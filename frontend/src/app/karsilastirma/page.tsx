@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getCategories, getProduct } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -58,7 +59,7 @@ export default async function KarsilastirmaPage({ searchParams }: PageProps) {
       <main className="flex-grow container mx-auto px-4 py-8" id="icerik">
         {/* Breadcrumb & Başlık */}
         <nav aria-label="Gezinti" className="mb-4 text-xs text-metin-ucuncul flex items-center gap-1.5">
-          <a href="/" className="hover:text-vurgu transition-colors">Ana Sayfa</a>
+          <Link href="/" className="hover:text-vurgu transition-colors">Ana Sayfa</Link>
           <span>&gt;</span>
           <span className="text-metin font-medium">Ürün Karşılaştırma</span>
         </nav>
