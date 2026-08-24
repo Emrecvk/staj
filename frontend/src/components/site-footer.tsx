@@ -16,68 +16,6 @@ import {
 export function SiteFooter() {
   return (
     <footer className="bg-yuzey-gomulu border-t border-kenar text-metin mt-auto text-sm">
-      {/* Upper B2B Value Badges Strip */}
-      <div className="border-b border-kenar bg-yuzey-kart py-6">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
-                <ShieldCheck size={22} />
-              </div>
-              <div>
-                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
-                  %100 Orijinal Ürün
-                </h4>
-                <p className="text-[11px] text-metin-ikincil">
-                  Doğrudan üretici ve yetkili distribütör garantisi
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
-                <Lock size={22} />
-              </div>
-              <div>
-                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
-                  256-Bit SSL Güvenlik
-                </h4>
-                <p className="text-[11px] text-metin-ikincil">
-                  Uçtan uca şifreli güvenli kurumsal ödeme
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
-                <Award size={22} />
-              </div>
-              <div>
-                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
-                  KVKK Uyumlu
-                </h4>
-                <p className="text-[11px] text-metin-ikincil">
-                  Kişisel verileriniz KVKK kapsamında korunur
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu shrink-0">
-                <FileCheck size={22} />
-              </div>
-              <div>
-                <h4 className="font-bold text-xs text-metin-marka uppercase tracking-wider">
-                  Hızlı B2B Teklif (RFQ)
-                </h4>
-                <p className="text-[11px] text-metin-ikincil">
-                  Aynı gün içinde resmi fiyat ve termin teklifi
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Footer Links Grid */}
       <div className="container mx-auto px-4 pt-12 pb-8">
@@ -243,13 +181,6 @@ export function SiteFooter() {
         {/* Bottom Copyright & Badges */}
         <div className="pt-6 border-t border-kenar flex flex-col md:flex-row items-center justify-between gap-4 text-metin-ucuncul text-xs">
           <span>© 2026 Çevik Elektronik San. ve Tic. A.Ş. Tüm hakları saklıdır.</span>
-          <div className="flex items-center gap-4 text-[11px]">
-            <span>256-Bit SSL Güvenli Alışveriş</span>
-            <span>•</span>
-            <span>%100 Orijinal Distribütör Garantisi</span>
-            <span>•</span>
-            <span>RoHS / REACH Uyumluluk</span>
-          </div>
         </div>
       </div>
     </footer>

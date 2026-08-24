@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,19 +8,16 @@ import {
   TrendingUp,
   Flame,
   Star,
-  ChevronLeft,
-  ChevronRight,
   ShoppingCart,
-  ArrowRight,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
-import { StokRozeti } from "@/components/ui/rozet";
-import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
 import { addToCart } from "@/lib/cart-actions";
 import { notifyCartUpdated } from "@/lib/stores/header-state";
 import { bildir } from "@/components/ui/bildirim";
-import type { ProductSummary } from "@/lib/api";
+import { UrunGorseli } from "@/components/urun-gorseli";
+import type { ProductSummary, PackagingOption } from "@/lib/api";
 
 type TabId = "yeni" | "coksatan" | "firsat" | "onecikan";
 
@@ -35,24 +32,24 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   {
+    id: "coksatan",
+    label: "Popüler",
+    icon: TrendingUp,
+    description: "En çok tercih edilen komponentler.",
+    linkText: "Tüm Popüler Ürünler",
+    linkHref: "/urunler?siralama=populerlik",
+  },
+  {
     id: "yeni",
-    label: "Yeni Eklenenler",
+    label: "Yeni",
     icon: Sparkles,
     description: "Kataloğumuza yeni katılan güncel yarı iletken ve pasif komponentler.",
     linkText: "Tüm Yeni Ürünler",
     linkHref: "/urunler?siralama=tarih_azalan",
   },
   {
-    id: "coksatan",
-    label: "Çok Satanlar",
-    icon: TrendingUp,
-    description: "Endüstriyel seri üretim projelerinde en çok tercih edilen popüler MPN'ler.",
-    linkText: "Çok Satanları Gör",
-    linkHref: "/urunler?siralama=populerlik",
-  },
-  {
     id: "firsat",
-    label: "Stok Fırsatları",
+    label: "Fırsat",
     icon: Flame,
     description: "Yüksek hacimli makara ve tepsi alımlarında özel fiyat avantajlı stoklar.",
     linkText: "Fırsat Ürünleri",
@@ -60,7 +57,7 @@ const TABS: TabConfig[] = [
   },
   {
     id: "onecikan",
-    label: "Öne Çıkanlar",
+    label: "Öne Çıkan",
     icon: Star,
     description: "Mühendislerimizin seçtiği yüksek performanslı referans tasarım parçaları.",
     linkText: "Öne Çıkan Kataloğu",
@@ -76,57 +73,45 @@ function formatPrice(val: number, cur: string) {
   }).format(val);
 }
 
-export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }) {
+export function VitrinSekmeleri({ urunler = [], baslangicSekmesi }: { urunler?: ProductSummary[]; baslangicSekmesi?: TabId }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("yeni");
+  const [activeTab, setActiveTab] = useState<TabId>(baslangicSekmesi ?? "yeni");
   const [startIndex, setStartIndex] = useState(0);
   const [addingId, setAddingId] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const activeTabConfig = TABS.find((t) => t.id === activeTab) || TABS[0];
 
-  // Yalnizca gercek urunler. API bos donduyse sahte urun UYDURULMAZ,
-  // asagida durust bir bos durum gosterilir.
+  const gorselliUrunler = urunler;
   const tabProducts =
     activeTab === "firsat"
-      ? urunler.filter((u) => u.kampanyaliMi).length > 0
-        ? urunler.filter((u) => u.kampanyaliMi)
-        : urunler
-      : urunler;
+      ? gorselliUrunler.filter((u) => u.kampanyaliMi).length > 0
+        ? gorselliUrunler.filter((u) => u.kampanyaliMi)
+        : gorselliUrunler
+      : gorselliUrunler;
 
-  // Carousel navigation bounds
   const totalItems = tabProducts.length;
-  const visibleCount = 4; // desktop base
+  const visibleCount = 4;
+  const totalPages = Math.ceil(totalItems / visibleCount) || 1;
 
-  const handleNext = () => {
-    setStartIndex((prev) => Math.min(prev + 1, Math.max(0, totalItems - visibleCount)));
-  };
+  // Listedeki ozet urunun varsayilan ambalaji (yoksa ilki). Ozet DTO'su
+  // ambalaj/fiyat verisini icermeyebilir; o durumda null doner.
+  const varsayilanAmbalaj = (p: ProductSummary): PackagingOption | null =>
+    p.ambalajlarVeFiyatlar?.find((a) => a.varsayilanMi) ?? p.ambalajlarVeFiyatlar?.[0] ?? null;
 
-  const handlePrev = () => {
-    setStartIndex((prev) => Math.max(prev - 1, 0));
-  };
-
-  // Quick MOQ Add to Cart action
   const handleQuickAdd = async (product: ProductSummary) => {
+    const ambalaj = varsayilanAmbalaj(product);
+    // Ambalaj/MOQ verisi listede yoksa uydurma id/miktar gondermek yerine
+    // urun sayfasina yonlendir; kullanici gercek ambalaji orada secsin.
+    if (!ambalaj) {
+      router.push(`/urunler/${product.id}`);
+      return;
+    }
     setAddingId(product.id);
     startTransition(async () => {
-      // Default MOQ based on component type
-      const defaultAmbalajId = product.id * 10 + 1; // standard generated mock ID or fallback
-      const defaultMoq = product.ureticiUrunKodu.includes("GRM")
-        ? 4000
-        : product.ureticiUrunKodu.includes("LM358")
-        ? 2500
-        : 90;
-
-      const result = await addToCart(defaultAmbalajId, defaultMoq);
-
+      const result = await addToCart(ambalaj.ambalajId, ambalaj.moq);
       if (result.success) {
-        bildir.eylemli(
-          "Sepete eklendi",
-          "Sepete Git",
-          () => router.push("/sepet"),
-          `${product.ureticiUrunKodu} (${defaultMoq.toLocaleString("tr-TR")} Adet)`
-        );
+        bildir.eylemli("Sepete eklendi", "Sepete Git", () => router.push("/sepet"), `${product.ureticiUrunKodu} (${ambalaj.moq.toLocaleString("tr-TR")} Adet)`);
         notifyCartUpdated();
         router.refresh();
       } else {
@@ -136,57 +121,53 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
     });
   };
 
+  // Gercek fiyat kademeleri: varsayilan ambalajin fiyatlar[] dizisinden.
+  // Kademe verisi yoksa yalnizca baslangic fiyatini (1 adet) goster; sahte
+  // "5 adet %5 indirim" kademesi URETMEZ.
+  const fiyatKademeleri = (p: ProductSummary): { miktar: number; fiyat: number; paraBirimi: string }[] => {
+    const tiers = varsayilanAmbalaj(p)?.fiyatlar ?? [];
+    if (tiers.length === 0) {
+      return [{ miktar: 1, fiyat: p.baslangicFiyati, paraBirimi: p.paraBirimi }];
+    }
+    return [...tiers]
+      .sort((a, b) => a.minMiktar - b.minMiktar)
+      .slice(0, 2)
+      .map((t) => ({ miktar: t.minMiktar, fiyat: t.birimFiyat, paraBirimi: t.paraBirimi }));
+  };
+
+  const sectionBgClass =
+    activeTab === "coksatan" ? "bg-white" :
+    activeTab === "yeni" ? "bg-[#faf9f7]" :
+    activeTab === "onecikan" ? "bg-white" :
+    activeTab === "firsat" ? "bg-[#1A3F63]" : "bg-white";
+
+  const titleColorClass = activeTab === "firsat" ? "text-white" : "text-metin-marka";
+
   return (
-    <section className="bg-yuzey-kart py-12 md:py-16 border-b border-kenar" aria-label="Ürün Vitrinleri">
+    <section className={`${sectionBgClass} py-12 md:py-16`} aria-label="Ürün Vitrinleri">
       <Kapsayici>
         {/* Header & Tabs Navigation */}
-        <div className="flex flex-col justify-between gap-4 border-b border-kenar pb-4 sm:flex-row sm:items-end">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-vurgu">
-              Vitrin & Seçilmiş Komponentler
-            </span>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-metin md:text-3xl">
-              Öne Çıkan Komponent Vitrinleri
-            </h2>
-            <p className="mt-1 text-sm text-metin-ikincil">
-              {activeTabConfig.description}
-            </p>
-          </div>
+        <div className="flex flex-col justify-between gap-4 pb-4 sm:flex-row sm:items-end">
+          <div><h2 className={`text-3xl font-extrabold tracking-tight md:text-4xl ${titleColorClass}`}>{activeTabConfig.label} Ürünler</h2><p className="sr-only">{activeTabConfig.description}</p></div>
 
-          {/* Carousel Next/Prev Controls & Catalog Link */}
-          <div className="flex items-center gap-3">
-            <Link
-              href={activeTabConfig.linkHref}
-              className="hidden items-center gap-1 text-xs font-bold text-vurgu transition-colors hover:text-vurgu-guclu sm:inline-flex"
-            >
-              {activeTabConfig.linkText} <ArrowRight size={14} />
-            </Link>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={startIndex === 0}
-                aria-label="Önceki Ürünler"
-                className="rounded-full border border-kenar bg-yuzey p-2 text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu disabled:opacity-40"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={startIndex >= Math.max(0, totalItems - visibleCount)}
-                aria-label="Sonraki Ürünler"
-                className="rounded-full border border-kenar bg-yuzey p-2 text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu disabled:opacity-40"
-              >
-                <ChevronRight size={16} />
-              </button>
+          {/* Pagination Dots */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setStartIndex(i * visibleCount)}
+                  className={`h-2.5 w-2.5 rounded-full transition-all ${startIndex / visibleCount === i ? (activeTab === "firsat" ? "bg-white ring-2 ring-white/30" : "bg-blue-500 ring-2 ring-blue-100") : (activeTab === "firsat" ? "bg-white/30" : "bg-gray-300")}`}
+                  aria-label={`Sayfa ${i + 1}`}
+                />
+              ))}
             </div>
           </div>
         </div>
 
         {/* Tab Buttons (ARIA tablist) */}
-        <div
+        {!baslangicSekmesi && <div
           role="tablist"
           aria-label="Ürün Vitrini Sekmeleri"
           className="mt-6 flex flex-wrap gap-2 border-b border-kenar sm:gap-6"
@@ -217,7 +198,7 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
               </button>
             );
           })}
-        </div>
+        </div>}
 
         {/* Tab Panel & Carousel Grid */}
         <div
@@ -249,80 +230,71 @@ export function VitrinSekmeleri({ urunler = [] }: { urunler?: ProductSummary[] }
               return (
                 <article
                   key={product.id}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:shadow-[var(--shadow-yukselti)]"
+                  className="group relative flex flex-col overflow-hidden rounded-xl border border-kenar bg-white p-3 shadow-sm hover:shadow-[var(--shadow-yukselti)] transition-all"
                 >
-                  {/* Top Badges & Actions */}
-                  <div>
-                    <div className="mb-3 flex items-start justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-[var(--radius-girdi)] bg-yuzey-gomulu px-2 py-0.5 text-[11px] font-bold text-metin-marka">
-                          {product.ureticiAd}
-                        </span>
-                        {product.kampanyaliMi && (
-                          <span className="rounded-[var(--radius-girdi)] bg-uyari-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-uyari-600">
-                            Fırsat
-                          </span>
-                        )}
-                      </div>
+                  {/* Top Right Favorite Button */}
+                  <div className="absolute right-3 top-3 z-10">
+                    <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full bg-yuzey-gomulu text-metin-ucuncul hover:text-vurgu hover:bg-vurgu-zemin transition-colors">
+                      <Star size={16} className="fill-current opacity-20 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  </div>
 
-                      <div className="flex items-center gap-1">
-                        <FavoriButonu urunId={product.id} />
-                        <KarsilastirmaButonu urunId={product.id} />
-                      </div>
-                    </div>
+                  {/* Image */}
+                  <Link href={`/urunler/${product.id}`} className="flex h-40 items-center justify-center p-2" aria-hidden="true" tabIndex={-1}>
+                    <UrunGorseli src={product.anaGorselUrl} urunKodu={product.ureticiUrunKodu} className="max-h-full max-w-full" />
+                  </Link>
 
-                    {/* MPN Code & Title */}
-                    <h3 className="font-mono text-base font-bold text-metin transition-colors group-hover:text-vurgu">
-                      <Link
-                        href={`/urunler/${product.id}`}
-                        className="line-clamp-1 hover:underline"
-                        title={product.ureticiUrunKodu}
-                      >
-                        {product.ureticiUrunKodu}
-                      </Link>
+                  {/* Info */}
+                  <div className="mt-4 text-center px-2">
+                    <h3 className="text-sm font-bold text-metin-marka line-clamp-1">
+                      <Link href={`/urunler/${product.id}`} title={product.ureticiUrunKodu}>{product.ureticiUrunKodu}</Link>
                     </h3>
-
-                    {/* Description */}
-                    <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-metin-ikincil">
+                    <p className="text-[11px] text-metin-ikincil line-clamp-1 mt-1 uppercase" title={product.kisaAciklama}>
                       {product.kisaAciklama}
                     </p>
                   </div>
 
-                  {/* Stock, Price & Quick Action */}
-                  <div className="mt-5 border-t border-kenar pt-3">
-                    <div className="mb-3 flex items-center justify-between">
-                      <StokRozeti miktar={product.toplamStok} />
-                      <span className="text-[11px] font-medium text-metin-ucuncul">
-                        Aynı Gün Kargo
-                      </span>
+                  {/* Stock & Icons */}
+                  <div className="mt-4 flex items-center justify-between px-2">
+                    <span className="text-[10px] font-semibold text-[#12ae8c]">
+                      {product.toplamStok} STOKTA
+                    </span>
+                    <div className="flex gap-1.5">
+                      <span className="text-[#1834b8] bg-[#1834b8]/10 p-1 rounded"><FileText size={12} /></span>
                     </div>
+                  </div>
 
-                    <div className="flex items-end justify-between gap-2">
-                      <div>
-                        <div className="text-[10px] font-medium text-metin-ucuncul">
-                          Başlangıç Fiyatı (1+):
-                        </div>
-                        <div className="font-mono text-base font-bold tracking-tight text-metin-marka sayisal tabular-nums">
-                          {formatPrice(product.baslangicFiyati, product.paraBirimi)}
-                        </div>
-                      </div>
+                  {/* Quantity Input */}
+                  <div className="mt-3 mx-2 flex h-9 items-center justify-between rounded-full bg-yuzey-gomulu border border-kenar">
+                    <button type="button" className="flex h-full w-9 items-center justify-center text-metin-ikincil hover:text-metin">−</button>
+                    <span className="text-xs font-bold text-metin">1</span>
+                    <button type="button" className="flex h-full w-9 items-center justify-center text-metin-ikincil hover:text-metin">+</button>
+                  </div>
 
-                      {/* B2B Fast MOQ Add Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleQuickAdd(product)}
-                        disabled={isAdding}
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-girdi)] bg-vurgu px-3 py-2 text-xs font-bold text-white transition-[background-color,transform] hover:bg-vurgu-guclu active:scale-[0.97] disabled:opacity-50"
-                        title="Varsayılan paket MOQ miktarıyla sepete hızlı ekle"
-                      >
-                        {isAdding ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <ShoppingCart size={14} />
-                        )}
-                        Sepete Ekle
-                      </button>
-                    </div>
+                  {/* Prices */}
+                  <div className="mt-4 mb-2 flex flex-col items-center justify-center text-[11px]">
+                     <div className="text-metin-ikincil font-medium mb-1">Fiyatlar</div>
+                     <div className="grid grid-cols-[auto_auto] gap-x-3 text-left">
+                       {fiyatKademeleri(product).map((kademe) => (
+                         <Fragment key={kademe.miktar}>
+                           <span className="text-metin-ikincil">{kademe.miktar}:</span>
+                           <span className="font-bold text-[#12ae8c]">{formatPrice(kademe.fiyat, kademe.paraBirimi)}</span>
+                         </Fragment>
+                       ))}
+                     </div>
+                  </div>
+
+                  {/* Footer Buttons */}
+                  <div className="mt-auto pt-3 flex items-center justify-between gap-1.5 px-2">
+                    <Link href={`/urunler/${product.id}`} className="rounded-full border border-kenar px-3 py-2 text-[10px] font-bold text-metin hover:bg-yuzey-gomulu flex-1 text-center whitespace-nowrap transition-colors">
+                      Fiyatları Gör
+                    </Link>
+                    <button type="button" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#7a9ed4] text-white hover:bg-[#688bc0] transition-colors" onClick={() => handleQuickAdd(product)} disabled={isAdding}>
+                      {isAdding ? <Loader2 size={13} className="animate-spin" /> : <ShoppingCart size={13} />}
+                    </button>
+                    <button type="button" className="rounded-full bg-[#1834b8] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#11288f] flex-1 text-center whitespace-nowrap transition-colors" onClick={() => handleQuickAdd(product)} disabled={isAdding}>
+                      Hemen Al
+                    </button>
                   </div>
                 </article>
               );

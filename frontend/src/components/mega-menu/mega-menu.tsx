@@ -98,10 +98,10 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label="Tüm Kategoriler Menüsü"
-        className={`flex items-center gap-2.5 px-5 py-3 font-bold text-sm uppercase tracking-wider transition-all select-none ${
+        className={`flex items-center gap-2.5 px-5 py-2.5 font-bold text-sm uppercase tracking-wider transition-all select-none ${
           isOpen
-            ? "bg-vurgu-dolgu text-metin-marka shadow-md"
-            : "bg-vurgu-dolgu text-metin-marka hover:bg-cyan-400"
+            ? "bg-yuzey-gomulu text-metin-marka"
+            : "bg-yuzey-kart text-metin hover:bg-yuzey-gomulu"
         }`}
       >
         <Menu size={18} className="stroke-[2.5]" />

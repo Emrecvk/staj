@@ -8,7 +8,6 @@ import {
   Search,
   X,
   Loader2,
-  ChevronDown,
   Cpu,
   Layers,
   Building2,
@@ -47,19 +46,35 @@ interface BrandSuggestion {
   yetkiliDistribitor: boolean;
 }
 
-const POPULER_ONERILER = ["STM32", "LM358", "ESP32", "1N4148", "NE555", "100nF MLCC"];
+const POPULER_ONERILER = [
+  "STM32",
+  "LM358",
+  "ESP32",
+  "1N4148",
+  "NE555",
+  "100nF MLCC",
+];
 
-export function SmartSearchCombobox({ categories = [], className = "" }: SmartSearchProps) {
+export function SmartSearchCombobox({
+  categories = [],
+  className = "",
+}: SmartSearchProps) {
   const router = useRouter();
   const menuData = getMergedCategories(categories);
   const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("tum");
+  const selectedCategory = "tum";
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [productSuggestions, setProductSuggestions] = useState<ProductSuggestion[]>([]);
-  const [categorySuggestions, setCategorySuggestions] = useState<CategorySuggestion[]>([]);
-  const [brandSuggestions, setBrandSuggestions] = useState<BrandSuggestion[]>([]);
+  const [productSuggestions, setProductSuggestions] = useState<
+    ProductSuggestion[]
+  >([]);
+  const [categorySuggestions, setCategorySuggestions] = useState<
+    CategorySuggestion[]
+  >([]);
+  const [brandSuggestions, setBrandSuggestions] = useState<BrandSuggestion[]>(
+    [],
+  );
   const [totalCount, setTotalCount] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,7 +84,12 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
   // Global shortcut Ctrl+K or / to focus search input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey && e.key === "k") || (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA")) {
+      if (
+        (e.ctrlKey && e.key === "k") ||
+        (e.key === "/" &&
+          document.activeElement?.tagName !== "INPUT" &&
+          document.activeElement?.tagName !== "TEXTAREA")
+      ) {
         e.preventDefault();
         inputRef.current?.focus();
         inputRef.current?.select();
@@ -82,7 +102,10 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
   // Close popup on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -146,7 +169,10 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
 
       // Check brands
       mainCat.oneCikanMarkalar.forEach((brand) => {
-        if (brand.ad.toLowerCase().includes(trimmed) && !seenBrands.has(brand.ad.toLowerCase())) {
+        if (
+          brand.ad.toLowerCase().includes(trimmed) &&
+          !seenBrands.has(brand.ad.toLowerCase())
+        ) {
           seenBrands.add(brand.ad.toLowerCase());
           matchingBrands.push(brand);
         }
@@ -204,14 +230,6 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
     }
   };
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCat = e.target.value;
-    setSelectedCategory(newCat);
-    if (query.trim().length >= 2) {
-      performSearch(query, newCat);
-    }
-  };
-
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsOpen(false);
@@ -257,27 +275,6 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
         className="flex items-center w-full bg-yuzey-kart border-2 border-marka rounded-[var(--radius-girdi)] overflow-hidden shadow-[var(--shadow-hafif)] focus-within:border-vurgu focus-within:ring-2 focus-within:ring-vurgu/20 transition-all"
         role="search"
       >
-        {/* Category Prefix Dropdown */}
-        <div className="relative shrink-0 hidden sm:flex items-center border-r border-kenar bg-yuzey-gomulu">
-          <select
-            value={selectedCategory}
-            onChange={handleCategoryChange}
-            aria-label="Kategori Seç"
-            className="h-10 pl-3 pr-7 bg-transparent text-xs font-semibold text-metin appearance-none cursor-pointer outline-none hover:text-vurgu transition-colors"
-          >
-            <option value="tum">Tüm Kategoriler</option>
-            {menuData.map((cat, idx) => (
-              <option key={`${cat.id}-${idx}`} value={cat.id}>
-                {cat.ad}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={13}
-            className="pointer-events-none absolute right-2 text-metin-ucuncul"
-          />
-        </div>
-
         {/* Search Input Field */}
         <div className="relative flex-grow flex items-center">
           <input
@@ -290,12 +287,12 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
               if (query.trim().length >= 2) setIsOpen(true);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="MPN, üretici parça kodu, entegre veya kategori ara..."
+            placeholder="Anahtar Kelime, Ürün Kodu..."
             aria-label="Akıllı Ürün ve Parça Arama"
             aria-autocomplete="list"
             aria-expanded={isOpen}
             aria-controls="search-suggestions-list"
-            className="w-full h-10 px-3.5 text-sm font-sans text-metin placeholder:text-metin-ucuncul outline-none bg-transparent"
+            className="w-full h-14 px-4 text-sm font-sans text-metin placeholder:text-metin-ucuncul outline-none bg-transparent"
           />
 
           {/* Quick Clear or Loading Spinner */}
@@ -312,21 +309,16 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
             >
               <X size={15} />
             </button>
-          ) : (
-            <div className="hidden lg:flex items-center mr-2 px-1.5 py-0.5 rounded border border-kenar-guclu bg-yuzey-gomulu text-[10px] font-mono text-metin-ucuncul">
-              Ctrl+K
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Submit Search Button */}
         <button
           type="submit"
           aria-label="Ara"
-          className="h-10 px-4 bg-marka hover:bg-marka-hover text-dolgu-uzeri font-medium flex items-center justify-center gap-1.5 transition-colors shrink-0"
+          className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#2375c4] text-white transition-colors hover:bg-[#24547E]"
         >
           <Search size={17} />
-          <span className="hidden md:inline text-xs font-semibold">Ara</span>
         </button>
       </form>
 
@@ -349,7 +341,8 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
                 <div className="p-3">
                   <div className="flex items-center justify-between mb-2 px-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul flex items-center gap-1.5">
-                      <Cpu size={13} className="text-vurgu" /> Eşleşen Komponentler
+                      <Cpu size={13} className="text-vurgu" /> Eşleşen
+                      Komponentler
                     </span>
                     <span className="text-[11px] font-mono text-metin-ikincil">
                       {totalCount} sonuç bulundu
@@ -374,7 +367,10 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
                                 className="object-contain w-full h-full"
                               />
                             ) : (
-                              <Cpu size={20} className="text-metin-ucuncul group-hover:text-vurgu" />
+                              <Cpu
+                                size={20}
+                                className="text-metin-ucuncul group-hover:text-vurgu"
+                              />
                             )}
                           </div>
                           <div className="min-w-0">
@@ -387,7 +383,8 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
                               </span>
                             </div>
                             <p className="text-xs text-metin-ucuncul truncate max-w-md">
-                              {prod.kisaAciklama || "Endüstriyel elektronik komponent"}
+                              {prod.kisaAciklama ||
+                                "Endüstriyel elektronik komponent"}
                             </p>
                           </div>
                         </div>
@@ -412,7 +409,8 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
                 <div className="p-3 bg-yuzey">
                   <div className="mb-2 px-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul flex items-center gap-1.5">
-                      <Layers size={13} className="text-vurgu" /> İlgili Kategoriler
+                      <Layers size={13} className="text-vurgu" /> İlgili
+                      Kategoriler
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -439,7 +437,8 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
                 <div className="p-3">
                   <div className="mb-2 px-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul flex items-center gap-1.5">
-                      <Building2 size={13} className="text-vurgu" /> Yetkili Üreticiler
+                      <Building2 size={13} className="text-vurgu" /> Yetkili
+                      Üreticiler
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 px-2">
@@ -465,11 +464,14 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
               {/* Autocomplete Footer Action */}
               <div className="p-3 bg-yuzey-gomulu flex items-center justify-between text-xs">
                 <span className="text-metin-ikincil">
-                  İpucu: Sonuçlar arasında doğrudan gezinmek için yukarı/aşağı ok tuşlarını kullanabilirsiniz.
+                  İpucu: Sonuçlar arasında doğrudan gezinmek için yukarı/aşağı
+                  ok tuşlarını kullanabilirsiniz.
                 </span>
                 <Link
                   href={`/urunler?aramaMetni=${encodeURIComponent(query)}${
-                    selectedCategory !== "tum" ? `&kategoriId=${selectedCategory}` : ""
+                    selectedCategory !== "tum"
+                      ? `&kategoriId=${selectedCategory}`
+                      : ""
                   }`}
                   onClick={() => setIsOpen(false)}
                   className="font-bold text-vurgu hover:text-vurgu-guclu flex items-center gap-1 shrink-0"
@@ -490,7 +492,8 @@ export function SmartSearchCombobox({ categories = [], className = "" }: SmartSe
 
               <div className="mt-4 pt-4 border-t border-kenar text-left">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul flex items-center gap-1 mb-2">
-                  <Sparkles size={12} className="text-vurgu" /> Popüler Parça Aramaları:
+                  <Sparkles size={12} className="text-vurgu" /> Popüler Parça
+                  Aramaları:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {POPULER_ONERILER.map((item) => (
