@@ -6,8 +6,19 @@ import { ArrowRight, BookOpen, Cpu, ShoppingCart } from "lucide-react";
 import { useHeaderCart } from "@/lib/stores/header-state";
 import { Kapsayici } from "@/components/ui/yuzey";
 
-export function AltPromos() {
+export function AltPromos({ siteParaBirimi }: { siteParaBirimi?: string }) {
   const { itemCount, toplamTutar, paraBirimi } = useHeaderCart();
+  let displayTutar = toplamTutar;
+  let displayCur = paraBirimi;
+  if (paraBirimi === "USD" && siteParaBirimi === "TRY") {
+    displayTutar = toplamTutar * 35.24;
+    displayCur = "TRY";
+  } else if (paraBirimi === "TRY" && siteParaBirimi === "USD") {
+    displayTutar = toplamTutar / 35.24;
+    displayCur = "USD";
+  } else if (siteParaBirimi) {
+    displayCur = siteParaBirimi;
+  }
   const [siteCurrency, setSiteCurrency] = useState("TRY");
 
   useEffect(() => {
