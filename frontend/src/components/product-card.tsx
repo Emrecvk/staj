@@ -1,9 +1,15 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ShoppingCart, Loader2, Minus, Plus } from "lucide-react";
 import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
-import { StokRozeti } from "@/components/ui/rozet";
 import { UrunGorseli } from "@/components/urun-gorseli";
-import type { ProductSummary } from "@/lib/api";
+import { addToCart } from "@/lib/cart-actions";
+import { notifyCartUpdated } from "@/lib/stores/header-state";
+import { bildir } from "@/components/ui/bildirim";
+import type { ProductSummary, PackagingOption } from "@/lib/api";
 
 function fiyatBicimle(deger: number, paraBirimi: string) {
   return new Intl.NumberFormat("tr-TR", {
@@ -14,43 +20,78 @@ function fiyatBicimle(deger: number, paraBirimi: string) {
 }
 
 /**
- * Ürün kartı.
+ * Özdisan tarzı katalog ürün kartı: belirgin stok durumu, adet seçici ve
+ * hızlı sepet aksiyonu.
+ *
+ * Not: Liste özet DTO'su ambalaj/fiyat-kademesi taşımadığı için gerçek bir
+ * ambalajId yok. Bu yüzden "Sepete Ekle" ambalaj verisi yoksa ürün sayfasına
+ * yönlendirir (uydurma id/miktar göndermeyiz) — mevcut hızlı-ekle deseni.
  */
 export function ProductCard({ product }: { product: ProductSummary }) {
+  const router = useRouter();
+  const [adet, setAdet] = useState(1);
+  const [ekleniyor, setEkleniyor] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const stokVar = product.toplamStok > 0;
+  const azStok = stokVar && product.toplamStok < 100;
+
+  const varsayilanAmbalaj: PackagingOption | null =
+    product.ambalajlarVeFiyatlar?.find((a) => a.varsayilanMi) ??
+    product.ambalajlarVeFiyatlar?.[0] ??
+    null;
+
+  const sepeteEkle = () => {
+    if (!varsayilanAmbalaj) {
+      // Gerçek ambalaj bilgisi listede yok; kullanıcı PDP'de seçsin.
+      router.push(`/urunler/${product.id}`);
+      return;
+    }
+    setEkleniyor(true);
+    startTransition(async () => {
+      const sonuc = await addToCart(varsayilanAmbalaj.ambalajId, varsayilanAmbalaj.moq * adet);
+      if (sonuc.success) {
+        bildir.eylemli(
+          "Sepete eklendi",
+          "Sepete Git",
+          () => router.push("/sepet"),
+          product.ureticiUrunKodu,
+        );
+        notifyCartUpdated();
+        router.refresh();
+      } else {
+        bildir.hata("Sepete eklenemedi", sonuc.message);
+      }
+      setEkleniyor(false);
+    });
+  };
+
+  const mesgul = ekleniyor && isPending;
+
   return (
     <article
-      className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-kart)]
-                 border border-kenar bg-yuzey-kart
-                 transition-[border-color,box-shadow] duration-[var(--sure-acilir)]
-                 ease-[var(--ease-cikis)] hover:border-kenar-guclu hover:shadow-[var(--shadow-yukselti)]"
+      className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-kenar
+                 bg-yuzey-kart shadow-sm transition-[border-color,box-shadow]
+                 duration-[var(--sure-acilir)] ease-[var(--ease-cikis)]
+                 hover:border-kenar-guclu hover:shadow-[var(--shadow-yukselti)]"
     >
+      {/* Görsel + rozetler + hover aksiyonları */}
       <div className="relative shrink-0 border-b border-kenar bg-yuzey-gomulu">
         <Link
           href={`/urunler/${product.id}`}
           className="flex aspect-[4/3] items-center justify-center p-4"
           aria-label={`${product.ureticiUrunKodu} ürün detayı`}
         >
-          <UrunGorseli
-            src={product.anaGorselUrl}
-            urunKodu={product.ureticiUrunKodu}
-            className="p-2"
-          />
+          <UrunGorseli src={product.anaGorselUrl} urunKodu={product.ureticiUrunKodu} className="p-2" />
         </Link>
 
         {product.kampanyaliMi && (
-          <span
-            className="absolute left-2 top-2 rounded-full bg-uyari-600 px-2 py-0.5
-                       text-[10px] font-bold uppercase tracking-wide text-white"
-          >
+          <span className="absolute left-2 top-2 rounded-full bg-uyari-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
             Fırsat
           </span>
         )}
 
-        {/* Odaklanınca da görünür: klavye kullanıcısı favori ve karşılaştırmaya erişebilmeli. */}
-        <div
-          className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity
-                     duration-[var(--sure-acilir)] focus-within:opacity-100 group-hover:opacity-100"
-        >
+        <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 transition-opacity duration-[var(--sure-acilir)] focus-within:opacity-100 group-hover:opacity-100">
           <KarsilastirmaButonu
             urunId={product.id}
             product={{
@@ -69,10 +110,11 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         </div>
       </div>
 
+      {/* Bilgi */}
       <div className="flex flex-grow flex-col p-4">
         <span className="mb-1 text-xs font-medium text-metin-ucuncul">{product.ureticiAd}</span>
 
-        <h3 className="mb-2 font-mono text-sm font-bold leading-tight text-metin">
+        <h3 className="mb-1.5 font-mono text-sm font-bold leading-tight text-metin">
           <Link
             href={`/urunler/${product.id}`}
             className="line-clamp-1 transition-colors duration-[var(--sure-ipucu)] hover:text-vurgu"
@@ -85,28 +127,74 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           {product.kisaAciklama}
         </p>
 
+        {/* Belirgin stok durumu (Özdisan tarzı) */}
         <div className="mb-3">
-          <StokRozeti miktar={product.toplamStok} />
+          {stokVar ? (
+            <span
+              className={`inline-flex items-center gap-1.5 text-xs font-bold ${
+                azStok ? "text-uyari-600" : "text-basari-600"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${azStok ? "bg-uyari-500" : "bg-basari-500"}`} />
+              <span className="font-mono tabular-nums">{product.toplamStok.toLocaleString("tr-TR")}</span>
+              {azStok ? " adet (sınırlı)" : " adet stokta"}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-hata-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-hata-500" />
+              Stokta yok — fiyat sorgula
+            </span>
+          )}
         </div>
 
-        <div className="mt-auto flex items-end justify-between gap-2 border-t border-kenar pt-3">
-          <div>
-            <div className="text-[10px] text-metin-ucuncul">Başlangıç fiyatı</div>
-            <div className="font-mono text-base font-bold tabular-nums text-metin">
-              {fiyatBicimle(product.baslangicFiyati, product.paraBirimi)}
-            </div>
+        {/* Fiyat */}
+        <div className="mb-3 border-t border-kenar pt-3">
+          <div className="text-[10px] text-metin-ucuncul">Başlangıç fiyatı</div>
+          <div className="font-mono text-lg font-bold tabular-nums text-metin">
+            {fiyatBicimle(product.baslangicFiyati, product.paraBirimi)}
+          </div>
+        </div>
+
+        {/* Adet seçici + sepete ekle */}
+        <div className="mt-auto flex items-center gap-2">
+          <div className="flex h-9 shrink-0 items-center rounded-[var(--radius-girdi)] border border-kenar">
+            <button
+              type="button"
+              onClick={() => setAdet((a) => Math.max(1, a - 1))}
+              disabled={adet <= 1}
+              aria-label="Adet azalt"
+              className="flex h-full w-8 items-center justify-center text-metin-ikincil transition-colors hover:text-vurgu disabled:opacity-40"
+            >
+              <Minus size={13} />
+            </button>
+            <span className="w-7 text-center font-mono text-sm font-bold tabular-nums text-metin">{adet}</span>
+            <button
+              type="button"
+              onClick={() => setAdet((a) => a + 1)}
+              aria-label="Adet artır"
+              className="flex h-full w-8 items-center justify-center text-metin-ikincil transition-colors hover:text-vurgu"
+            >
+              <Plus size={13} />
+            </button>
           </div>
 
-          <Link
-            href={`/urunler/${product.id}`}
-            className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-girdi)]
-                       border border-kenar-guclu px-2.5 py-1.5 text-xs font-semibold text-metin
-                       transition-[background-color,border-color,color,transform]
+          <button
+            type="button"
+            onClick={sepeteEkle}
+            disabled={mesgul}
+            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-girdi)]
+                       bg-vurgu px-3 text-xs font-bold text-white transition-[background-color,transform]
                        duration-[var(--sure-basma)] ease-[var(--ease-cikis)]
-                       hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu active:scale-[0.97]"
+                       hover:bg-vurgu-guclu active:scale-[0.97] disabled:opacity-60"
           >
-            İncele <ArrowRight size={13} />
-          </Link>
+            {mesgul ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <>
+                <ShoppingCart size={14} /> Sepete Ekle
+              </>
+            )}
+          </button>
         </div>
       </div>
     </article>
