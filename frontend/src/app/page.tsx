@@ -3,10 +3,8 @@ import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { HeroB2B } from "@/components/home/hero-b2b";
-import { EnvanterSeridi } from "@/components/home/envanter-seridi";
-import { KategoriIzgarasi } from "@/components/home/kategori-izgarasi";
+import { AltPromos } from "@/components/home/alt-promos";
 import { VitrinSekmeleri } from "@/components/home/vitrin-sekmeleri";
-import { DistributorVitrini } from "@/components/home/distributor-vitrini";
 import { B2BDegerOnerisi } from "@/components/home/b2b-deger-onerisi";
 import { YukariCik } from "@/components/ui/yukari-cik";
 import {
@@ -34,34 +32,36 @@ export default async function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-yuzey">
-      {/* 1. Global 3-Tier Header & Mega Menu */}
+      {/* 1. Sade header */}
       <SiteHeader categories={categories} initialCurrency={seciliParaBirimi as "TRY" | "USD"} />
 
       <main id="icerik" className="flex-grow">
-        {/* 2. Split B2B Hero Section (Slider + Quick BOM Widget) */}
-        <Suspense fallback={<div className="h-[480px] bg-marka animate-pulse" />}>
-          <HeroB2B categories={categories} stoktakiUrun={ozet?.stoktakiUrun} />
+        {/* 2. Kategori + kampanya + hızlı işlemler (açık temalı 3 kolon) */}
+        <Suspense fallback={<div className="h-[360px] bg-yuzey-gomulu animate-pulse" />}>
+          <HeroB2B
+            categories={categories}
+            kategoriSayilari={kategoriSayilari}
+            stoktakiUrun={ozet?.stoktakiUrun}
+          />
         </Suspense>
 
-        {/* 3. Live Inventory Metrics Strip */}
-        <EnvanterSeridi ozet={ozet} />
+        <AltPromos siteParaBirimi={seciliParaBirimi} />
 
-        {/* 4. Category Grid — gercek kategoriler ve gercek urun sayilari */}
-        <KategoriIzgarasi categories={categories} urunSayilari={kategoriSayilari} />
+        {/* 3. Stoktan teslim edilebilen ürünler */}
+        <div>
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="coksatan" siteParaBirimi={seciliParaBirimi} />
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="yeni" siteParaBirimi={seciliParaBirimi} />
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="onecikan" siteParaBirimi={seciliParaBirimi} />
+          <VitrinSekmeleri urunler={urunler} baslangicSekmesi="firsat" siteParaBirimi={seciliParaBirimi} />
+        </div>
 
-        {/* 5. Tabbed Product Showcase Carousels (New, Bestsellers, Stock Deals, Featured) */}
-        <VitrinSekmeleri urunler={urunler} siteParaBirimi={seciliParaBirimi} />
-
-        {/* 6. Authorized Supplier Line-Card Showcase */}
-        <DistributorVitrini />
-
-        {/* 7. B2B Corporate Solutions & Value Propositions */}
+        {/* BOM/RFQ çözümleri ve iletişim alanı */}
         <div id="cozumler">
           <B2BDegerOnerisi />
         </div>
       </main>
 
-      {/* 8. Global Site Footer */}
+      {/* 9. Sade footer */}
       <SiteFooter />
       <YukariCik />
     </div>
