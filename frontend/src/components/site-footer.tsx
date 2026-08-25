@@ -139,6 +139,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/blog" className="hover:text-vurgu transition-colors">
+                  Blog & Teknik Kaynaklar
+                </Link>
+              </li>
+              <li>
                 <Link href="/kayit/kurumsal" className="hover:text-vurgu transition-colors">
                   Kurumsal Cari Hesap Başvurusu
                 </Link>

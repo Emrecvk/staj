@@ -7,6 +7,16 @@ export type PackagingOption = { ambalajId: number; ad: string; ambalajTipi?: num
 export type WarehouseStock = { depoKodu: string; depoAdi: string; stokMiktari: number; teslimSuresiGun: number };
 export type PublicPage = { slug: string; baslik: string; icerikHtml: string; seoBaslik?: string | null; seoAciklama?: string | null };
 export type PublicFaq = { id: number; kategoriId: number | null; soru: string; cevap: string; sira: number };
+export type BlogOzet = {
+  id: number;
+  baslik: string;
+  slug: string;
+  ozet: string;
+  kapakGorselUrl?: string | null;
+  yayinTarihi?: string | null;
+  kategori?: string | null;
+};
+export type BlogDetay = BlogOzet & { icerikHtml: string };
 
 export type ProductSummary = {
   id: number;
@@ -127,6 +137,14 @@ export function getPublicPage(slug: string) {
 
 export function getFaqs() {
   return safeFetch<PublicFaq[]>("/icerik/sss", []);
+}
+
+export function getBlogYazilari() {
+  return safeFetch<BlogOzet[]>("/icerik/blog", []);
+}
+
+export function getBlogYazisi(slug: string) {
+  return safeFetch<BlogDetay | null>(`/icerik/blog/${encodeURIComponent(slug)}`, null);
 }
 
 // Favori ve karsilastirma islemleri lib/katalog-actions.ts icinde,
