@@ -14,16 +14,16 @@
 
 | Kayıt | İş | Durum | Kaba tahmin |
 |---|---|---|---|
-| A1 | Stok bildirimi — "gelince haber ver" | Backend hazır | 3–4 sa |
-| A2 | Müşteri ürün kodları | Backend hazır | 4–5 sa |
-| A3 | Duyuru şeridi ve banner'lar | Backend hazır | 2 sa |
-| B1 | Listeleme DTO'sunu zenginleştir | Backend değişikliği | 4–6 sa |
-| C1 | Aramaya üretici adını kat | Backend değişikliği | 15 dk |
-| C2 | Marka facet'ini görünür kıl | Backend değişikliği | 2 sa |
-| C3 | `/markalar` line-card sayfası | Backend hazır | 3 sa |
-| D1 | BOM ve RFQ'yu ana menüye taşı | Sadece frontend | 30 dk |
-| E1 | Çözüm alt sayfaları | İçerik + frontend | 4 sa |
-| E2 | PDP'de datasheet'i öne çıkar | Sadece frontend | 1 sa |
+| A1 | Stok bildirimi — "gelince haber ver" | Tamamlandı | 3–4 sa |
+| A2 | Müşteri ürün kodları | Tamamlandı | 4–5 sa |
+| A3 | Duyuru şeridi ve banner'lar | Tamamlandı | 2 sa |
+| B1 | Listeleme DTO'sunu zenginleştir | Tamamlandı | 4–6 sa |
+| C1 | Aramaya üretici adını kat | Tamamlandı | 15 dk |
+| C2 | Marka facet'ini görünür kıl | Tamamlandı | 2 sa |
+| C3 | `/markalar` line-card sayfası | Tamamlandı | 3 sa |
+| D1 | Üreticiler'i ana navigasyona, BOM'u ana sayfaya taşı | Tamamlandı | 1–2 sa |
+| E1 | Çözüm alt sayfaları | Tamamlandı | 4 sa |
+| E2 | PDP'de datasheet'i öne çıkar | Tamamlandı | 1 sa |
 
 ---
 
@@ -150,16 +150,18 @@ Tüm markaların A–Z listelendiği, harf navigasyonlu, yetkili rozetli bir say
 
 Sitenin en değerli iki B2B aracı, ana menüde yok.
 
-### D1 · BOM ve RFQ'yu ana menüye taşı
+### D1 · Üreticiler'i ana navigasyona, BOM'u ana sayfaya taşı
 
 **Durum:** Sadece frontend · **Kaba tahmin:** 30 dk
 
-Ana navigasyonda bugün yalnızca **Ürünler**, **Çözümler**, **Kurumsal** ve
-**İletişim** var. `/bom`, `/teklif-iste`, `/araclar` ve `/blog` sadece footer'dan
-erişilebiliyor.
+Ana navigasyona **Üreticiler** bağlantısı eklenecek ve üretici line-card sayfasına
+gidecek. BOM ve RFQ ana navigasyona alınmayacak; BOM, ana sayfada görünür bir
+"BOM Yükle ve Eşleştir" çağrısıyla sunulacak. RFQ mevcut ürün, sepet ve çözüm
+akışlarından erişilebilir kalacak.
 
-BOM eşleştirme ve teklif talebi bu işin ayırt edici özellikleri; footer'da
-saklanmaları ölçülebilir bir kayıp. Menüye çıkarmak yarım saatlik iş.
+BOM eşleştirme bu işin ayırt edici özelliklerinden biri olduğu için ana sayfada
+ayrı bir aksiyon olarak görünür olmalı; üreticiler ise `/markalar` line-card
+sayfasından keşfedilmeli.
 
 ---
 
@@ -178,13 +180,82 @@ ediyor.
 İçerik yönetimi `/icerik/sayfalar/{slug}` ucuyla zaten mümkün; `/hakkimizda` sayfası
 bu deseni kullanıyor, aynısı çoğaltılabilir.
 
-### E2 · PDP'de datasheet'i öne çıkar
+### E2 · Ürün detay sayfasını Özdisan tarzına redesign et
 
-**Durum:** Sadece frontend · **Kaba tahmin:** 1 sa
+**Durum:** Sadece frontend · **Kaba tahmin:** 4–5 sa
 
-`UrunDetayDto` `Dokumanlar` alanını zaten taşıyor. Ürün detayında teknik dokümanı
-belirgin, ikonlu ve dosya boyutlu bir blok hâline getirmek — mühendis için sayfadaki
-en önemli bağlantı çoğu zaman budur.
+PDP layout'u Özdisan karşılaştırmasından sonra tamamen yeniden tasarlanmalı. Bugün
+2 kolon (sol-sağ) yapıda, hedef 3 bölgeli asimetrik layout. Bu madde yalnızca
+datasheet bloku değil, **tüm sayfa yeniden yapılandırılması**.
+
+#### Temel farklar (Çevik → Özdisan)
+
+| Öğe | Çevik | Özdisan | Değişim |
+|---|---|---|---|
+| **Görsel** | Placeholder, küçük | Galeri, büyük (50% üst kısım) | Ürün görseli 3x büyütül |
+| **Grid** | 2 kolon (sol-sağ) | 3 bölge (sol-orta-sağ) | Grid yapısını yeniden kur |
+| **Bilgi sırası** | Ambalaj → MOQ → Fiyat → Alım | Üretici → Kod → Stok → Kademeli Fiyat → Alım | Satın alma akışını türet |
+| **Stok gösterimi** | Depo listeleri | Net sayı + renk (yeşil/turuncu/kırmızı) | Stok UI sadeleştir |
+| **Datasheet** | Ayrı blok (üst) | İçgili bilgi (orta bölgede ikon) | Satır içi, daha kompakt |
+| **Sekmeler (alt)** | Teknik Özellikleri, Dokümanlar, vb. | Tablo görünümü satırları | Okunabilirlik iyileştir |
+
+#### Yapılacak işler (sırasıyla)
+
+1. **Layout Grid'i Yeniden Kur** (`.tsx` dosyası)
+   - `frontend/src/app/urunler/[id]/client.tsx` ana grid yapısı
+   - Satır 99: `lg:grid-cols-12` → asimetrik 3 bölge (1.5:1:1 oranı)
+   - Sol: Ürün görseli + depo stokları
+   - Orta: Ürün bilgileri (üretici, kod, açıklama, datasheet ikonu)
+   - Sağ: Ambalaj seçimi, kademeli fiyat, alım kontrolleri
+
+2. **Bileşen Sırası Değiştir**
+   - Ambalaj seçeneğini sağa taşı (orta bilgiden sonra)
+   - MOQ/MPQ/Katlama gösterimini sağ bölgede organize et
+   - Fiyat tablosunu altında göster
+   - Sepete Ekle / Teklif İste'yi en altta (tam genişlik)
+
+3. **Ürün Görseli Büyüt**
+   - Galeri container'ı ürün detayında daha belirgin hâle getir
+   - Placeholder yerine gerçek ürün görseli yükle
+   - Responsive: mobilde fullwidth, desktop'te 45% sol
+
+4. **Stok Gösterimini Sadeleştir**
+   - "Stok & Depo Dağılımı" bloğu: depo isimlerini çıkar, net sayı göster
+   - Renk kodu ekle: > 100 adet (yeşil), 1–100 (turuncu), 0 (kırmızı)
+   - Gelecek stok tarihi alt satırda ince yazı
+
+5. **Datasheet Bloku İçgileştir**
+   - Çevik'te üst köşede ayrı blok, Özdisan'da orta bilginin altında ikon
+   - `frontend/src/app/urunler/[id]/pdp-bilesenleri.tsx` bileşenini güncellemeliyebilir
+   - İndirme butonu sağda kalabilir ama daha kompakt
+
+6. **Teknik Özellikler Tablosu Okunabilirlik**
+   - Bugün parametrik tablo alt sekmede; bu kalabilir ama satır renklerini iyileştir
+   - Alternatif: İlk 5 kritik özelliği üst kısımda card'lar hâlinde göster
+
+#### Dosyalar değişecek
+
+- `frontend/src/app/urunler/[id]/client.tsx` — ana layout (satır 68–170+)
+- `frontend/src/app/urunler/[id]/pdp-bilesenleri.tsx` — bileşen yapısı (tüm bileşenler)
+- `frontend/src/app/urunler/[id]/page.css` veya Tailwind sınıfları — responsive breakpoint'ler
+
+#### Dikkat noktaları
+
+- **Datasheet boyutu**: `UrunDetayDto.Dokumanlar` zaten `boyutByte` taşıyorsa sorun yok;
+  yoksa backend'e bu eklenmeli.
+- **Görsel swap**: Ana görsel placeholder yerine `anaGorselUrl` çekme (zaten yapılıyor ama
+  galeri container'ı büyütülmeli).
+- **Responsive**: Mobilde 2 kolon (görsel üst, bilgi alt), tabletde 1.5:1.5, desktop'te 1.5:1:1.
+- **Performans**: Ambalaj / fiyat listesi uzunsa lazy load düşün; ama MVP için viewport
+  içi render yeterli.
+
+#### Neden 4–5 saat
+
+- Layout yeniden kuru: 1–1.5 sa
+- Bileşenleri organize et ve prop'ları düzenle: 1–1.5 sa
+- Responsive breakpoint'ler (mobil / tablet / desktop): 1 sa
+- Test ve pixel-perfect hizala: 1 sa
+- Buffer (beklenmedik sorun): 0.5 sa
 
 ---
 
