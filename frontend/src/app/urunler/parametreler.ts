@@ -39,6 +39,13 @@ export function apiParametreleriniKur(
   for (const [anahtar, deger] of Object.entries(urlParametreleri)) {
     if (deger === undefined || anahtar === "gorunum") continue;
 
+    // Marka filtresi: URL'de sade `ureticiId`, API'de `UreticiIdleri` (List<int>).
+    // ASP.NET model binder tekrarlanan anahtarları listeye bağlar.
+    if (anahtar === "ureticiId") {
+      cikti["UreticiIdleri"] = deger;
+      continue;
+    }
+
     if (GEZINME_ANAHTARLARI.has(anahtar)) {
       cikti[anahtar] = deger;
       continue;

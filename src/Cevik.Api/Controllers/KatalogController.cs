@@ -38,6 +38,13 @@ public class KatalogController : ControllerBase
         return Ok(sonuc);
     }
 
+    [HttpGet("ureticiler")]
+    public async Task<IActionResult> UreticileriListele()
+    {
+        var sonuc = await _katalogServisi.UreticileriGetirAsync();
+        return Ok(sonuc);
+    }
+
     [HttpGet("urunler/{id}")]
     public async Task<IActionResult> UrunDetay(long id, [FromQuery] string? dil, [FromQuery] string? paraBirimi)
     {

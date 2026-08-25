@@ -43,7 +43,14 @@ export function resolveViewMode(queryMode?: string | null): ViewMode {
   return "izgara";
 }
 
-export function ProductListingClient({ initialData }: { initialData: ProductResult | null }) {
+export function ProductListingClient({
+  initialData,
+  ureticiAdlari = {},
+}: {
+  initialData: ProductResult | null;
+  /** Üretici id → ad; aktif-filtre çipinde okunur marka adı göstermek için. */
+  ureticiAdlari?: Record<string, string>;
+}) {
   const [mobilFiltreAcik, setMobilFiltreAcik] = useState(false);
   const router = useRouter();
   const sorguParametreleri = useSearchParams();
@@ -336,7 +343,11 @@ export function ProductListingClient({ initialData }: { initialData: ProductResu
             {aktifCipler.map(({ kod, deger }) => (
               <FiltreCipi
                 key={`${kod}-${deger}`}
-                etiket={deger}
+                etiket={
+                  kod === "ureticiId"
+                    ? `Marka: ${ureticiAdlari[deger] ?? deger}`
+                    : deger
+                }
                 onKaldir={() => filtreDegistir(kod, deger, false)}
               />
             ))}

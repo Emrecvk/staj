@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Kapsayici } from "@/components/ui/yuzey";
-import { getCategories, getProducts } from "@/lib/api";
+import { getCategories, getProducts, getUreticiler } from "@/lib/api";
 import { ProductListingClient } from "./client";
 import { apiParametreleriniKur } from "./parametreler";
 
@@ -18,15 +19,26 @@ export default async function UrunlerPage({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const parametreler = await searchParams;
+  const cookieStore = await cookies();
+  const seciliParaBirimi = cookieStore.get("site_para_birimi")?.value === "USD" ? "USD" : "TRY";
 
   // URL parametreleri API bicimine cevrilir; parametrik filtreler
   // ParametrikFiltreler[anahtar] olmadan sunucu tarafindan yok sayiliyor.
   const apiParametreleri = apiParametreleriniKur(parametreler);
+  apiParametreleri.paraBirimi = seciliParaBirimi;
 
-  const [kategoriler, sonuc] = await Promise.all([
+  // Marka filtresi aktifse üretici adlarını çöz; aktif-filtre çipinde ham id
+  // yerine "Omron" gibi okunur ad göstermek için (yalnızca gerektiğinde çekilir).
+  const ureticiFiltresiVar = parametreler.ureticiId !== undefined;
+
+  const [kategoriler, sonuc, ureticiler] = await Promise.all([
     getCategories(),
     getProducts(apiParametreleri),
+    ureticiFiltresiVar ? getUreticiler() : Promise.resolve([]),
   ]);
+
+  const ureticiAdlari: Record<string, string> = {};
+  for (const u of ureticiler) ureticiAdlari[String(u.id)] = u.ad;
 
   const aramaMetni = typeof parametreler.aramaMetni === "string" ? parametreler.aramaMetni : null;
   const kategoriId = typeof parametreler.kategoriId === "string" ? parametreler.kategoriId : null;
@@ -45,7 +57,7 @@ export default async function UrunlerPage({ searchParams }: {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader categories={kategoriler} />
+      <SiteHeader categories={kategoriler} initialCurrency={seciliParaBirimi} />
 
       <main id="icerik" className="flex-grow py-8">
         <Kapsayici>
@@ -60,7 +72,7 @@ export default async function UrunlerPage({ searchParams }: {
             )}
           </header>
 
-          <ProductListingClient initialData={sonuc} />
+          <ProductListingClient initialData={sonuc} ureticiAdlari={ureticiAdlari} />
         </Kapsayici>
       </main>
 
