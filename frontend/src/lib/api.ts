@@ -36,6 +36,16 @@ export type ProductSummary = {
   depoStoklari?: WarehouseStock[];
 };
 
+export type UreticiOzet = {
+  id: number;
+  ad: string;
+  slug: string;
+  logoUrl?: string | null;
+  webSitesi?: string | null;
+  yetkiliDistributorMu: boolean;
+  urunSayisi: number;
+};
+
 export type FacetOption = { deger: string; hamDeger: string; urunSayisi: number };
 export type FacetGroup = { kod: string; ad: string; gosterimTipi: number; secenekler: FacetOption[] };
 export type ProductResult = { urunler: { sayfaNo: number; sayfaBoyutu: number; toplamKayit: number; toplamSayfa: number; kayitlar: ProductSummary[] }; filtreler: FacetGroup[] };
@@ -88,6 +98,8 @@ export async function safeFetch<T>(path: string, fallback: T): Promise<T> {
 
 export function getCategories() { return safeFetch<Category[]>("/Katalog/kategoriler/agac", []); }
 
+export function getUreticiler() { return safeFetch<UreticiOzet[]>("/Katalog/ureticiler", []); }
+
 export async function getProducts(params: Record<string, string | number | boolean | undefined | string[]> = {}) {
   const query = new URLSearchParams(); 
   Object.entries(params).forEach(([key, value]) => {
@@ -104,8 +116,9 @@ export async function getProducts(params: Record<string, string | number | boole
   return result || { urunler: { sayfaNo: 1, sayfaBoyutu: 0, toplamKayit: 0, toplamSayfa: 0, kayitlar: [] }, filtreler: [] };
 }
 
-export async function getProduct(id: string) {
-  return safeFetch<ProductDetail | null>(`/Katalog/urunler/${id}`, null);
+export async function getProduct(id: string, paraBirimi?: "TRY" | "USD") {
+  const query = paraBirimi ? `?paraBirimi=${paraBirimi}` : "";
+  return safeFetch<ProductDetail | null>(`/Katalog/urunler/${id}${query}`, null);
 }
 
 export function getPublicPage(slug: string) {

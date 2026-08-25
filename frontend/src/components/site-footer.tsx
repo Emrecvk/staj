@@ -115,6 +115,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/araclar" className="hover:text-vurgu transition-colors">
+                  Mühendis Araçları
+                </Link>
+              </li>
+              <li>
                 <Link href="/sss" className="hover:text-vurgu transition-colors">
                   Sıkça Sorulan Sorular
                 </Link>

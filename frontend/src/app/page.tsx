@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { HeroB2B } from "@/components/home/hero-b2b";
 import { AltPromos } from "@/components/home/alt-promos";
 import { VitrinSekmeleri } from "@/components/home/vitrin-sekmeleri";
+import { DistributorVitrini } from "@/components/home/distributor-vitrini";
 import { B2BDegerOnerisi } from "@/components/home/b2b-deger-onerisi";
 import { YukariCik } from "@/components/ui/yukari-cik";
 import {
@@ -12,6 +13,7 @@ import {
   getProducts,
   getKatalogOzeti,
   getKategoriUrunSayilari,
+  getUreticiler,
 } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +21,16 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const cookieStore = await cookies();
   const seciliParaBirimi = cookieStore.get("site_para_birimi")?.value === "USD" ? "USD" : "TRY";
-  const [categories, productResult, ozet] = await Promise.all([
+  const [categories, productResult, ozet, ureticiler] = await Promise.all([
     getCategories(),
-    getProducts({ sayfaNo: 1, sayfaBoyutu: 12, sadeceStoktakiler: true }),
+    getProducts({
+      sayfaNo: 1,
+      sayfaBoyutu: 12,
+      sadeceStoktakiler: true,
+      paraBirimi: seciliParaBirimi,
+    }),
     getKatalogOzeti(),
+    getUreticiler(),
   ]);
 
   // Kategori urun sayilari: kategoriler geldikten sonra gercek sayimla.
@@ -46,6 +54,9 @@ export default async function Home() {
         </Suspense>
 
         <AltPromos siteParaBirimi={seciliParaBirimi} />
+
+        {/* Yetkili distribütör markaları (gerçek üretici verisi) */}
+        <DistributorVitrini ureticiler={ureticiler} />
 
         {/* 3. Stoktan teslim edilebilen ürünler */}
         <div>

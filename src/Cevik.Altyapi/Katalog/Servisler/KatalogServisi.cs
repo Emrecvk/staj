@@ -480,6 +480,29 @@ public class KatalogServisi : IKatalogServisi
         return dto;
     }
 
+    public async Task<List<UreticiOzetDto>> UreticileriGetirAsync()
+    {
+        // Yalnızca aktif ve en az bir ürünü olan üreticiler. UrunSayisi global
+        // soft-delete filtresini otomatik uygular; sayı gerçektir, uydurma değil.
+        return await _context.Ureticiler
+            .Where(u => u.Aktif && u.Urunler.Any())
+            .OrderByDescending(u => u.YetkiliDistributorMu)
+            .ThenByDescending(u => u.Urunler.Count)
+            .ThenBy(u => u.Ad)
+            .AsNoTracking()
+            .Select(u => new UreticiOzetDto
+            {
+                Id = u.Id,
+                Ad = u.Ad,
+                Slug = u.Slug,
+                LogoUrl = u.LogoUrl,
+                WebSitesi = u.WebSitesi,
+                YetkiliDistributorMu = u.YetkiliDistributorMu,
+                UrunSayisi = u.Urunler.Count
+            })
+            .ToListAsync();
+    }
+
     public async Task IliskiliUrunEkleAsync(long urunId, long iliskiliUrunId, short tip, int sira = 0)
     {
         if (urunId == iliskiliUrunId)
