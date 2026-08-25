@@ -12,7 +12,7 @@ function siBicim(deger: number, birim: string): string {
   if (!isFinite(deger) || isNaN(deger)) return "—";
   if (deger === 0) return `0 ${birim}`;
   const negatif = deger < 0;
-  let d = Math.abs(deger);
+  const d = Math.abs(deger);
   const onekler: [number, string][] = [
     [1e9, "G"], [1e6, "M"], [1e3, "k"], [1, ""],
     [1e-3, "m"], [1e-6, "µ"], [1e-9, "n"], [1e-12, "p"],
