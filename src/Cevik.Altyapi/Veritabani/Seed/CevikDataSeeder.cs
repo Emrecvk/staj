@@ -6,6 +6,7 @@ using Cevik.Alan.Katalog;
 using Cevik.Alan.Kimlik;
 using Cevik.Alan.Kurallar;
 using Cevik.Alan.Ortak;
+using Cevik.Altyapi.Veritabani.Seed.Katalog;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -14,16 +15,21 @@ using Microsoft.Extensions.Logging;
 namespace Cevik.Altyapi.Veritabani.Seed;
 
 /// <summary>
-/// Sentetik katalog üreticisi.
+/// Katalog seed'i.
 ///
-/// Kasıtlı olarak ozdisan.com'dan veri KAZINMAZ; yalnızca veri yapısı taklit edilir
-/// (PLANLAMA.md 3 - "Veri nereden gelecek"). Üretilen kodlar, üretici adları ve
-/// parametre değerleri gerçek komponent ailelerinin desenini izler ki
-/// arama ve parametrik filtre özellikleri gösterilebilsin.
+/// Ürün verisi <see cref="ParcaKatalogu"/>'ndan gelir: gerçek üretici parça numaraları,
+/// ya üreticinin yayımladığı sipariş kodu şemasından türetilmiş (pasifler, lojik) ya da
+/// elle küratörlü (yarı iletkenler, modüller). Hiçbir MPN rastgele üretilmez ve her
+/// parametre değeri MPN'in kodladığı bilgiyle tutarlıdır.
+///
+/// Rastgelelik yalnızca TİCARİ alanlarda kalır — stok miktarı, liste fiyatı, teslim
+/// süresi, görüntülenme sayısı. Bunlar üreticinin değil distribütörün verisidir; sabit
+/// tohumla üretilir ki her kurulumda aynı katalog çıksın.
+///
+/// Kasıtlı olarak hiçbir siteden veri KAZINMAZ (PLANLAMA.md 3 - "Veri nereden gelecek").
 /// </summary>
 public class CevikDataSeeder
 {
-    private const int UrunSayisi = 5000;
     private const int TohumDegeri = 20260820; // Deterministik: her kurulumda aynı katalog
 
     private readonly CevikDbContext _context;
@@ -49,13 +55,25 @@ public class CevikDataSeeder
             return;
         }
 
-        _logger.LogInformation("Katalog üretiliyor...");
+        // Parça katalogunun kategori / üretici / parametre referansları tutarsızsa
+        // yarım dolu bir veritabanı bırakmaktansa hiç başlamamak daha iyidir.
+        var hatalar = ParcaKatalogu.Dogrula();
+        if (hatalar.Count > 0)
+        {
+            foreach (var hata in hatalar.Take(25))
+                _logger.LogError("Katalog tutarsızlığı: {Hata}", hata);
+
+            throw new InvalidOperationException(
+                $"Parça katalogunda {hatalar.Count} tutarsızlık var, seed durduruldu. İlki: {hatalar[0]}");
+        }
+
+        _logger.LogInformation("Katalog üretiliyor — {Sayi} parça...", ParcaKatalogu.Tumu.Count);
 
         var ozellikler = await OzellikTanimlariniEkleAsync();
-        var (yapraklar, kategoriOzellikHaritasi) = await KategorileriEkleAsync(ozellikler);
+        var kategoriler = await KategorileriEkleAsync(ozellikler);
         var ureticiler = await UreticileriEkleAsync();
 
-        await UrunleriUretAsync(yapraklar, kategoriOzellikHaritasi, ureticiler, ozellikler);
+        await UrunleriUretAsync(kategoriler, ureticiler, ozellikler);
 
         _logger.LogInformation("Katalog seed işlemi tamamlandı.");
     }
@@ -154,8 +172,8 @@ public class CevikDataSeeder
         _context.Duyurular.AddRange(
             new Duyuru
             {
-                Baslik = "Kargo kampanyası",
-                Icerik = "Belirli tutarın üzerindeki siparişlerde kargo ücretsizdir.",
+                Baslik = "Çevik Elektronik kampanyası",
+                Icerik = "Güncel kampanyalarımızı keşfedin.",
                 Sira = 1,
                 BaslangicTarihi = simdi.AddDays(-1),
                 BitisTarihi = simdi.AddDays(30)
@@ -248,12 +266,14 @@ public class CevikDataSeeder
         return tanimlar.ToDictionary(t => t.Kod);
     }
 
-    private async Task<(List<(Kategori Kategori, KatalogSablonlari.KategoriSablonu Sablon)> Yapraklar,
-                       Dictionary<int, string[]> KategoriOzellikleri)>
+    /// <summary>
+    /// Kategori ağacını kurar ve her yaprak için filtre panelinin parametre listesini yazar.
+    /// Dönüş, parçaların <c>KategoriSlug</c> alanıyla eşleşen slug tabanlı sözlüktür.
+    /// </summary>
+    private async Task<Dictionary<string, (Kategori Kategori, KatalogSablonlari.KategoriSablonu Sablon)>>
         KategorileriEkleAsync(Dictionary<string, OzellikTanimi> ozellikler)
     {
-        var yapraklar = new List<(Kategori, KatalogSablonlari.KategoriSablonu)>();
-        var kategoriOzellikleri = new Dictionary<int, string[]>();
+        var yapraklar = new Dictionary<string, (Kategori, KatalogSablonlari.KategoriSablonu)>(StringComparer.Ordinal);
         var kokSira = 1;
 
         foreach (var kokSablon in KatalogSablonlari.Agac)
@@ -295,9 +315,13 @@ public class CevikDataSeeder
                     YaprakMi = true,
                     SeoBaslik = $"{altSablon.AdTr} | ÇEVİK Elektronik",
                     SeoAciklama = $"{altSablon.AdTr} ürünlerini parametrik filtrelerle arayın.",
-                    SeoIcerikHtml = $"<p>{altSablon.AdTr} kategorisinde " +
-                                    $"{string.Join(", ", altSablon.Ureticiler.Select(u => u.Ad))} gibi üreticilerin ürünlerini " +
-                                    "teknik parametrelerine göre filtreleyerek bulabilirsiniz.</p>"
+                    SeoIcerikHtml =
+                        $"<p>{altSablon.AdTr} kategorisindeki ürünleri " +
+                        string.Join(", ", altSablon.OzellikKodlari
+                            .Where(ozellikler.ContainsKey)
+                            .Take(4)
+                            .Select(k => ozellikler[k].AdTr)) +
+                        " gibi teknik parametrelere göre filtreleyerek bulabilirsiniz.</p>"
                 };
 
                 _context.Kategoriler.Add(alt);
@@ -310,7 +334,9 @@ public class CevikDataSeeder
                 var sira = 1;
                 foreach (var ozellikKodu in altSablon.OzellikKodlari)
                 {
-                    if (!ozellikler.TryGetValue(ozellikKodu, out var tanim)) continue;
+                    if (!ozellikler.TryGetValue(ozellikKodu, out var tanim))
+                        throw new InvalidOperationException(
+                            $"'{altSablon.Slug}' kategorisi tanımsız '{ozellikKodu}' parametresine referans veriyor.");
 
                     _context.KategoriOzellikleri.Add(new KategoriOzelligi
                     {
@@ -323,182 +349,176 @@ public class CevikDataSeeder
 
                 await _context.SaveChangesAsync();
 
-                yapraklar.Add((alt, altSablon));
-                kategoriOzellikleri[alt.Id] = altSablon.OzellikKodlari;
+                yapraklar[altSablon.Slug] = (alt, altSablon);
             }
         }
 
-        return (yapraklar, kategoriOzellikleri);
+        _logger.LogInformation("{Kok} ana kategori, {Yaprak} alt kategori eklendi.",
+            KatalogSablonlari.Agac.Length, yapraklar.Count);
+
+        return yapraklar;
     }
 
+    /// <summary>
+    /// Üreticiler <see cref="UreticiKatalogu"/>'ndan gelir: gerçek marka adı, web adresi
+    /// ve ülke. Yetkili distribütörlük rozeti sabittir — önceki sürümde rastgele
+    /// atanıyordu ve her kurulumda farklı markalara "yetkili distribütör" yazıyordu.
+    /// </summary>
     private async Task<Dictionary<string, Uretici>> UreticileriEkleAsync()
     {
-        // Üreticiler şablonlardaki gerçek marka adlarından toplanır; böylece
-        // "Üretici" facet'i anlamlı olur. Aynı marka birden çok kategoride
-        // geçtiği için ada göre tekilleştiriyoruz.
-        var adlar = KatalogSablonlari.Agac
-            .SelectMany(k => k.Altlar)
-            .SelectMany(a => a.Ureticiler)
-            .Select(u => u.Ad)
-            .Distinct()
-            .OrderBy(a => a)
-            .ToList();
-
-        var rastgele = new Randomizer(TohumDegeri);
-
-        var ureticiler = adlar.Select(ad => new Uretici
+        var ureticiler = UreticiKatalogu.Hepsi.Select(u => new Uretici
         {
-            Ad = ad,
-            Slug = SlugUret(ad),
-            WebSitesi = $"https://www.{SlugUret(ad)}.com",
-            YetkiliDistributorMu = rastgele.Bool(0.4f),
+            Ad = u.Ad,
+            Slug = SlugUret(u.Ad),
+            WebSitesi = $"https://www.{u.Alan}",
+            Aciklama = $"{u.Aciklama} Merkez: {u.Ulke}.",
+            YetkiliDistributorMu = u.YetkiliDistributor,
             Aktif = true
         }).ToList();
 
         _context.Ureticiler.AddRange(ureticiler);
         await _context.SaveChangesAsync();
 
-        return ureticiler.ToDictionary(u => u.Ad);
+        _logger.LogInformation("{Sayi} üretici eklendi.", ureticiler.Count);
+
+        return ureticiler.ToDictionary(u => u.Ad, StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// Parça katalogundaki her MPN için bir <see cref="Urun"/> satırı yazar.
+    ///
+    /// Teknik alanlar parçadan olduğu gibi kopyalanır; yalnızca ticari alanlar
+    /// (fiyat, stok, teslim süresi, görüntülenme) sabit tohumlu rastgeleyle üretilir.
+    /// </summary>
     private async Task UrunleriUretAsync(
-        List<(Kategori Kategori, KatalogSablonlari.KategoriSablonu Sablon)> yapraklar,
-        Dictionary<int, string[]> kategoriOzellikleri,
+        Dictionary<string, (Kategori Kategori, KatalogSablonlari.KategoriSablonu Sablon)> kategoriler,
         Dictionary<string, Uretici> ureticiler,
         Dictionary<string, OzellikTanimi> ozellikler)
     {
         // Tek Faker örneği + sabit tohum: deterministik ve hızlı.
-        // Önceki sürüm döngü içinde 5000 kez new Faker() yapıyordu.
         var f = new Faker("tr") { Random = new Randomizer(TohumDegeri) };
-        var ozellikSozlugu = KatalogSablonlari.Ozellikler.ToDictionary(o => o.Kod);
-
-        var kullanilanKodlar = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var urunBasinaKategori = UrunSayisi / yapraklar.Count;
-
         var toplam = 0;
 
-        foreach (var (kategori, sablon) in yapraklar)
+        foreach (var parca in ParcaKatalogu.Tumu)
         {
-            // Üretici ile kod ön eki BİRLİKTE seçilir: STM32F… kodlu parçanın
-            // üreticisi STMicroelectronics olmalı. Önceki sürüm ön eki kategoriden,
-            // üreticiyi ayrı rastgele seçtiği için "Texas Instruments üretimi
-            // STM32F766" gibi tutarsız kayıtlar oluşuyordu.
-            var kategoriUreticileri = sablon.Ureticiler
-                .Where(u => ureticiler.ContainsKey(u.Ad))
-                .Select(u => (Varlik: ureticiler[u.Ad], u.KodOnEki))
-                .ToList();
+            var (kategori, sablon) = kategoriler[parca.KategoriSlug];
+            var uretici = ureticiler[parca.UreticiAd];
 
-            for (var i = 0; i < urunBasinaKategori; i++)
+            var urun = new Urun
             {
-                var secim = f.PickRandom(kategoriUreticileri);
-                var uretici = secim.Varlik;
+                KategoriId = kategori.Id,
+                UreticiId = uretici.Id,
+                UreticiUrunKodu = parca.Mpn,
+                NormalizeKod = UrunKoduNormalizeleyici.Normalize(parca.Mpn),
+                KisaAciklama = parca.Aciklama,
+                DetayliAciklamaTr =
+                    $"{uretici.Ad} üretimi {parca.Mpn}. {sablon.AdTr} kategorisinde yer alır. " +
+                    "Teknik parametreleri üreticinin veri sayfasıyla uyumludur, RoHS uyumludur.",
+                DetayliAciklamaEn =
+                    $"{parca.Mpn} manufactured by {uretici.Ad}, listed under {sablon.AdEn}. " +
+                    "Parameters follow the manufacturer datasheet. RoHS compliant.",
+                // Gerçek dosya sağlanana kadar istemciye 404 üreten bir yol vermeyiz.
+                AnaGorselUrl = null,
+                GorselTemsiliMi = true,
+                RohsDurumu = f.Random.WeightedRandom(
+                    [RohsDurumu.Belgeli, RohsDurumu.Belgesiz, RohsDurumu.Bilinmiyor],
+                    [0.94f, 0.03f, 0.03f]),
+                UrunDurumu = f.Random.WeightedRandom(
+                    [UrunDurumu.Aktif, UrunDurumu.YeniTasarimaOnerilmez, UrunDurumu.OmruSonu, UrunDurumu.KullanimdanKalkti],
+                    [0.90f, 0.06f, 0.03f, 0.01f]),
+                MontajTipi = parca.Montaj,
+                KampanyaliMi = f.Random.Bool(0.06f),
+                GoruntulenmeSayisi = f.Random.Int(0, 12_000),
+                UreticiTeslimSuresiHaftaMin = (short)f.Random.Int(1, 6),
+                Aktif = true
+            };
 
-                // Bu ürünün parametre değerlerini önce seç: ürün açıklaması
-                // ve kodu bunlardan türetilir (gerçek kataloglarda da öyledir).
-                var secilenOzellikler = new Dictionary<string, string>();
-                foreach (var kod in sablon.OzellikKodlari)
+            urun.UreticiTeslimSuresiHaftaMax = (short)(urun.UreticiTeslimSuresiHaftaMin + f.Random.Int(1, 6));
+
+            // JSONB okuma kopyası — anahtar olarak parametre KODU kullanılır;
+            // filtre API'si de kodla çalışır.
+            urun.OzelliklerJson = JsonSerializer.Serialize(
+                parca.Ozellikler.ToDictionary(o => o.Kod, o => o.Deger));
+
+            _context.Urunler.Add(urun);
+
+            // EAV tarafı — filtreleme ve facet sayaçları buradan çalışır.
+            foreach (var ozellik in parca.Ozellikler)
+            {
+                var tanim = ozellikler[ozellik.Kod];
+
+                _context.UrunOzellikDegerleri.Add(new UrunOzellikDegeri
                 {
-                    if (!ozellikSozlugu.TryGetValue(kod, out var sablonOzellik)) continue;
-                    // Her ürün her parametreye sahip olmasın — gerçek katalog da eksiktir.
-                    if (f.Random.Bool(0.12f)) continue;
-
-                    secilenOzellikler[kod] = f.PickRandom(sablonOzellik.Degerler);
-                }
-
-                var mpn = BenzersizKodUret(f, secim.KodOnEki, kullanilanKodlar);
-
-                var urun = new Urun
-                {
-                    KategoriId = kategori.Id,
-                    UreticiId = uretici.Id,
-                    UreticiUrunKodu = mpn,
-                    NormalizeKod = UrunKoduNormalizeleyici.Normalize(mpn),
-                    KisaAciklama = AciklamaUret(sablon, secilenOzellikler, ozellikSozlugu),
-                    // TrimEnd ile Türkçe çoğul eki kırpma denemesi "LED'ler" -> "LED'"
-                    // gibi bozuk çıktılar veriyordu; kategori adını olduğu gibi kullanıyoruz.
-                    DetayliAciklamaTr = f.Random.Bool(0.7f)
-                        ? $"{uretici.Ad} üretimi, {sablon.AdTr} kategorisinde yer alan komponent. " +
-                          "Endüstriyel uygulamalarda yaygın olarak kullanılır. RoHS uyumludur."
+                    Urun = urun,
+                    OzellikTanimId = tanim.Id,
+                    DegerMetin = ozellik.Deger,
+                    // Sayısal karşılık yalnızca parametre SAYI tipinde ilan edilmişse yazılır
+                    // ve değeri parçanın kendisi verir. İki tuzak birden var:
+                    //  - Metin tipli parametrede metinden sayı çıkarmak yanıltıcıdır:
+                    //    "1/10 W" -> 1 ve "1 W" -> 1 aynı sayıya düşer, "0603" -> 603 olur.
+                    //  - Sayısal parametrede metinden çıkarmak ölçeği kaybettirir:
+                    //    "100 nF" ile "100 pF" ikisi de 100 olur.
+                    DegerSayi = tanim.VeriTipi == OzellikVeriTipi.Sayi
+                        ? ozellik.Sayi ?? SayiyaCevir(ozellik.Deger)
                         : null,
-                    DetayliAciklamaEn = f.Random.Bool(0.7f)
-                        ? $"{uretici.Ad} component in the {sablon.AdEn} category. " +
-                          "Widely used in industrial applications. RoHS compliant."
-                        : null,
-                    // Gerçek dosya sağlanana kadar istemciye 404 üreten bir yol vermeyiz.
-                    AnaGorselUrl = null,
-                    GorselTemsiliMi = true, // Sentetik katalog: tüm görseller temsilidir
-                    RohsDurumu = f.Random.WeightedRandom(
-                        [RohsDurumu.Belgeli, RohsDurumu.Belgesiz, RohsDurumu.Bilinmiyor],
-                        [0.85f, 0.10f, 0.05f]),
-                    UrunDurumu = f.Random.WeightedRandom(
-                        [UrunDurumu.Aktif, UrunDurumu.YeniTasarimaOnerilmez, UrunDurumu.OmruSonu, UrunDurumu.KullanimdanKalkti],
-                        [0.82f, 0.09f, 0.06f, 0.03f]),
-                    MontajTipi = f.Random.WeightedRandom([MontajTipi.Smt, MontajTipi.Tht], [0.8f, 0.2f]),
-                    KampanyaliMi = f.Random.Bool(0.08f),
-                    GoruntulenmeSayisi = f.Random.Int(0, 12000),
-                    UreticiTeslimSuresiHaftaMin = (short)f.Random.Int(1, 6),
-                    Aktif = true
-                };
-                urun.UreticiTeslimSuresiHaftaMax = (short)(urun.UreticiTeslimSuresiHaftaMin + f.Random.Int(1, 6));
+                    HamDeger = ozellik.Deger
+                });
+            }
 
-                // JSONB okuma kopyası — anahtar olarak KOD kullanılır.
-                // Önceki sürüm görünen adı (AdTr) anahtar yapıyordu; filtre API'si
-                // kodla çalıştığı için iki taraf birbirini tutmuyordu.
-                urun.OzelliklerJson = JsonSerializer.Serialize(secilenOzellikler);
+            AmbalajVeFiyatEkle(f, urun, sablon);
 
-                _context.Urunler.Add(urun);
-
-                // EAV tarafı — filtreleme ve facet sayaçları buradan çalışır.
-                foreach (var (kod, deger) in secilenOzellikler)
-                {
-                    if (!ozellikler.TryGetValue(kod, out var tanim)) continue;
-
-                    _context.UrunOzellikDegerleri.Add(new UrunOzellikDegeri
-                    {
-                        Urun = urun,
-                        OzellikTanimId = tanim.Id,
-                        DegerMetin = deger,
-                        DegerSayi = SayiyaCevir(deger),
-                        HamDeger = deger
-                    });
-                }
-
-                AmbalajVeFiyatEkle(f, urun);
-
-                toplam++;
-                if (toplam % 500 == 0)
-                {
-                    await _context.SaveChangesAsync();
-                    _context.ChangeTracker.Clear();
-                    _logger.LogInformation("{Toplam} ürün üretildi...", toplam);
-                }
+            toplam++;
+            if (toplam % 1000 == 0)
+            {
+                await _context.SaveChangesAsync();
+                _context.ChangeTracker.Clear();
+                _logger.LogInformation("{Toplam} ürün yazıldı...", toplam);
             }
         }
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Toplam {Toplam} ürün üretildi.", toplam);
+        _context.ChangeTracker.Clear();
+
+        _logger.LogInformation("Toplam {Toplam} ürün yazıldı.", toplam);
     }
 
     /// <summary>
-    /// Ürüne 1-3 ambalaj varyantı ve her birine kademeli fiyat ekler.
+    /// Ürüne kategorisine uygun ambalaj varyantları ve her birine kademeli fiyat ekler.
     ///
-    /// Önceki sürüm ürün başına TEK ambalaj üretiyordu; oysa "aynı ürünün
-    /// Tape&amp;Reel / Tube / Tray varyantları farklı MOQ ve fiyata sahiptir"
-    /// bu projenin ayırt edici özelliklerinden biri (PLANLAMA.md 5.3).
+    /// Ambalaj profili kategoriden gelir: çip direnç 5000'lik makarada, DIN ray güç
+    /// kaynağı kutuda tek satılır. Fiyat da kategorinin bandından çekilir — önceki
+    /// sürüm tüm katalog için tek bir 0.008–145 USD aralığı kullandığından 90 USD'lik
+    /// direnç ve 1 sentlik güç kaynağı üretiyordu.
     /// </summary>
-    private void AmbalajVeFiyatEkle(Faker f, Urun urun)
+    private void AmbalajVeFiyatEkle(Faker f, Urun urun, KatalogSablonlari.KategoriSablonu sablon)
     {
-        var ambalajSayisi = f.Random.WeightedRandom([1, 2, 3], [0.35f, 0.45f, 0.20f]);
-        var secilenler = f.Random.ListItems(KatalogSablonlari.AmbalajSecenekleri.ToList(), ambalajSayisi);
+        var secenekler = KatalogSablonlari.AmbalajlarProfilBazli[sablon.Ambalaj];
 
-        // Taban birim fiyat: pasif komponentler kuruşun altında olabilir,
-        // bu yüzden numeric(18,6) kullanıyoruz (PLANLAMA.md 5.3 uyarısı).
-        var tabanFiyat = Math.Round(f.Random.Decimal(0.008m, 145m), 6);
+        var ambalajSayisi = Math.Min(secenekler.Length,
+            f.Random.WeightedRandom([1, 2, 3], [0.30f, 0.48f, 0.22f]));
+
+        // İlk seçenek her zaman varsayılan olsun ki "makarasız direnç" gibi bir
+        // durum oluşmasın; kalanlar rastgele seçilir.
+        var secilenler = new List<KatalogSablonlari.AmbalajSecenegi> { secenekler[0] };
+        secilenler.AddRange(f.Random.ListItems(secenekler.Skip(1).ToList(), ambalajSayisi - 1));
+
+        var tabanFiyat = LogAralikFiyat(f, sablon.FiyatMin, sablon.FiyatMax);
 
         var ilkMi = true;
         foreach (var secim in secilenler)
         {
-            var stokVar = f.Random.Bool(0.72f);
+            var stokVar = f.Random.Bool(0.74f);
+
+            // Stok ADET cinsinden gerçekçi bir aralıktan üretilir, sonra katlama
+            // miktarının üstüne yuvarlanır. Pahalı ürünlerde adet doğal olarak azdır.
+            var ustSinir = tabanFiyat switch
+            {
+                < 0.05m => 250_000,
+                < 1m => 40_000,
+                < 10m => 6_000,
+                < 50m => 800,
+                _ => 150
+            };
 
             var ambalaj = new UrunAmbalaji
             {
@@ -508,15 +528,14 @@ public class CevikDataSeeder
                 Mpq = secim.Mpq,
                 Moq = secim.Moq,
                 KatlamaMiktari = secim.Katlama,
-                // Stok ADET cinsinden gerçekçi bir aralıktan üretilir, sonra
-                // katlama miktarının üstüne yuvarlanır. Önceden "1..40 × katlama"
-                // yazıyordu; Cut Tape (katlama=1) ambalajlarına en fazla 40 adet
-                // stok düşüyor ve bu ambalajlar pratikte satın alınamıyordu.
                 StokMiktari = stokVar
-                    ? SiparisMiktarKurali.YukariYuvarla(f.Random.Int(250, 40_000), secim.Katlama)
+                    ? SiparisMiktarKurali.YukariYuvarla(
+                        f.Random.Int(Math.Max(secim.Moq, ustSinir / 40), Math.Max(secim.Moq * 2, ustSinir)),
+                        secim.Katlama)
                     : 0,
-                GelecekStokMiktari = f.Random.Bool(0.25f)
-                    ? SiparisMiktarKurali.YukariYuvarla(f.Random.Int(500, 20_000), secim.Katlama)
+                GelecekStokMiktari = f.Random.Bool(0.22f)
+                    ? SiparisMiktarKurali.YukariYuvarla(
+                        f.Random.Int(secim.Moq, Math.Max(secim.Moq * 2, ustSinir / 2)), secim.Katlama)
                     : 0,
                 VarsayilanMi = ilkMi
             };
@@ -524,12 +543,14 @@ public class CevikDataSeeder
             if (ambalaj.GelecekStokMiktari > 0)
                 ambalaj.GelecekStokTarihi = DateTime.UtcNow.Date.AddDays(f.Random.Int(14, 120));
 
-            // Büyük ambalajda birim fiyat düşer.
+            // Büyük ambalajda birim fiyat düşer, kesme bantta artar.
             var ambalajCarpani = secim.Tip switch
             {
-                AmbalajTipi.TapeReel => 0.88m,
-                AmbalajTipi.OzelReel => 0.93m,
-                AmbalajTipi.CutTape => 1.15m,
+                AmbalajTipi.TapeReel => 0.86m,
+                AmbalajTipi.OzelReel => 0.92m,
+                AmbalajTipi.Tray => 0.95m,
+                AmbalajTipi.Tube => 0.97m,
+                AmbalajTipi.CutTape => 1.18m,
                 _ => 1.00m
             };
 
@@ -550,79 +571,32 @@ public class CevikDataSeeder
         }
     }
 
+    /// <summary>
+    /// Fiyatı bandın logaritmik ölçeğinden çeker. Düz uniform dağılım, 0.0015–0.28 USD
+    /// gibi iki buçuk kademelik bir bantta ürünlerin yarısını üst uca yığardı; gerçek
+    /// katalogda ucuz parça çok, pahalı parça azdır.
+    /// </summary>
+    private static decimal LogAralikFiyat(Faker f, decimal min, decimal max)
+    {
+        var altSinir = Math.Log((double)min);
+        var ustSinir = Math.Log((double)max);
+        var deger = Math.Exp(altSinir + f.Random.Double() * (ustSinir - altSinir));
+
+        return Math.Round((decimal)deger, 6);
+    }
+
     // -----------------------------------------------------------------------
     // Yardımcılar
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// "STM32F103C8T6" desenine benzer, kategori içinde benzersiz üretici ürün kodu.
-    /// Benzersizlik şart: (uretici_id, uretici_urun_kodu) üzerinde UNIQUE index var.
-    /// </summary>
-    private static string BenzersizKodUret(Faker f, string onEk, HashSet<string> kullanilanlar)
-    {
-        const string harfler = "ABCDEFGHJKLMNPRSTUVWXYZ";
-
-        for (var deneme = 0; deneme < 40; deneme++)
-        {
-            var kod = onEk
-                    + f.Random.Int(100, 999)
-                    + f.Random.Char(harfler[0], harfler[^1])
-                    + f.Random.Int(1, 9)
-                    + f.PickRandom("T", "K", "N", "R", "");
-
-            if (kullanilanlar.Add(kod)) return kod;
-        }
-
-        // Son çare: sayaç ekleyerek garanti benzersiz yap.
-        var yedek = $"{onEk}{f.Random.Int(1000, 9999)}-{kullanilanlar.Count}";
-        kullanilanlar.Add(yedek);
-        return yedek;
-    }
-
-    /// <summary>
-    /// "IC-32F103C MCU 32BIT 64KB FLASH 48LQFP" tarzı teknik, kısaltmalı açıklama.
-    ///
-    /// Değerler ADIYLA seçilir (kategori şablonundaki AciklamaOzellikKodlari sırasına
-    /// göre) ve birimi de yazılır. Önceki sürüm sözlükteki ilk üç değeri sabit bir
-    /// kalıba yerleştiriyordu; bu yüzden "FLASH 8" yazıp aslında frekansı basmak
-    /// gibi yanlış etiketli açıklamalar üretiyordu.
-    /// </summary>
-    private static string AciklamaUret(
-        KatalogSablonlari.KategoriSablonu sablon,
-        Dictionary<string, string> ozellikler,
-        Dictionary<string, KatalogSablonlari.OzellikSablonu> ozellikSozlugu)
-    {
-        var parcalar = new List<string> { sablon.AciklamaOnEki };
-
-        foreach (var kod in sablon.AciklamaOzellikKodlari)
-        {
-            if (!ozellikler.TryGetValue(kod, out var deger)) continue;
-
-            // Sayısal parametrelerde birim değerin içinde değildir; ekliyoruz.
-            var birim = ozellikSozlugu.TryGetValue(kod, out var tanim) ? tanim.Birim : null;
-            var yazim = birim is not null && !deger.Contains(birim, StringComparison.OrdinalIgnoreCase)
-                ? $"{deger}{birim}"
-                : deger;
-
-            parcalar.Add(yazim);
-        }
-
-        // Yalnızca tip ön eki büyük harfe çevrilir. Tüm metni büyütmek
-        // "0.22 µF" birimini "0.22 ΜF" (Yunanca büyük Mu) yapıyor ve
-        // "10 kΩ" gibi birimlerin okunuşunu bozuyordu.
-        parcalar[0] = parcalar[0].ToUpperInvariant();
-        return string.Join(" ", parcalar);
-    }
-
-    /// <summary>
-    /// "72", "10 kΩ", "±5%", "2.0 - 3.6 V" gibi metinlerden sayısal değeri çıkarır.
-    /// Sayısal aralık filtresi ve sıralama bu kolona bağlıdır; çıkarılamayan
-    /// değerlerde null döner ve yalnızca metin filtresi çalışır.
+    /// "72", "10 kΩ", "±%5", "2.0 - 3.6 V" gibi metinlerden sayısal değeri çıkarır.
+    /// Yalnızca parçanın kendi sayısal değeri verilmemişse devreye girer.
     /// </summary>
     private static decimal? SayiyaCevir(string deger)
     {
         var temiz = new string(deger
-            .TakeWhile(c => char.IsDigit(c) || c == '.' || c == ',' || c == '-' || c == '±' || c == ' ')
+            .TakeWhile(c => char.IsDigit(c) || c == '.' || c == ',' || c == '-' || c == '±' || c == '%' || c == ' ')
             .Where(c => char.IsDigit(c) || c == '.')
             .ToArray());
 
