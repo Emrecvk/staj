@@ -72,6 +72,20 @@ public class KatalogUclariTestleri
     }
 
     [Fact]
+    public async Task UrunListeleme_KartVerisiniZenginDoner()
+    {
+        var sonuc = await _istemci.GetFromJsonAsync<UrunAramaSonucDto>(
+            "/api/katalog/urunler?sayfaNo=1&sayfaBoyutu=10", JsonAyarlari);
+
+        var urun = sonuc!.Urunler.Kayitlar.First();
+        urun.UreticiId.Should().BeGreaterThan(0);
+        urun.UrunDurumu.Should().NotBeNullOrWhiteSpace();
+        urun.RohsDurumu.Should().NotBeNullOrWhiteSpace();
+        urun.AmbalajlarVeFiyatlar.Should().NotBeEmpty();
+        urun.AmbalajlarVeFiyatlar[0].Fiyatlar.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task UrunKoduParcaliAramasi_SonucBulur()
     {
         // Önce gerçek bir ürün kodu al, ilk 6 karakteriyle ara.
@@ -108,6 +122,25 @@ public class KatalogUclariTestleri
     }
 
     [Fact]
+    public async Task Arama_UreticiAdiIle_SonucBulur()
+    {
+        var uretici = await _fabrika.Veritabaniyla(db => db.Ureticiler
+            .Where(u => u.Urunler.Any())
+            .OrderBy(u => u.Id)
+            .Select(u => new { u.Ad, u.Id })
+            .FirstAsync());
+
+        var sonuc = await _istemci.GetFromJsonAsync<UrunAramaSonucDto>(
+            $"/api/katalog/urunler?aramaMetni={Uri.EscapeDataString(uretici.Ad)}",
+            JsonAyarlari);
+
+        sonuc!.Urunler.ToplamKayit.Should().BeGreaterThan(0,
+            $"'{uretici.Ad}' üretici adıyla arama en az bir ürün bulmalı");
+        sonuc.Urunler.Kayitlar.Should().Contain(u => u.UreticiAd == uretici.Ad,
+            "sonuçlar aranan üreticiye ait ürünleri içermeli");
+    }
+
+    [Fact]
     public async Task YaprakKategoride_FacetSayaclariDolu()
     {
         // Bildirilen "facet verisi yok" sorununun düzeldiğinin kanıtı.
@@ -126,6 +159,17 @@ public class KatalogUclariTestleri
         ilkGrup.Secenekler.Should().NotBeEmpty();
         ilkGrup.Secenekler.Should().OnlyContain(s => s.UrunSayisi > 0,
             "facet seçeneği sıfır ürünle listelenmemeli");
+    }
+
+    [Fact]
+    public async Task KategoriSecilmeden_UreticiFacetleriDoner()
+    {
+        var sonuc = await _istemci.GetFromJsonAsync<UrunAramaSonucDto>(
+            "/api/katalog/urunler?sayfaNo=1&sayfaBoyutu=10", JsonAyarlari);
+
+        var facet = sonuc!.Filtreler.Should().ContainSingle(f => f.Kod == "ureticiId").Subject;
+        facet.Secenekler.Should().NotBeEmpty("kategori seçilmeden marka filtresi görünmeli");
+        facet.Secenekler.Should().Contain(s => s.UrunSayisi > 0);
     }
 
     [Fact]

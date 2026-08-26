@@ -35,6 +35,8 @@ public class DokumanDto
     public short Tip { get; set; } // enum
     public required string Url { get; set; }
     public required string Baslik { get; set; }
+    public long? BoyutByte { get; set; }
+    public string? Dil { get; set; }
 }
 
 public class AmbalajFiyatDto

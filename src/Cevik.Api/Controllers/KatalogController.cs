@@ -39,9 +39,16 @@ public class KatalogController : ControllerBase
     }
 
     [HttpGet("ureticiler")]
-    public async Task<IActionResult> UreticileriListele()
+    public async Task<IActionResult> UreticileriListele([FromQuery] int? kategoriId)
     {
-        var sonuc = await _katalogServisi.UreticileriGetirAsync();
+        var sonuc = await _katalogServisi.UreticileriGetirAsync(kategoriId);
+        return Ok(sonuc);
+    }
+
+    [HttpGet("ureticiler/sayilari")]
+    public async Task<IActionResult> KategoriUreticiSayilariniGetir([FromQuery] List<int> kategoriIdleri)
+    {
+        var sonuc = await _katalogServisi.KategoriUreticiSayilariniGetirAsync(kategoriIdleri);
         return Ok(sonuc);
     }
 
