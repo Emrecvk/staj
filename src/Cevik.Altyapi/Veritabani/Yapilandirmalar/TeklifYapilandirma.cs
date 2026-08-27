@@ -23,5 +23,11 @@ public class TeklifKalemiYapilandirmasi : IEntityTypeConfiguration<TeklifKalemi>
     {
         builder.Property(t => t.HedefBirimFiyat).HasColumnType("numeric(18,6)");
         builder.Property(t => t.TeklifEdilenBirimFiyat).HasColumnType("numeric(18,6)");
+
+        // Ambalaj silinse bile teklif geçmişi bozulmamalı: Restrict.
+        builder.HasOne(t => t.UrunAmbalaji)
+               .WithMany()
+               .HasForeignKey(t => t.UrunAmbalajId)
+               .OnDelete(DeleteBehavior.Restrict);
     }
 }

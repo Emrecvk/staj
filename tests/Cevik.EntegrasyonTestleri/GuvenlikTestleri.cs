@@ -52,6 +52,67 @@ public class GuvenlikTestleri
             $"{yol} kimliksiz çağrılabilmemeli");
     }
 
+    /// <summary>
+    /// YAZMA uçları için 401 kapsamı. Önceki sürümde yalnızca yedi GET ucu
+    /// test ediliyordu; bir POST/PUT/DELETE ucuna <c>[Authorize]</c> eklemeyi
+    /// unutmak hiçbir testi kırmıyordu — yani en tehlikeli uçlar korumasızdı.
+    /// </summary>
+    [Theory]
+    [InlineData("POST", "/api/yonetim/urun")]
+    [InlineData("PUT", "/api/yonetim/urun/1")]
+    [InlineData("DELETE", "/api/yonetim/urun/1")]
+    [InlineData("PUT", "/api/yonetim/urun/stok")]
+    [InlineData("PUT", "/api/yonetim/urun/fiyat")]
+    [InlineData("POST", "/api/yonetim/kategori")]
+    [InlineData("DELETE", "/api/yonetim/kategori/1")]
+    [InlineData("POST", "/api/yonetim/uretici")]
+    [InlineData("DELETE", "/api/yonetim/uretici/1")]
+    [InlineData("POST", "/api/yonetim/blog")]
+    [InlineData("PUT", "/api/Yonetim/siparis-durum")]
+    [InlineData("PUT", "/api/Yonetim/kullanici-rol")]
+    [InlineData("PUT", "/api/Yonetim/firma-onay")]
+    [InlineData("GET", "/api/yonetim/teklifler")]
+    public async Task YonetimYazmaUclari_TokensizErisimde_401Doner(string metot, string yol)
+    {
+        using var istek = new HttpRequestMessage(new HttpMethod(metot), yol)
+        {
+            Content = JsonContent.Create(new { })
+        };
+
+        var yanit = await _istemci.SendAsync(istek);
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
+            $"{metot} {yol} kimliksiz çağrılabilmemeli");
+    }
+
+    /// <summary>
+    /// Müşteri tokeni yönetim YAZMA uçlarına da girememeli. 401 (kimlik yok)
+    /// ile 403 (kimlik var, yetki yok) ayrı hatalar; ikisini de doğrulamak
+    /// gerekiyor çünkü politikayı unutmak yalnızca ikincisini bozar.
+    /// </summary>
+    [Theory]
+    [InlineData("POST", "/api/yonetim/urun")]
+    [InlineData("PUT", "/api/yonetim/urun/stok")]
+    [InlineData("POST", "/api/yonetim/kategori")]
+    [InlineData("POST", "/api/yonetim/uretici")]
+    [InlineData("PUT", "/api/Yonetim/kullanici-rol")]
+    [InlineData("PUT", "/api/Yonetim/firma-onay")]
+    public async Task YonetimYazmaUclari_MusteriTokeniyle_403Doner(string metot, string yol)
+    {
+        var token = await MusteriTokeniAlAsync($"musteri.yazma.{Guid.NewGuid():N}@test.com");
+
+        using var istek = new HttpRequestMessage(new HttpMethod(metot), yol)
+        {
+            Content = JsonContent.Create(new { })
+        };
+        istek.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var yanit = await _istemci.SendAsync(istek);
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            $"{metot} {yol} müşteri rolüne kapalı olmalı");
+    }
+
     [Fact]
     public async Task YonetimUclari_MusteriTokeniyle_403Doner()
     {

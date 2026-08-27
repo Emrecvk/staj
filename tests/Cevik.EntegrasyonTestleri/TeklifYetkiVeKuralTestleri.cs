@@ -97,7 +97,7 @@ public class TeklifYetkiVeKuralTestleri
                 },
             });
 
-        yanit.StatusCode.Should().Be(HttpStatusCode.OK, await yanit.Content.ReadAsStringAsync());
+        yanit.StatusCode.Should().Be(HttpStatusCode.NoContent, await yanit.Content.ReadAsStringAsync());
     }
 
     // -----------------------------------------------------------------------
@@ -147,7 +147,7 @@ public class TeklifYetkiVeKuralTestleri
         var teklifId = await TeklifOlusturAsync(musteriId, TeklifDurumu.MusteriOnayiBekliyor);
 
         var yanit = await musteriIstemci.PostAsync($"/api/teklif/{teklifId}/red", null);
-        yanit.StatusCode.Should().Be(HttpStatusCode.OK);
+        yanit.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var durum = await Veritabanindan(db => db.TeklifTalepleri
             .Where(t => t.Id == teklifId).Select(t => t.Durum).FirstAsync());

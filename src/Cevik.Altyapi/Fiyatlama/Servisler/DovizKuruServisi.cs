@@ -25,7 +25,17 @@ public class DovizKuruServisi : IDovizKuruServisi
         _logger = logger;
     }
 
+    /// <summary>
+    /// Para hesabı yapan yollar için: kur yoksa İSTİSNA fırlatır.
+    /// Sessizce 1 dönmek, yanlış para biriminde tahsilat demekti.
+    /// </summary>
     public async Task<decimal> KurGetirAsync(string kaynakParaBirimi, string hedefParaBirimi, DateOnly? tarih = null)
+        => await KurDeneAsync(kaynakParaBirimi, hedefParaBirimi, tarih)
+           ?? throw new IsKuraliIhlaliException(
+               $"{kaynakParaBirimi.ToUpperInvariant()} → {hedefParaBirimi.ToUpperInvariant()} kuru bulunamadı. " +
+               "Güncel kur yüklenene kadar bu işlem tamamlanamaz.");
+
+    public async Task<decimal?> KurDeneAsync(string kaynakParaBirimi, string hedefParaBirimi, DateOnly? tarih = null)
     {
         var kaynak = kaynakParaBirimi.ToUpperInvariant();
         var hedef = hedefParaBirimi.ToUpperInvariant();
@@ -45,10 +55,8 @@ public class DovizKuruServisi : IDovizKuruServisi
 
         if (kaynakKuru is null || hedefKuru is null || hedefKuru == 0)
         {
-            _logger.LogWarning(
-                "{Kaynak}->{Hedef} için kur bulunamadı, 1 kabul edildi. Tutar hesabı eksik olabilir.",
-                kaynak, hedef);
-            return 1m;
+            _logger.LogWarning("{Kaynak}->{Hedef} için kur bulunamadı.", kaynak, hedef);
+            return null;
         }
 
         return kaynakKuru.Value / hedefKuru.Value;

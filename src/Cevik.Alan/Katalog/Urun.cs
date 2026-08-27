@@ -34,6 +34,18 @@ public class Urun : VarlikTabaniUzun
 
     public string? AnaGorselUrl { get; set; }
 
+    /// <summary>Katalog kaydının geldiği dış sistem. Örn: "Ozdisan".</summary>
+    public string? KaynakSistem { get; set; }
+
+    /// <summary>Dış sistemdeki değişmeyen ürün kimliği.</summary>
+    public string? KaynakKimligi { get; set; }
+
+    /// <summary>Ürünün kaynak sistemdeki ayrıntı sayfası.</summary>
+    public string? KaynakUrl { get; set; }
+
+    /// <summary>Kaydın en son eşitlendiği sürümlenmiş katalog anlık görüntüsü.</summary>
+    public string? KaynakKatalogSurumu { get; set; }
+
     /// <summary>Sitedeki "*Bu ürün görseli temsilidir" uyarısı.</summary>
     public bool GorselTemsiliMi { get; set; }
 

@@ -89,6 +89,76 @@ public class SiparisMiktarKuraliTestleri
         SiparisMiktarKurali.Dogrula(2999, ambalaj).Gecerli.Should().BeFalse();
         SiparisMiktarKurali.Dogrula(6000, ambalaj).Gecerli.Should().BeTrue();
     }
+
+    /// <summary>
+    /// PLANLAMA.md 5.3 domain kuralı yalnızca MOQ ve katlamayı içerir;
+    /// MPQ ambalaj boyutunu tarif eden bir alandır, sipariş kısıtı değil.
+    /// MPQ bir ara alt sınır olarak eklenmiş ve MOQ'su 1 olan üründen
+    /// 10 adet almayı bile engellemişti — bu test o davranışın geri
+    /// gelmesini engeller.
+    /// </summary>
+    [Fact]
+    public void MpqBuyukOlsaBile_MoqVeKatlamaya_UyanMiktar_Kabul_Edilir()
+    {
+        var ambalaj = new UrunAmbalaji
+        {
+            Ad = "Tape & Reel (TR)",
+            AmbalajTipi = AmbalajTipi.TapeReel,
+            Moq = 1,
+            KatlamaMiktari = 1,
+            Mpq = 3000
+        };
+
+        SiparisMiktarKurali.Dogrula(10, ambalaj).Gecerli.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Önerilen miktar her zaman katlamaya uymalı: kullanıcı öneriyi aynen
+    /// girdiğinde yeniden reddedilmemeli. Sıfır/negatif dalı bu kuralı
+    /// atlıyor ve katlamaya uymayan bir MOQ değeri öneriyordu.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public void SifirVeyaNegatifMiktarda_OnerilenMiktar_KatlamayaUyar(int miktar)
+    {
+        var sonuc = SiparisMiktarKurali.Dogrula(miktar, moq: 100, katlamaMiktari: 30);
+
+        sonuc.Gecerli.Should().BeFalse();
+        sonuc.OnerilenMiktar.Should().Be(120, "100 MOQ'u 30'un katına yuvarlanmalı");
+        SiparisMiktarKurali.Dogrula(sonuc.OnerilenMiktar, moq: 100, katlamaMiktari: 30)
+            .Gecerli.Should().BeTrue("önerilen miktar yeniden doğrulamayı geçmeli");
+    }
+}
+
+public class IndirimHesabiTestleri
+{
+    [Fact]
+    public void EnAvantajliIndirimSecilir_VeIndirimlerUstUsteBindirilmez()
+    {
+        var simdi = DateTimeOffset.UtcNow;
+        var indirimler = new List<Indirim>
+        {
+            new()
+            {
+                Id = 7,
+                Ad = "Ürün kampanyası",
+                HedefTipi = IndirimHedefTipi.Urun,
+                HedefId = 1,
+                IndirimTipi = IndirimTipi.Yuzde,
+                Deger = 20m,
+                BaslangicTarihi = simdi.AddDays(-1),
+                BitisTarihi = simdi.AddDays(1),
+                Aktif = true
+            }
+        };
+
+        var sonuc = IndirimHesabi.Uygula(100m, 3, 10m, indirimler);
+
+        sonuc.BirimFiyat.Should().Be(80m);
+        sonuc.SatirIndirimTutari.Should().Be(60m);
+        sonuc.IndirimId.Should().Be(7);
+    }
 }
 
 /// <summary>
@@ -260,5 +330,66 @@ public class UrunKoduNormalizeleyiciTestleri
         var arama = UrunKoduNormalizeleyici.Normalize("stm32-f1");
 
         urunKodu.Should().Contain(arama);
+    }
+}
+
+/// <summary>
+/// Para yuvarlama ve dönüştürme. Bu sınıfın hiç testi yoktu: sepet her
+/// okumada, sipariş her kurulumda buradan geçiyor ama yuvarlama yönü ya da
+/// hassasiyeti değişse hiçbir test kırılmıyordu.
+///
+/// PLANLAMA.md 5.3 hassasiyeti açıkça belirliyor: numeric(18,6). Pasif
+/// komponentlerde birim fiyat 0,0234 USD gibi olabilir; 2 ondalığa yuvarlamak
+/// 10.000 adetlik siparişte yüzlerce lira hata demektir.
+/// </summary>
+public class ParaHesabiTestleri
+{
+    [Fact]
+    public void Hassasiyet_AltiOndalik()
+    {
+        ParaHesabi.OndalikHassasiyeti.Should().Be(6);
+    }
+
+    [Fact]
+    public void KucukBirimFiyat_IkiOndaligaDusurulmez()
+    {
+        // 0,0234 USD × 10.000 adet = 234 USD. İki ondalığa yuvarlanmış
+        // 0,02'lik bir fiyat 200 USD verir — 34 USD fark.
+        var birimFiyat = ParaHesabi.Yuvarla(0.0234m);
+
+        birimFiyat.Should().Be(0.0234m);
+        (birimFiyat * 10_000).Should().Be(234m);
+    }
+
+    [Theory]
+    [InlineData("0.0000005", "0.000001")]
+    [InlineData("0.0000015", "0.000002")]
+    [InlineData("-0.0000005", "-0.000001")]
+    public void Yuvarlama_YarimDegerleri_SifirdanUzaga_Yuvarlar(string girdi, string beklenen)
+    {
+        // MidpointRounding.AwayFromZero: bankacı yuvarlamasına düşülürse
+        // 0,0000005 → 0 olur ve toplamlar sistematik olarak aşağı kayar.
+        var kultur = System.Globalization.CultureInfo.InvariantCulture;
+
+        ParaHesabi.Yuvarla(decimal.Parse(girdi, kultur))
+            .Should().Be(decimal.Parse(beklenen, kultur));
+    }
+
+    [Fact]
+    public void AltinciOndaliktan_Sonrasi_Yuvarlanir()
+    {
+        ParaHesabi.Yuvarla(1.23456749m).Should().Be(1.234567m);
+    }
+
+    [Fact]
+    public void Donustur_KurlaCarpar_VeYuvarlar()
+    {
+        ParaHesabi.Donustur(12.5m, 34.1234m).Should().Be(426.5425m);
+    }
+
+    [Fact]
+    public void Donustur_BirKur_TutariDegistirmez()
+    {
+        ParaHesabi.Donustur(1234.567891m, 1m).Should().Be(1234.567891m);
     }
 }

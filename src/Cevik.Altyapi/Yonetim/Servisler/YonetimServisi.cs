@@ -20,11 +20,20 @@ public class YonetimServisi : IYonetimServisi
     // Firma onayı
     // -----------------------------------------------------------------------
 
-    public async Task<List<FirmaBasvuruOzetDto>> BekleyenFirmalariGetirAsync()
+    public async Task<SayfaliSonucDto<FirmaBasvuruOzetDto>> BekleyenFirmalariGetirAsync(int sayfaNo, int sayfaBoyutu)
     {
-        return await _context.Firmalar
-            .Where(f => f.OnayDurumu == FirmaOnayDurumu.Beklemede)
+        sayfaNo = Math.Max(1, sayfaNo);
+        sayfaBoyutu = Math.Clamp(sayfaBoyutu, 1, 100);
+        var sorgu = _context.Firmalar.Where(f => f.OnayDurumu == FirmaOnayDurumu.Beklemede);
+        return new SayfaliSonucDto<FirmaBasvuruOzetDto>
+        {
+            SayfaNo = sayfaNo,
+            SayfaBoyutu = sayfaBoyutu,
+            ToplamKayit = await sorgu.CountAsync(),
+            Kayitlar = await sorgu
             .OrderBy(f => f.OlusturmaTarihi)
+            .Skip((sayfaNo - 1) * sayfaBoyutu)
+            .Take(sayfaBoyutu)
             .AsNoTracking()
             .Select(f => new FirmaBasvuruOzetDto
             {
@@ -37,7 +46,8 @@ public class YonetimServisi : IYonetimServisi
                 BasvuruTarihi = f.OlusturmaTarihi,
                 KullaniciSayisi = _context.Kullanicilar.Count(k => k.FirmaId == f.Id)
             })
-            .ToListAsync();
+            .ToListAsync()
+        };
     }
 
     public async Task<bool> FirmaOnaylaAsync(FirmaOnayDto dto, long islemiYapanKullaniciId)
@@ -83,20 +93,24 @@ public class YonetimServisi : IYonetimServisi
     // Sipariş yönetimi
     // -----------------------------------------------------------------------
 
-    public async Task<List<SiparisYonetimOzetDto>> SiparisleriGetirAsync(short? durum, int sayfa, int boyut)
+    public async Task<SayfaliSonucDto<SiparisYonetimOzetDto>> SiparisleriGetirAsync(
+        short? durum,
+        int sayfaNo,
+        int sayfaBoyutu)
     {
-        boyut = Math.Clamp(boyut, 1, 200);
-        sayfa = Math.Max(sayfa, 1);
+        sayfaBoyutu = Math.Clamp(sayfaBoyutu, 1, 200);
+        sayfaNo = Math.Max(sayfaNo, 1);
 
         var sorgu = _context.Siparisler.AsQueryable();
 
         if (durum.HasValue)
             sorgu = sorgu.Where(s => s.Durum == (SiparisDurumu)durum.Value);
 
+        var toplamKayit = await sorgu.CountAsync();
         var kayitlar = await sorgu
             .OrderByDescending(s => s.Id)
-            .Skip((sayfa - 1) * boyut)
-            .Take(boyut)
+            .Skip((sayfaNo - 1) * sayfaBoyutu)
+            .Take(sayfaBoyutu)
             .AsNoTracking()
             .Select(s => new SiparisYonetimOzetDto
             {
@@ -121,7 +135,13 @@ public class YonetimServisi : IYonetimServisi
         foreach (var kayit in kayitlar)
             kayit.IzinliGecisler = [.. SiparisDurumMakinesi.IzinliGecisler(kayit.Durum)];
 
-        return kayitlar;
+        return new SayfaliSonucDto<SiparisYonetimOzetDto>
+        {
+            SayfaNo = sayfaNo,
+            SayfaBoyutu = sayfaBoyutu,
+            ToplamKayit = toplamKayit,
+            Kayitlar = kayitlar
+        };
     }
 
     public async Task<bool> SiparisDurumGuncelleAsync(SiparisDurumGuncelleDto dto, long islemiYapanKullaniciId)
@@ -214,11 +234,21 @@ public class YonetimServisi : IYonetimServisi
     // İçerik
     // -----------------------------------------------------------------------
 
-    public async Task<List<BlogYazisiDto>> BlogYazilariGetirAsync()
+    public async Task<SayfaliSonucDto<BlogYazisiDto>> BlogYazilariGetirAsync(int sayfaNo, int sayfaBoyutu)
     {
-        return await _context.BlogYazilari
+        sayfaNo = Math.Max(1, sayfaNo);
+        sayfaBoyutu = Math.Clamp(sayfaBoyutu, 1, 100);
+        var sorgu = _context.BlogYazilari.AsNoTracking();
+        return new SayfaliSonucDto<BlogYazisiDto>
+        {
+            SayfaNo = sayfaNo,
+            SayfaBoyutu = sayfaBoyutu,
+            ToplamKayit = await sorgu.CountAsync(),
+            Kayitlar = await sorgu
             .AsNoTracking()
             .OrderByDescending(b => b.Id)
+            .Skip((sayfaNo - 1) * sayfaBoyutu)
+            .Take(sayfaBoyutu)
             .Select(b => new BlogYazisiDto
             {
                 Id = b.Id,
@@ -230,7 +260,8 @@ public class YonetimServisi : IYonetimServisi
                 Kategori = b.Kategori,
                 YayinTarihi = b.YayinTarihi ?? b.OlusturmaTarihi
             })
-            .ToListAsync();
+            .ToListAsync()
+        };
     }
 
     public async Task<BlogYazisiDto> BlogYazisiEkleAsync(BlogYazisiEkleDto dto)

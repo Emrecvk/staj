@@ -16,7 +16,9 @@ public static class OnbellekAnahtarlari
     /// <summary>Eski tek dilli anahtar — temizlik sırasında da silinir.</summary>
     public const string KategoriAgaci = "kategori_agaci";
 
-    public static string KategoriAgaciDil(string dil) => $"kategori_agaci_{DilKodu.Coz(dil)}";
+    // v2: herkese açık ağaç yalnızca aktif ürünü olan dalları içeriyor.
+    // Sürüm eki, Redis'te eski 24 saatlik ağacın kullanılmasını engeller.
+    public static string KategoriAgaciDil(string dil) => $"kategori_agaci_v2_{DilKodu.Coz(dil)}";
 
     public static readonly string[] KategoriAgaciAnahtarlari =
     [
@@ -25,6 +27,13 @@ public static class OnbellekAnahtarlari
         KategoriAgaciDil(DilKodu.Ingilizce)
     ];
 
-    /// <summary>Bir kategorinin facet tanımları.</summary>
-    public static string KategoriFacetleri(int kategoriId) => $"kategori_facet_{kategoriId}";
+    /// <summary>Bir kategorinin dile göre facet değerleri.</summary>
+    public static string KategoriFacetleri(int kategoriId, string dil) =>
+        $"kategori_facet_{kategoriId}_{DilKodu.Coz(dil)}";
+
+    public static string[] KategoriFacetAnahtarlari(int kategoriId) =>
+    [
+        KategoriFacetleri(kategoriId, DilKodu.Turkce),
+        KategoriFacetleri(kategoriId, DilKodu.Ingilizce)
+    ];
 }

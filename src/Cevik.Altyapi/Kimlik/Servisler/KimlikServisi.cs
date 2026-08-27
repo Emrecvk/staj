@@ -16,6 +16,8 @@ namespace Cevik.Altyapi.Kimlik.Servisler;
 
 public class KimlikServisi : IKimlikServisi
 {
+    private static readonly TimeSpan YenilemeTekrarToleransi = TimeSpan.FromSeconds(30);
+
     private readonly CevikDbContext _context;
     private readonly JwtAyarlari _jwt;
     private readonly PasswordHasher<Kullanici> _parolaHesaplayici = new();
@@ -59,6 +61,7 @@ public class KimlikServisi : IKimlikServisi
         var yeniRefreshToken = new KullaniciRefreshToken
         {
             KullaniciId = kullanici.Id,
+            AileId = Guid.NewGuid(),
             TokenHash = refreshTokenHash,
             SonaErmeTarihi = DateTimeOffset.UtcNow.AddDays(7)
         };
@@ -80,18 +83,24 @@ public class KimlikServisi : IKimlikServisi
         if (mevcutToken == null)
             return null;
 
-        if (mevcutToken.IptalEdildiMi || mevcutToken.KullanildiMi)
+        if (mevcutToken.IptalEdildiMi)
+            return null;
+
+        if (mevcutToken.KullanildiMi)
         {
-            // Token çalınmış olabilir - ailedeki tüm tokenları iptal et
-            var aileTokens = await _context.KullaniciRefreshTokens
-                .Where(x => x.KullaniciId == mevcutToken.KullaniciId && !x.IptalEdildiMi)
-                .ToListAsync();
-                
-            foreach (var t in aileTokens)
+            var tekrarYaniti = await KisaSureliTekrarYanitiniOlusturAsync(mevcutToken, dto.RefreshToken);
+            if (tekrarYaniti is not null)
+                return tekrarYaniti;
+
+            // Tolerans penceresi dışındaki kullanım çalıntı kabul edilir. Başka
+            // cihazların oturumlarını değil, yalnız bu token zincirini iptal et.
+            var aileTokenlari = await AileTokenlariniGetirAsync(mevcutToken);
+            foreach (var token in aileTokenlari.Where(x => !x.IptalEdildiMi))
             {
-                t.IptalEdildiMi = true;
-                t.IptalNedeni = "Şüpheli token yeniden kullanımı";
+                token.IptalEdildiMi = true;
+                token.IptalNedeni = "Şüpheli token yeniden kullanımı";
             }
+
             await _context.SaveChangesAsync();
             return null;
         }
@@ -99,24 +108,111 @@ public class KimlikServisi : IKimlikServisi
         if (mevcutToken.SonaErmeTarihi <= DateTimeOffset.UtcNow)
             return null;
 
-        var yeniRefreshToken = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+        var aileId = mevcutToken.AileId == Guid.Empty ? Guid.NewGuid() : mevcutToken.AileId;
+        var yeniRefreshToken = ArdilRefreshTokenUret(dto.RefreshToken);
         var yeniRefreshTokenHash = HashYarat(yeniRefreshToken);
 
+        mevcutToken.AileId = aileId;
         mevcutToken.YerineGecenTokenHash = yeniRefreshTokenHash;
         
         var yeniTokenEntity = new KullaniciRefreshToken
         {
             KullaniciId = mevcutToken.KullaniciId,
+            AileId = aileId,
             TokenHash = yeniRefreshTokenHash,
             SonaErmeTarihi = DateTimeOffset.UtcNow.AddDays(7)
         };
         
         _context.KullaniciRefreshTokens.Add(yeniTokenEntity);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Aynı token iki API örneğine eşzamanlı ulaştığında xmin/benzersiz
+            // hash korumasından yalnız biri yazabilir. Kazananın ürettiği ardıl
+            // deterministiktir; güncel kaydı doğrulayıp aynı yanıtı döndürürüz.
+            _context.ChangeTracker.Clear();
+            var guncelToken = await _context.KullaniciRefreshTokens
+                .Include(x => x.Kullanici)
+                .FirstOrDefaultAsync(x => x.TokenHash == tokenHash);
+
+            var tekrarYaniti = guncelToken is null
+                ? null
+                : await KisaSureliTekrarYanitiniOlusturAsync(guncelToken, dto.RefreshToken);
+
+            if (tekrarYaniti is not null)
+                return tekrarYaniti;
+
+            throw;
+        }
 
         var tokenDto = TokenUret(mevcutToken.Kullanici);
         tokenDto.RefreshToken = yeniRefreshToken;
         return tokenDto;
+    }
+
+    private async Task<TokenDto?> KisaSureliTekrarYanitiniOlusturAsync(
+        KullaniciRefreshToken mevcutToken,
+        string sunulanRefreshToken)
+    {
+        if (!mevcutToken.KullanildiMi || mevcutToken.GuncellemeTarihi is null)
+            return null;
+
+        if (DateTimeOffset.UtcNow - mevcutToken.GuncellemeTarihi.Value > YenilemeTekrarToleransi)
+            return null;
+
+        var ardilToken = ArdilRefreshTokenUret(sunulanRefreshToken);
+        var ardilTokenHash = HashYarat(ardilToken);
+        if (!string.Equals(ardilTokenHash, mevcutToken.YerineGecenTokenHash, StringComparison.Ordinal))
+            return null;
+
+        // Ardıl tokenla çıkış yapılmış, süresi dolmuş veya o da kullanılmışsa
+        // eski token üzerinden yeni bir access token üretme. Aksi davranış,
+        // kullanıcının çıkışından hemen sonra eski bir isteğin oturumu açmasına
+        // yol açardı.
+        var ardilKaydi = await _context.KullaniciRefreshTokens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.TokenHash == ardilTokenHash);
+        if (ardilKaydi is null || !ardilKaydi.GecerliMi)
+            return null;
+
+        var tokenDto = TokenUret(mevcutToken.Kullanici);
+        tokenDto.RefreshToken = ardilToken;
+        return tokenDto;
+    }
+
+    private async Task<List<KullaniciRefreshToken>> AileTokenlariniGetirAsync(
+        KullaniciRefreshToken baslangicTokeni)
+    {
+        if (baslangicTokeni.AileId != Guid.Empty)
+        {
+            return await _context.KullaniciRefreshTokens
+                .Where(x => x.KullaniciId == baslangicTokeni.KullaniciId &&
+                            x.AileId == baslangicTokeni.AileId)
+                .ToListAsync();
+        }
+
+        // Düzeltmeden önce oluşturulmuş Guid.Empty kayıtları başka cihazlarla
+        // aynı aileymiş gibi ele alma. Yalnız eski tokenın ardıl zincirini izle.
+        var kullaniciTokenlari = await _context.KullaniciRefreshTokens
+            .Where(x => x.KullaniciId == baslangicTokeni.KullaniciId)
+            .ToListAsync();
+        var tokenHaritasi = kullaniciTokenlari.ToDictionary(x => x.TokenHash, StringComparer.Ordinal);
+        var sonuc = new List<KullaniciRefreshToken>();
+        KullaniciRefreshToken? token = baslangicTokeni;
+
+        while (token is not null && !sonuc.Any(x => x.Id == token.Id))
+        {
+            sonuc.Add(token);
+            token = token.YerineGecenTokenHash is not null &&
+                    tokenHaritasi.TryGetValue(token.YerineGecenTokenHash, out var ardil)
+                ? ardil
+                : null;
+        }
+
+        return sonuc;
     }
 
     public async Task<bool> CikisYapAsync(string refreshToken)
@@ -315,6 +411,18 @@ public class KimlikServisi : IKimlikServisi
         var bytes = Encoding.UTF8.GetBytes(token);
         var hash = sha.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
+    }
+
+    /// <summary>
+    /// Aynı eski token için bütün API örneklerinin aynı ardıl tokenı üretmesini
+    /// sağlar. Böylece eşzamanlı yenilemelerden veritabanına ilk yazan kazanır;
+    /// diğer istek de düz metni saklamadan aynı başarılı yanıtı döndürebilir.
+    /// </summary>
+    private string ArdilRefreshTokenUret(string oncekiRefreshToken)
+    {
+        using var hmac = new System.Security.Cryptography.HMACSHA512(Encoding.UTF8.GetBytes(_jwt.Key));
+        var veri = Encoding.UTF8.GetBytes($"cevik-refresh-rotation-v1:{oncekiRefreshToken}");
+        return Convert.ToBase64String(hmac.ComputeHash(veri));
     }
 
     private static readonly string SahteHash =

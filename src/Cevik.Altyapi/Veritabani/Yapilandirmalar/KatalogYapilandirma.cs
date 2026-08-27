@@ -17,6 +17,11 @@ public class UrunYapilandirmasi : IEntityTypeConfiguration<Urun>
     public void Configure(EntityTypeBuilder<Urun> builder)
     {
         builder.HasIndex(u => new { u.UreticiId, u.UreticiUrunKodu }).IsUnique();
+        builder.HasIndex(u => new { u.KaynakSistem, u.KaynakKimligi }).IsUnique();
+
+        builder.Property(u => u.KaynakSistem).HasMaxLength(40);
+        builder.Property(u => u.KaynakKimligi).HasMaxLength(100);
+        builder.Property(u => u.KaynakKatalogSurumu).HasMaxLength(40);
         
         // GIN (normalize_kod gin_trgm_ops)
         builder.HasIndex(u => u.NormalizeKod)

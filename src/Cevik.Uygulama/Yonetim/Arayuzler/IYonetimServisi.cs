@@ -7,7 +7,7 @@ public interface IYonetimServisi
     Task<bool> FirmaOnaylaAsync(FirmaOnayDto dto, long islemiYapanKullaniciId);
 
     /// <summary>Onay bekleyen firma başvuruları — admin panelinin giriş ekranı için.</summary>
-    Task<List<FirmaBasvuruOzetDto>> BekleyenFirmalariGetirAsync();
+    Task<Cevik.Uygulama.Ortak.SayfaliSonucDto<FirmaBasvuruOzetDto>> BekleyenFirmalariGetirAsync(int sayfaNo, int sayfaBoyutu);
 
     /// <summary>
     /// Sipariş durumunu değiştirir. Geçiş <see cref="Cevik.Alan.Kurallar.SiparisDurumMakinesi"/>
@@ -15,11 +15,14 @@ public interface IYonetimServisi
     /// </summary>
     Task<bool> SiparisDurumGuncelleAsync(SiparisDurumGuncelleDto dto, long islemiYapanKullaniciId);
 
-    Task<List<SiparisYonetimOzetDto>> SiparisleriGetirAsync(short? durum, int sayfa, int boyut);
+    Task<Cevik.Uygulama.Ortak.SayfaliSonucDto<SiparisYonetimOzetDto>> SiparisleriGetirAsync(
+        short? durum,
+        int sayfaNo,
+        int sayfaBoyutu);
 
     /// <summary>Kullanıcı rolü değiştirme — yetki yükseltmenin TEK meşru yolu.</summary>
     Task<bool> KullaniciRolGuncelleAsync(KullaniciRolGuncelleDto dto);
 
-    Task<List<BlogYazisiDto>> BlogYazilariGetirAsync();
+    Task<Cevik.Uygulama.Ortak.SayfaliSonucDto<BlogYazisiDto>> BlogYazilariGetirAsync(int sayfaNo, int sayfaBoyutu);
     Task<BlogYazisiDto> BlogYazisiEkleAsync(BlogYazisiEkleDto dto);
 }

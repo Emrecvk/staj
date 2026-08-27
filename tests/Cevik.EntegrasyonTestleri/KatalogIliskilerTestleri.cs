@@ -36,7 +36,7 @@ public class KatalogIliskilerTestleri : IClassFixture<CevikUygulamaFabrikasi>
 
         // 1. Karsilastirmaya Ekle
         var yanitEkle = await istemci.PostAsync($"/api/katalog/karsilastirma/{urun.Id}", null);
-        yanitEkle.StatusCode.Should().Be(HttpStatusCode.OK);
+        yanitEkle.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // 2. Karsilastirma Listesini Getir
         var yanitListe = await istemci.GetFromJsonAsync<KarsilastirmaSonucDto>("/api/katalog/karsilastirma");
@@ -45,7 +45,7 @@ public class KatalogIliskilerTestleri : IClassFixture<CevikUygulamaFabrikasi>
 
         // 3. Karsilastirmadan Cikar
         var yanitCikar = await istemci.DeleteAsync($"/api/katalog/karsilastirma/{urun.Id}");
-        yanitCikar.StatusCode.Should().Be(HttpStatusCode.OK);
+        yanitCikar.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // 4. Tekrar Getir ve Bos Oldugunu Dogrula
         var yanitListe2 = await istemci.GetFromJsonAsync<KarsilastirmaSonucDto>("/api/katalog/karsilastirma");
@@ -105,16 +105,17 @@ public class KatalogIliskilerTestleri : IClassFixture<CevikUygulamaFabrikasi>
         eklenen!.MusteriKodu.Should().Be("MCODE-001");
 
         // 2. Listele
-        var yanitListe = await istemci.GetFromJsonAsync<List<MusteriUrunKoduDto>>("/api/profil/musteri-urun-kodlari");
-        yanitListe.Should().Contain(m => m.Id == eklenen.Id && m.MusteriKodu == "MCODE-001");
+        var yanitListe = await istemci.GetFromJsonAsync<Cevik.Uygulama.Ortak.SayfaliSonucDto<MusteriUrunKoduDto>>(
+            "/api/profil/musteri-urun-kodlari");
+        yanitListe!.Kayitlar.Should().Contain(m => m.Id == eklenen.Id && m.MusteriKodu == "MCODE-001");
 
         // 3. Guncelle
         var guncelleDto = new MusteriUrunKoduGuncelleDto { MusteriKodu = "MCODE-002", Aciklama = "Guncel kod" };
         var yanitGuncelle = await istemci.PutAsJsonAsync($"/api/profil/musteri-urun-kodlari/{eklenen.Id}", guncelleDto);
-        yanitGuncelle.StatusCode.Should().Be(HttpStatusCode.OK);
+        yanitGuncelle.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // 4. Sil
         var yanitSil = await istemci.DeleteAsync($"/api/profil/musteri-urun-kodlari/{eklenen.Id}");
-        yanitSil.StatusCode.Should().Be(HttpStatusCode.OK);
+        yanitSil.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 }

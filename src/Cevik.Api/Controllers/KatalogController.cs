@@ -17,14 +17,25 @@ public class KatalogController : ControllerBase
     }
 
     [HttpGet("kategoriler/agac")]
-    public async Task<IActionResult> KategoriAgaciniGetir([FromQuery] string? dil)
+    [ProducesResponseType(typeof(List<KategoriAgacDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<KategoriAgacDto>>> KategoriAgaciniGetir([FromQuery] string? dil)
     {
         var sonuc = await _katalogServisi.KategoriAgaciniGetirAsync(dil);
         return Ok(sonuc);
     }
 
+    [HttpGet("kategoriler/urun-sayilari")]
+    [ProducesResponseType(typeof(Dictionary<int, int>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Dictionary<int, int>>> KategoriUrunSayilariniGetir([FromQuery] List<int> kategoriIdleri)
+    {
+        var sonuc = await _katalogServisi.KategoriUrunSayilariniGetirAsync(kategoriIdleri);
+        return Ok(sonuc);
+    }
+
     [HttpGet("kategoriler/{slug}")]
-    public async Task<IActionResult> KategoriDetay(string slug, [FromQuery] string? dil)
+    [ProducesResponseType(typeof(KategoriDetayDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<KategoriDetayDto>> KategoriDetay(string slug, [FromQuery] string? dil)
     {
         var sonuc = await _katalogServisi.KategoriDetayGetirAsync(slug, dil);
         if (sonuc == null) return NotFound();
@@ -32,28 +43,33 @@ public class KatalogController : ControllerBase
     }
 
     [HttpGet("urunler")]
-    public async Task<IActionResult> UrunleriListele([FromQuery] UrunAramaFiltreDto filtre)
+    [ProducesResponseType(typeof(UrunAramaSonucDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<UrunAramaSonucDto>> UrunleriListele([FromQuery] UrunAramaFiltreDto filtre)
     {
         var sonuc = await _katalogServisi.UrunleriListeleAsync(filtre);
         return Ok(sonuc);
     }
 
     [HttpGet("ureticiler")]
-    public async Task<IActionResult> UreticileriListele([FromQuery] int? kategoriId)
+    [ProducesResponseType(typeof(List<UreticiOzetDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<UreticiOzetDto>>> UreticileriListele([FromQuery] int? kategoriId)
     {
         var sonuc = await _katalogServisi.UreticileriGetirAsync(kategoriId);
         return Ok(sonuc);
     }
 
     [HttpGet("ureticiler/sayilari")]
-    public async Task<IActionResult> KategoriUreticiSayilariniGetir([FromQuery] List<int> kategoriIdleri)
+    [ProducesResponseType(typeof(Dictionary<int, int>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Dictionary<int, int>>> KategoriUreticiSayilariniGetir([FromQuery] List<int> kategoriIdleri)
     {
         var sonuc = await _katalogServisi.KategoriUreticiSayilariniGetirAsync(kategoriIdleri);
         return Ok(sonuc);
     }
 
     [HttpGet("urunler/{id}")]
-    public async Task<IActionResult> UrunDetay(long id, [FromQuery] string? dil, [FromQuery] string? paraBirimi)
+    [ProducesResponseType(typeof(UrunDetayDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UrunDetayDto>> UrunDetay(long id, [FromQuery] string? dil, [FromQuery] string? paraBirimi)
     {
         var sonuc = await _katalogServisi.UrunDetayGetirAsync(id, dil, paraBirimi);
         if (sonuc == null) return NotFound();
@@ -75,7 +91,8 @@ public class KatalogController : ControllerBase
     }
 
     [HttpGet("karsilastirma")]
-    public async Task<IActionResult> KarsilastirmaListesiGetir()
+    [ProducesResponseType(typeof(KarsilastirmaSonucDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<KarsilastirmaSonucDto>> KarsilastirmaListesiGetir()
     {
         var (kullaniciId, oturumAnahtari) = KimlikCoz();
         var sonuc = await _katalogServisi.KarsilastirmaListesiGetirAsync(kullaniciId, oturumAnahtari);
@@ -83,18 +100,20 @@ public class KatalogController : ControllerBase
     }
 
     [HttpPost("karsilastirma/{urunId:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> KarsilastirmayaEkle(long urunId)
     {
         var (kullaniciId, oturumAnahtari) = KimlikCoz();
         await _katalogServisi.KarsilastirmayaEkleAsync(kullaniciId, oturumAnahtari, urunId);
-        return Ok();
+        return NoContent();
     }
 
     [HttpDelete("karsilastirma/{urunId:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> KarsilastirmadanCikar(long urunId)
     {
         var (kullaniciId, oturumAnahtari) = KimlikCoz();
         await _katalogServisi.KarsilastirmadanCikarAsync(kullaniciId, oturumAnahtari, urunId);
-        return Ok();
+        return NoContent();
     }
 }

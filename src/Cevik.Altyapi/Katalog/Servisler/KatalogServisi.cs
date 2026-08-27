@@ -49,6 +49,28 @@ public class KatalogServisi : IKatalogServisi
             .ThenBy(k => k.AdTr)
             .ToListAsync();
 
+        // Katalog menüsünde boş dallar göstermek kullanıcıyı her seferinde
+        // "eşleşen ürün bulunamadı" ekranına götürüyor. Yalnızca aktif bir
+        // ürünü doğrudan veya alt dallarından biri üzerinden kapsayan
+        // kategorileri yayınlıyoruz; yönetim tarafındaki kategori kayıtlarına
+        // dokunulmuyor.
+        var urunKategoriIdleri = await _context.Urunler
+            .AsNoTracking()
+            .Where(u => u.Aktif)
+            .Select(u => u.KategoriId)
+            .Distinct()
+            .ToListAsync();
+
+        var urunKategoriYollari = tumKategoriler
+            .Where(k => urunKategoriIdleri.Contains(k.Id))
+            .Select(k => k.Yol)
+            .ToList();
+
+        tumKategoriler = tumKategoriler
+            .Where(k => urunKategoriYollari.Any(yol =>
+                yol == k.Yol || yol.StartsWith(k.Yol + ".", StringComparison.Ordinal)))
+            .ToList();
+
         var cocuklar = tumKategoriler
             .Where(k => k.UstKategoriId is not null)
             .GroupBy(k => k.UstKategoriId!.Value)
@@ -154,6 +176,7 @@ public class KatalogServisi : IKatalogServisi
                 u.UreticiId,
                 u.UreticiUrunKodu,
                 UreticiAd = u.Uretici.Ad,
+                UreticiLogoUrl = u.Uretici.LogoUrl,
                 u.KisaAciklama,
                 u.AnaGorselUrl,
                 u.GorselTemsiliMi,
@@ -185,31 +208,18 @@ public class KatalogServisi : IKatalogServisi
                         a.Moq,
                         a.KatlamaMiktari,
                         a.StokMiktari,
-                        Fiyatlar = a.FiyatKademeleri
-                            .OrderBy(f => f.MinMiktar)
-                            .Take(2)
-                            .Select(f => new
-                            {
-                                f.MinMiktar,
-                                f.MaxMiktar,
-                                f.BirimFiyat,
-                                f.ParaBirimi
-                            })
-                            .ToList()
+                        a.GelecekStokMiktari,
+                        a.GelecekStokTarihi,
+                        a.VarsayilanMi,
+                        // Kademeler burada KIRPILMAZ: "başlangıç fiyatı" hesabı
+                        // aşağıda MOQ'yu kapsayan kademeyi arıyor, ki bu üçüncü
+                        // veya dördüncü kademe olabilir. Take(2) ile sınırlansaydı
+                        // o kademe hiç görünmeyip yanlış (ya da sıfır) fiyata düşülürdü.
+                        Fiyatlar = a.FiyatKademeleri.OrderBy(f => f.MinMiktar).ToList()
                     })
                     .Take(1)
                     .ToList(),
-                ToplamStok = u.UrunAmbalajlari.Sum(a => (int?)a.StokMiktari) ?? 0,
-                EnDusukFiyat = u.UrunAmbalajlari
-                    .SelectMany(a => a.FiyatKademeleri)
-                    .OrderBy(f => f.BirimFiyat)
-                    .Select(f => (decimal?)f.BirimFiyat)
-                    .FirstOrDefault(),
-                ParaBirimi = u.UrunAmbalajlari
-                    .SelectMany(a => a.FiyatKademeleri)
-                    .OrderBy(f => f.BirimFiyat)
-                    .Select(f => f.ParaBirimi)
-                    .FirstOrDefault()
+                ToplamStok = u.UrunAmbalajlari.Sum(a => (int?)a.StokMiktari) ?? 0
             })
             .ToListAsync();
 
@@ -217,7 +227,21 @@ public class KatalogServisi : IKatalogServisi
         var kayitlar = new List<UrunOzetDto>(urunler.Count);
         foreach (var u in urunler)
         {
-            var kaynak = u.ParaBirimi ?? ParaBirimiKodu.Usd;
+            // "Başlangıç fiyatı" müşterinin GERÇEKTEN ödeyeceği tutar olmalı:
+            // kartta gösterilen varsayılan ambalajın, o ambalajın MOQ'sunu
+            // KAPSAYAN kademesi. Önceki sürüm ürünün tüm ambalaj/kademeleri
+            // arasından mutlak en ucuz birim fiyatı alıyordu — bu genellikle
+            // binlerce adetlik toplu alım kademesiydi. Sonuç: kart "₺1,06'dan
+            // başlıyor" derken müşteri MOQ'yu (ör. 5 adet) sepete eklediğinde
+            // ₺1,48 ödüyordu; aynı kural burada da SiparisMiktarKurali'nin
+            // kardeşi olan FiyatKademesiSecici ile, sepetteki hesaplamayla
+            // BİREBİR aynı şekilde uygulanıyor.
+            var varsayilanAmbalaj = u.AmbalajlarVeFiyatlar.FirstOrDefault();
+            var secilenKademe = varsayilanAmbalaj is null
+                ? null
+                : FiyatKademesiSecici.Sec(varsayilanAmbalaj.Fiyatlar, varsayilanAmbalaj.Moq);
+
+            var kaynak = secilenKademe?.ParaBirimi ?? ParaBirimiKodu.Usd;
             kayitlar.Add(new UrunOzetDto
             {
                 Id = u.Id,
@@ -225,16 +249,18 @@ public class KatalogServisi : IKatalogServisi
                 UreticiId = u.UreticiId,
                 UreticiUrunKodu = u.UreticiUrunKodu,
                 UreticiAd = u.UreticiAd,
+                UreticiLogoUrl = u.UreticiLogoUrl,
                 KisaAciklama = u.KisaAciklama,
                 AnaGorselUrl = u.AnaGorselUrl,
                 GorselTemsiliMi = u.GorselTemsiliMi,
                 KampanyaliMi = u.KampanyaliMi,
                 ToplamStok = u.ToplamStok,
-                BaslangicFiyati = await FiyatiDonusturAsync(u.EnDusukFiyat ?? 0m, kaynak, hedefPara, kurOnbellegi),
+                BaslangicFiyati = await FiyatiDonusturAsync(secilenKademe?.BirimFiyat ?? 0m, kaynak, hedefPara, kurOnbellegi),
                 ParaBirimi = hedefPara,
                 UrunDurumu = u.UrunDurumu.ToString(),
                 RohsDurumu = u.RohsDurumu.ToString(),
                 Kilif = KilifDegeriniGetir(u.OzelliklerJson),
+                Ozellikler = OzellikleriGetir(u.OzelliklerJson),
                 Dokumanlar = u.Dokumanlar.Select(d => new DokumanListeDto
                 {
                     Tip = (short)d.Tip,
@@ -252,6 +278,9 @@ public class KatalogServisi : IKatalogServisi
                         Moq = ambalaj.Moq,
                         KatlamaMiktari = ambalaj.KatlamaMiktari,
                         StokMiktari = ambalaj.StokMiktari,
+                        GelecekStokMiktari = ambalaj.GelecekStokMiktari,
+                        GelecekStokTarihi = ambalaj.GelecekStokTarihi?.ToString("yyyy-MM-dd"),
+                        VarsayilanMi = ambalaj.VarsayilanMi,
                         Fiyatlar = ambalaj.Fiyatlar.Select(f => new FiyatKademesiDto
                         {
                             MinMiktar = f.MinMiktar,
@@ -276,7 +305,7 @@ public class KatalogServisi : IKatalogServisi
 
         var sonuc = new UrunAramaSonucDto
         {
-            Urunler = new PagedResultDto<UrunOzetDto>
+            Urunler = new SayfaliSonucDto<UrunOzetDto>
             {
                 SayfaNo = sayfaNo,
                 SayfaBoyutu = sayfaBoyutu,
@@ -285,7 +314,12 @@ public class KatalogServisi : IKatalogServisi
             }
         };
 
-        sonuc.Filtreler = await FacetleriHesaplaAsync(temelSorgu, markasizSorgu, filtre, kategoriIdleri, dilKodu);
+        sonuc.Filtreler = await FacetleriOnbellektenVeyaHesaplaAsync(
+            temelSorgu,
+            markasizSorgu,
+            filtre,
+            kategoriIdleri,
+            dilKodu);
 
         return sonuc;
     }
@@ -310,6 +344,19 @@ public class KatalogServisi : IKatalogServisi
         }
 
         return null;
+    }
+
+    private static Dictionary<string, string> OzellikleriGetir(string? ozelliklerJson)
+    {
+        if (string.IsNullOrWhiteSpace(ozelliklerJson)) return [];
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(ozelliklerJson) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 
     /// <summary>
@@ -470,6 +517,46 @@ public class KatalogServisi : IKatalogServisi
         _ => sorgu.OrderBy(u => u.Id)
     };
 
+    private async Task<List<FacetGrupDto>> FacetleriOnbellektenVeyaHesaplaAsync(
+        IQueryable<Urun> temelSorgu,
+        IQueryable<Urun> markasizSorgu,
+        UrunAramaFiltreDto filtre,
+        List<int>? kategoriIdleri,
+        string dil)
+    {
+        var onbelleklenebilir = filtre.KategoriId is not null
+            && string.IsNullOrWhiteSpace(filtre.AramaMetni)
+            && filtre.UreticiIdleri.Count == 0
+            && filtre.ParametrikFiltreler.Count == 0
+            && !filtre.SadeceStoktakiler;
+
+        var anahtar = onbelleklenebilir
+            ? OnbellekAnahtarlari.KategoriFacetleri(filtre.KategoriId!.Value, dil)
+            : null;
+
+        if (anahtar is not null)
+        {
+            var json = await _cache.GetStringAsync(anahtar);
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                var cozulmus = JsonSerializer.Deserialize<List<FacetGrupDto>>(json);
+                if (cozulmus is not null) return cozulmus;
+            }
+        }
+
+        var sonuc = await FacetleriHesaplaAsync(temelSorgu, markasizSorgu, filtre, kategoriIdleri, dil);
+
+        if (anahtar is not null)
+        {
+            await _cache.SetStringAsync(
+                anahtar,
+                JsonSerializer.Serialize(sonuc),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15) });
+        }
+
+        return sonuc;
+    }
+
     /// <summary>
     /// Facet sayaçları.
     ///
@@ -536,25 +623,51 @@ public class KatalogServisi : IKatalogServisi
             .Distinct()
             .ToListAsync();
 
+        // Tüm filtrelenebilir özellik değerlerini TEK sorguda alırız. Önceki
+        // uygulama her tanım için ayrı, korelasyonlu Any sorgusu çalıştırıyordu;
+        // kategoriye yeni özellik eklendikçe sorgu sayısı doğrusal artıyordu.
+        var tanimIdleri = tanimlar.Select(t => t.OzellikTanimId).Distinct().ToList();
+        var degerSatirlari = await _context.UrunOzellikDegerleri
+            .AsNoTracking()
+            .Where(d => tanimIdleri.Contains(d.OzellikTanimId) && d.DegerMetin != null)
+            .Where(d => temelSorgu.Any(u => u.Id == d.UrunId))
+            .Select(d => new { d.UrunId, d.OzellikTanimId, Deger = d.DegerMetin! })
+            .ToListAsync();
+
+        var koddanTanimIdye = tanimlar
+            .GroupBy(t => t.Kod, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().OzellikTanimId, StringComparer.OrdinalIgnoreCase);
+        var urunDegerleri = degerSatirlari
+            .GroupBy(d => d.UrunId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.GroupBy(d => d.OzellikTanimId)
+                    .ToDictionary(x => x.Key, x => x.Select(d => d.Deger).ToHashSet(StringComparer.Ordinal)));
+
         foreach (var tanim in tanimlar.OrderBy(t => t.Sira).ThenBy(t => t.AdTr))
         {
-            // Kendi seçimi hariç, diğer parametrik filtreler uygulanmış sorgu.
+            // Kendi seçimi hariç diğer parametrik filtreleri bellekte uygularız;
+            // veri yukarıdaki tek veritabanı sorgusundan gelir.
             var digerFiltreler = filtre.ParametrikFiltreler
-                .Where(p => p.Key != tanim.Kod)
-                .ToDictionary(p => p.Key, p => p.Value);
+                .Where(p => !string.Equals(p.Key, tanim.Kod, StringComparison.OrdinalIgnoreCase))
+                .Where(p => koddanTanimIdye.ContainsKey(p.Key) && p.Value.Count > 0)
+                .ToList();
 
-            var sayimSorgusu = ParametrikFiltreleriUygula(temelSorgu, digerFiltreler);
+            var uygunUrunIdleri = urunDegerleri
+                .Where(urun => digerFiltreler.All(secim =>
+                    urun.Value.TryGetValue(koddanTanimIdye[secim.Key], out var degerler)
+                    && secim.Value.Any(degerler.Contains)))
+                .Select(urun => urun.Key)
+                .ToHashSet();
 
-            var secenekler = await _context.UrunOzellikDegerleri
-                .AsNoTracking()
-                .Where(d => d.OzellikTanimId == tanim.OzellikTanimId && d.DegerMetin != null)
-                .Where(d => sayimSorgusu.Any(u => u.Id == d.UrunId))
-                .GroupBy(d => d.DegerMetin!)
-                .Select(g => new { Deger = g.Key, Sayi = g.Count() })
+            var secenekler = degerSatirlari
+                .Where(d => d.OzellikTanimId == tanim.OzellikTanimId && uygunUrunIdleri.Contains(d.UrunId))
+                .GroupBy(d => d.Deger)
+                .Select(g => new { Deger = g.Key, Sayi = g.Select(d => d.UrunId).Distinct().Count() })
                 .OrderByDescending(x => x.Sayi)
                 .ThenBy(x => x.Deger)
                 .Take(50) // Uzun listelerde panel şişmesin
-                .ToListAsync();
+                .ToList();
 
             if (secenekler.Count == 0) continue;
 
@@ -589,6 +702,7 @@ public class KatalogServisi : IKatalogServisi
 
         var urun = await _context.Urunler
             .Include(u => u.Uretici)
+            .Include(u => u.Kategori)
             .Include(u => u.Dokumanlar)
             .Include(u => u.Gorseller)
             .Include(u => u.UrunAmbalajlari).ThenInclude(a => a.FiyatKademeleri)
@@ -601,9 +715,14 @@ public class KatalogServisi : IKatalogServisi
         var dto = new UrunDetayDto
         {
             Id = urun.Id,
+            UreticiId = urun.UreticiId,
             UreticiUrunKodu = urun.UreticiUrunKodu,
             UreticiAd = urun.Uretici.Ad,
+            UreticiLogoUrl = urun.Uretici.LogoUrl,
+            KategoriId = urun.KategoriId,
+            KategoriYolu = await KategoriYolunuGetirAsync(urun.Kategori.Yol, dilKodu),
             KisaAciklama = urun.KisaAciklama,
+            AnaGorselUrl = urun.AnaGorselUrl,
             DetayliAciklama = DilKodu.IngilizceMi(dilKodu)
                 ? (urun.DetayliAciklamaEn ?? urun.DetayliAciklamaTr)
                 : urun.DetayliAciklamaTr,
@@ -654,9 +773,11 @@ public class KatalogServisi : IKatalogServisi
             {
                 AmbalajId = ambalaj.Id,
                 Ad = ambalaj.Ad,
+                AmbalajTipi = (short)ambalaj.AmbalajTipi,
                 Moq = ambalaj.Moq,
                 Mpq = ambalaj.Mpq,
                 KatlamaMiktari = ambalaj.KatlamaMiktari,
+                VarsayilanMi = ambalaj.VarsayilanMi,
                 StokMiktari = (int)ambalaj.StokMiktari,
                 GelecekStokMiktari = (int)ambalaj.GelecekStokMiktari,
                 GelecekStokTarihi = ambalaj.GelecekStokTarihi?.ToString("yyyy-MM-dd")
@@ -697,6 +818,29 @@ public class KatalogServisi : IKatalogServisi
         }
 
         return dto;
+    }
+
+    private async Task<List<string>> KategoriYolunuGetirAsync(string yol, string dil)
+    {
+        var idler = yol.Split('.', StringSplitOptions.RemoveEmptyEntries)
+            .Select(parca => int.TryParse(parca, out var id) ? id : (int?)null)
+            .Where(id => id is not null)
+            .Select(id => id!.Value)
+            .ToList();
+        if (idler.Count == 0) return [];
+
+        var adlar = await _context.Kategoriler
+            .AsNoTracking()
+            .Where(k => idler.Contains(k.Id))
+            .Select(k => new { k.Id, k.AdTr, k.AdEn })
+            .ToDictionaryAsync(k => k.Id);
+
+        return idler
+            .Where(adlar.ContainsKey)
+            .Select(id => DilKodu.IngilizceMi(dil) && !string.IsNullOrWhiteSpace(adlar[id].AdEn)
+                ? adlar[id].AdEn
+                : adlar[id].AdTr)
+            .ToList();
     }
 
     public async Task<List<UreticiOzetDto>> UreticileriGetirAsync(int? kategoriId = null)
@@ -749,6 +893,37 @@ public class KatalogServisi : IKatalogServisi
                 UrunSayisi = u.Urunler.Count
             })
             .ToListAsync();
+    }
+
+    public async Task<Dictionary<int, int>> KategoriUrunSayilariniGetirAsync(IReadOnlyCollection<int> kategoriIdleri)
+    {
+        if (kategoriIdleri.Count == 0)
+            return [];
+
+        var istenenKategoriler = await _context.Kategoriler
+            .AsNoTracking()
+            .Where(k => kategoriIdleri.Contains(k.Id))
+            .Select(k => new { k.Id, k.Yol })
+            .ToListAsync();
+
+        var kategoriYollari = await _context.Kategoriler
+            .AsNoTracking()
+            .Select(k => new { k.Id, k.Yol })
+            .ToDictionaryAsync(k => k.Id, k => k.Yol);
+
+        var kategoriBazliUrunSayilari = await _context.Urunler
+            .AsNoTracking()
+            .Where(u => u.Aktif)
+            .GroupBy(u => u.KategoriId)
+            .Select(grup => new { KategoriId = grup.Key, Sayi = grup.Count() })
+            .ToDictionaryAsync(grup => grup.KategoriId, grup => grup.Sayi);
+
+        return istenenKategoriler.ToDictionary(
+            kategori => kategori.Id,
+            kategori => kategoriBazliUrunSayilari
+                .Where(urunler => kategoriYollari.TryGetValue(urunler.Key, out var urunYolu) &&
+                    (urunYolu == kategori.Yol || urunYolu.StartsWith(kategori.Yol + ".")))
+                .Sum(urunler => urunler.Value));
     }
 
     public async Task<Dictionary<int, int>> KategoriUreticiSayilariniGetirAsync(IReadOnlyCollection<int> kategoriIdleri)
@@ -975,7 +1150,12 @@ public class KatalogServisi : IKatalogServisi
 
         if (!kurOnbellegi.TryGetValue(kaynak, out var kur))
         {
-            kur = await _dovizKuruServisi.KurGetirAsync(kaynak, hedefParaBirimi);
+            // Katalog bir GÖSTERİM yolu: kur yoksa liste 500 vermemeli.
+            // Çevrilemeyen fiyat kaynak para biriminde olduğu gibi bırakılır.
+            var bulunan = await _dovizKuruServisi.KurDeneAsync(kaynak, hedefParaBirimi);
+            if (bulunan is null) return ParaHesabi.Yuvarla(tutar);
+
+            kur = bulunan.Value;
             kurOnbellegi[kaynak] = kur;
         }
 

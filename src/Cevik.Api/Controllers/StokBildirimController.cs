@@ -1,9 +1,8 @@
 using System.Security.Claims;
-using Cevik.Alan.Fiyatlama;
-using Cevik.Altyapi.Veritabani;
+using Cevik.Uygulama.Katalog.Arayuzler;
 using Cevik.Uygulama.Katalog.Dto;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cevik.Api.Controllers;
 
@@ -11,48 +10,30 @@ namespace Cevik.Api.Controllers;
 [Route("api/katalog")]
 public class StokBildirimController : ControllerBase
 {
-    private readonly CevikDbContext _context;
+    private readonly IStokBildirimServisi _servis;
+    public StokBildirimController(IStokBildirimServisi servis) => _servis = servis;
 
-    public StokBildirimController(CevikDbContext context)
+    /// <summary>
+    /// Uç bilerek anonime açıktır (ziyaretçi haber almak için üye olmak
+    /// zorunda değil), ama bu yüzden ORAN SINIRI şart: sınırsız hâliyle
+    /// üçüncü kişilerin adresleri sınırsızca kaydedilebiliyor, arka plan
+    /// işleyicisi de stok gelince onlara site adına posta atıyordu —
+    /// istenmeyen posta rölesi. Adres biçimi
+    /// <c>StokBildirimTalebiDtoValidator</c> ile doğrulanır.
+    /// </summary>
+    [HttpPost("urunler/ambalajlar/{ambalajId:long}/stok-bildirimi")]
+    [EnableRateLimiting("Auth")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> StokBildirimiOlustur(long ambalajId, StokBildirimTalebiDto dto)
     {
-        _context = context;
-    }
-
-    [HttpPost("urunler/ambalajlar/{ambalajId}/stok-bildirimi")]
-    public async Task<IActionResult> StokBildirimiOlustur(long ambalajId, [FromBody] StokBildirimTalebiDto dto)
-    {
-        if (string.IsNullOrWhiteSpace(dto.Eposta))
-            return BadRequest("E-posta adresi zorunludur.");
-
-        var ambalajVarMi = await _context.UrunAmbalajlari.AnyAsync(a => a.Id == ambalajId);
-        if (!ambalajVarMi) return NotFound("Ambalaj bulunamadı.");
-
-        long? kullaniciId = null;
-        if (User.Identity?.IsAuthenticated == true)
-        {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (idClaim != null && long.TryParse(idClaim.Value, out var id))
-                kullaniciId = id;
-        }
-
-        var mevcutBildirim = await _context.StokBildirimleri
-            .AnyAsync(sb => sb.UrunAmbalajId == ambalajId && sb.Eposta == dto.Eposta && !sb.BildirildiMi);
-
-        if (mevcutBildirim)
-            return Conflict("Bu ürün için zaten bekleyen bir stok bildirim talebiniz bulunmaktadır.");
-
-        var yeniBildirim = new StokBildirimi
-        {
-            UrunAmbalajId = ambalajId,
-            Eposta = dto.Eposta,
-            KullaniciId = kullaniciId,
-            IstenenMiktar = dto.IstenenMiktar,
-            BildirildiMi = false
-        };
-
-        _context.StokBildirimleri.Add(yeniBildirim);
-        await _context.SaveChangesAsync();
-
-        return Ok("Stok bildirimi başarıyla oluşturuldu.");
+        var kullaniciId = long.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id)
+            ? id
+            : (long?)null;
+        await _servis.OlusturAsync(ambalajId, kullaniciId, dto);
+        return NoContent();
     }
 }

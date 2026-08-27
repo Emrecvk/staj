@@ -1,4 +1,5 @@
 using Cevik.Alan.Kurallar;
+using Cevik.Alan.Ortak;
 using Cevik.Alan.Siparis;
 using Cevik.Altyapi.Veritabani;
 using Cevik.Uygulama.Ortak;
@@ -124,6 +125,29 @@ public class SepetServisi : ISepetServisi
             GenelToplam = 0
         };
 
+        var varsayilanIskonto = musteriGrubuId is null
+            ? 0m
+            : await _context.MusteriGruplari
+                .Where(g => g.Id == musteriGrubuId.Value)
+                .Select(g => g.VarsayilanIskontoYuzdesi)
+                .FirstOrDefaultAsync();
+
+        var urunIdleri = kalemler.Select(k => k.UrunAmbalaji.UrunId).Distinct().ToList();
+        var kategoriIdleri = kalemler.Select(k => k.UrunAmbalaji.Urun.KategoriId).Distinct().ToList();
+        var ureticiIdleri = kalemler.Select(k => k.UrunAmbalaji.Urun.UreticiId).Distinct().ToList();
+        var simdi = DateTimeOffset.UtcNow;
+        var etkinIndirimler = await _context.Indirimler
+            .AsNoTracking()
+            .Where(i => i.Aktif && i.BaslangicTarihi <= simdi && i.BitisTarihi >= simdi)
+            .Where(i =>
+                (i.HedefTipi == IndirimHedefTipi.Urun && urunIdleri.Contains(i.HedefId))
+                || (i.HedefTipi == IndirimHedefTipi.Kategori && kategoriIdleri.Contains((int)i.HedefId))
+                || (i.HedefTipi == IndirimHedefTipi.Uretici && ureticiIdleri.Contains((int)i.HedefId))
+                || (i.HedefTipi == IndirimHedefTipi.MusteriGrubu
+                    && musteriGrubuId != null
+                    && i.HedefId == musteriGrubuId.Value))
+            .ToListAsync();
+
         foreach (var kalem in kalemler)
         {
             var ambalaj = kalem.UrunAmbalaji;
@@ -134,8 +158,18 @@ public class SepetServisi : ISepetServisi
             // "MinMiktar <= miktar" olan sonuncuyu alıyordu; MaxMiktar,
             // müşteri grubu ve tarih alanları hiç okunmuyordu.
             var kademe = FiyatKademesiSecici.Sec(ambalaj.FiyatKademeleri, kalem.Miktar, musteriGrubuId);
-            var birimFiyat = kademe?.BirimFiyat ?? 0m;
-            var satirToplami = Math.Round(birimFiyat * kalem.Miktar, 4, MidpointRounding.AwayFromZero);
+            var listeBirimFiyati = kademe?.BirimFiyat ?? 0m;
+            var urunIndirimleri = etkinIndirimler.Where(i =>
+                (i.HedefTipi == IndirimHedefTipi.Urun && i.HedefId == ambalaj.UrunId)
+                || (i.HedefTipi == IndirimHedefTipi.Kategori && i.HedefId == ambalaj.Urun.KategoriId)
+                || (i.HedefTipi == IndirimHedefTipi.Uretici && i.HedefId == ambalaj.Urun.UreticiId)
+                || (i.HedefTipi == IndirimHedefTipi.MusteriGrubu && i.HedefId == musteriGrubuId));
+            var indirim = IndirimHesabi.Uygula(
+                listeBirimFiyati,
+                kalem.Miktar,
+                varsayilanIskonto,
+                urunIndirimleri);
+            var satirToplami = ParaHesabi.Yuvarla(indirim.BirimFiyat * kalem.Miktar);
 
             dto.Kalemler.Add(new SepetKalemDto
             {
@@ -143,13 +177,18 @@ public class SepetServisi : ISepetServisi
                 UrunId = ambalaj.UrunId,
                 UrunKodu = ambalaj.Urun.UreticiUrunKodu,
                 KisaAciklama = ambalaj.Urun.KisaAciklama,
+                AnaGorselUrl = ambalaj.Urun.AnaGorselUrl,
                 UrunAmbalajId = ambalaj.Id,
                 SatistakiKatsayi = ambalaj.KatlamaMiktari,
                 Miktar = kalem.Miktar,
-                BirimFiyat = birimFiyat,
+                ListeBirimFiyati = listeBirimFiyati,
+                BirimFiyat = indirim.BirimFiyat,
+                IndirimTutari = indirim.SatirIndirimTutari,
                 ToplamFiyat = satirToplami
             });
 
+            dto.AraToplam += ParaHesabi.Yuvarla(listeBirimFiyati * kalem.Miktar);
+            dto.IndirimTutari += indirim.SatirIndirimTutari;
             dto.GenelToplam += satirToplami;
 
             if (kademe is not null)
@@ -169,10 +208,58 @@ public class SepetServisi : ISepetServisi
             .FirstOrDefaultAsync();
     }
 
+    /// <summary>
+    /// Sepeti OKUR; yoksa oluşturmaz.
+    ///
+    /// Önceki sürüm okuma yolunda da <c>SepetBulVeyaOlusturAsync</c> çağırıyordu:
+    /// <c>X-Session-Key</c> göndermeyen her anonim <c>GET /api/Sepet</c> isteği
+    /// veritabanına kalıcı bir <c>Sepetler</c> satırı yazıyordu. Oran sınırı da
+    /// olmadığı için bu sınırsız satır büyümesi demekti; frontend sorunu bilip
+    /// çağrıyı atlayarak maskeliyordu. GET yan etkisiz olmalı — sepet ilk kalem
+    /// eklendiğinde <c>SepeteEkleAsync</c> içinde oluşturulur.
+    /// </summary>
     public async Task<SepetDto?> SepetGetirAsync(long? kullaniciId, string? oturumAnahtari)
     {
-        var sepet = await SepetBulVeyaOlusturAsync(kullaniciId, oturumAnahtari);
+        var sepet = await SepetBulAsync(kullaniciId, oturumAnahtari);
+
+        if (sepet is null)
+            return new SepetDto
+            {
+                SepetId = 0,
+                OturumAnahtari = null,
+                ParaBirimi = "USD",
+                GenelToplam = 0
+            };
+
         return await DtoyaCevirAsync(sepet, await MusteriGrubuGetirAsync(kullaniciId));
+    }
+
+    /// <summary>Var olan sepeti bulur; yoksa null döner, satır YAZMAZ.</summary>
+    private async Task<Sepet?> SepetBulAsync(long? kullaniciId, string? oturumAnahtari)
+    {
+        var oturum = string.IsNullOrWhiteSpace(oturumAnahtari) ? null : oturumAnahtari;
+
+        if (kullaniciId is > 0)
+        {
+            // Giriş yapmış kullanıcı elinde DOLU bir misafir sepetiyle geldiyse
+            // birleştirme okuma yolunda da yapılmalı; bu, veri kaybını önleyen
+            // kasıtlı bir yazmadır. Misafir sepeti YOKSA hiçbir şey yazılmaz.
+            if (oturum is not null
+                && await _context.Sepetler.AnyAsync(s => s.OturumAnahtari == oturum && s.KullaniciId == null))
+            {
+                return await SepetBulVeyaOlusturAsync(kullaniciId, oturum);
+            }
+
+            return await _context.Sepetler
+                .Include(s => s.Kalemler)
+                .FirstOrDefaultAsync(s => s.KullaniciId == kullaniciId);
+        }
+
+        if (oturum is null) return null;
+
+        return await _context.Sepetler
+            .Include(s => s.Kalemler)
+            .FirstOrDefaultAsync(s => s.OturumAnahtari == oturum && s.KullaniciId == null);
     }
 
     // -----------------------------------------------------------------------

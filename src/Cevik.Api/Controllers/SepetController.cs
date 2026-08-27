@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Cevik.Uygulama.Siparis.Arayuzler;
 using Cevik.Uygulama.Siparis.Dto;
+using Cevik.Alan.Kurallar;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cevik.Api.Controllers;
@@ -11,10 +12,12 @@ namespace Cevik.Api.Controllers;
 public class SepetController : ControllerBase
 {
     private readonly ISepetServisi _sepetServisi;
+    private readonly IDovizKuruServisi _dovizKuruServisi;
 
-    public SepetController(ISepetServisi sepetServisi)
+    public SepetController(ISepetServisi sepetServisi, IDovizKuruServisi dovizKuruServisi)
     {
         _sepetServisi = sepetServisi;
+        _dovizKuruServisi = dovizKuruServisi;
     }
 
     /// <summary>
@@ -39,10 +42,38 @@ public class SepetController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get()
+    [ProducesResponseType(typeof(SepetDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SepetDto>> Get([FromQuery] string? paraBirimi)
     {
         var (userId, sessionKey) = KimlikCoz();
         var sepet = await _sepetServisi.SepetGetirAsync(userId, sessionKey);
+
+        if (sepet is not null && !string.IsNullOrWhiteSpace(paraBirimi))
+        {
+            var hedefParaBirimi = ParaBirimiKodu.Coz(paraBirimi);
+            var kaynakParaBirimi = ParaBirimiKodu.Coz(sepet.ParaBirimi);
+            // Sepet görüntüleme de bir GÖSTERİM yolu: kur yoksa sepet
+            // açılmamazlık etmemeli, fiyatlar kendi para biriminde kalır.
+            var bulunanKur = kaynakParaBirimi == hedefParaBirimi
+                ? null
+                : await _dovizKuruServisi.KurDeneAsync(kaynakParaBirimi, hedefParaBirimi);
+
+            if (bulunanKur is { } kur)
+            {
+                foreach (var kalem in sepet.Kalemler)
+                {
+                    kalem.ListeBirimFiyati = ParaHesabi.Donustur(kalem.ListeBirimFiyati, kur);
+                    kalem.BirimFiyat = ParaHesabi.Donustur(kalem.BirimFiyat, kur);
+                    kalem.IndirimTutari = ParaHesabi.Donustur(kalem.IndirimTutari, kur);
+                    kalem.ToplamFiyat = ParaHesabi.Donustur(kalem.ToplamFiyat, kur);
+                }
+
+                sepet.AraToplam = ParaHesabi.Donustur(sepet.AraToplam, kur);
+                sepet.IndirimTutari = ParaHesabi.Donustur(sepet.IndirimTutari, kur);
+                sepet.GenelToplam = ParaHesabi.Donustur(sepet.GenelToplam, kur);
+                sepet.ParaBirimi = hedefParaBirimi;
+            }
+        }
         
         if (sepet != null && userId == null && string.IsNullOrEmpty(sessionKey))
         {
@@ -54,7 +85,9 @@ public class SepetController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Ekle(SepeteEkleDto dto)
+    [ProducesResponseType(typeof(SepetDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    public async Task<ActionResult<SepetDto>> Ekle(SepeteEkleDto dto)
     {
         var (userId, sessionKey) = KimlikCoz();
         var sepet = await _sepetServisi.SepeteEkleAsync(userId, sessionKey, dto);
@@ -68,7 +101,8 @@ public class SepetController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> Guncelle(SepetGuncelleDto dto)
+    [ProducesResponseType(typeof(SepetDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SepetDto>> Guncelle(SepetGuncelleDto dto)
     {
         var (userId, sessionKey) = KimlikCoz();
         var sepet = await _sepetServisi.SepetGuncelleAsync(userId, sessionKey, dto);
@@ -76,7 +110,8 @@ public class SepetController : ControllerBase
     }
 
     [HttpDelete("{kalemId}")]
-    public async Task<IActionResult> Sil(long kalemId)
+    [ProducesResponseType(typeof(SepetDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<SepetDto>> Sil(long kalemId)
     {
         var (userId, sessionKey) = KimlikCoz();
         var sepet = await _sepetServisi.SepettenCikarAsync(userId, sessionKey, kalemId);
@@ -84,10 +119,11 @@ public class SepetController : ControllerBase
     }
 
     [HttpDelete("bosalt")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Bosalt()
     {
         var (userId, sessionKey) = KimlikCoz();
         await _sepetServisi.SepetiBosaltAsync(userId, sessionKey);
-        return Ok();
+        return NoContent();
     }
 }

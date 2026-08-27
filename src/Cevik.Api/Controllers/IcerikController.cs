@@ -1,4 +1,5 @@
 using Cevik.Uygulama.Icerik.Arayuzler;
+using Cevik.Uygulama.Icerik.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,32 +18,40 @@ public class IcerikController : ControllerBase
     public IcerikController(IPublicIcerikServisi icerikServisi) => _icerikServisi = icerikServisi;
 
     [HttpGet("blog")]
-    public async Task<IActionResult> BlogListesi()
+    [ProducesResponseType(typeof(List<PublicBlogOzetDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<PublicBlogOzetDto>>> BlogListesi()
         => Ok(await _icerikServisi.BlogYazilariniGetirAsync());
 
     [HttpGet("blog/{slug}")]
-    public async Task<IActionResult> BlogDetay(string slug)
+    [ProducesResponseType(typeof(PublicBlogDetayDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PublicBlogDetayDto>> BlogDetay(string slug)
     {
         var yazi = await _icerikServisi.BlogYazisiGetirAsync(slug);
         return yazi is null ? NotFound() : Ok(yazi);
     }
 
     [HttpGet("duyurular")]
-    public async Task<IActionResult> Duyurular()
+    [ProducesResponseType(typeof(List<PublicDuyuruDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<PublicDuyuruDto>>> Duyurular()
         => Ok(await _icerikServisi.DuyurulariGetirAsync());
 
     [HttpGet("bannerlar")]
-    public async Task<IActionResult> Bannerlar([FromQuery] string? konum)
+    [ProducesResponseType(typeof(List<PublicBannerDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<PublicBannerDto>>> Bannerlar([FromQuery] string? konum)
         => Ok(await _icerikServisi.BannerlariGetirAsync(konum));
 
     [HttpGet("sayfalar/{slug}")]
-    public async Task<IActionResult> Sayfa(string slug, [FromQuery] string? dil)
+    [ProducesResponseType(typeof(PublicSayfaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PublicSayfaDto>> Sayfa(string slug, [FromQuery] string? dil)
     {
         var sayfa = await _icerikServisi.SayfaGetirAsync(slug, dil);
         return sayfa is null ? NotFound() : Ok(sayfa);
     }
 
     [HttpGet("sss")]
-    public async Task<IActionResult> Sss([FromQuery] int? kategoriId)
+    [ProducesResponseType(typeof(List<PublicSssDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<PublicSssDto>>> Sss([FromQuery] int? kategoriId)
         => Ok(await _icerikServisi.SikSorulanSorulariGetirAsync(kategoriId));
 }

@@ -7,6 +7,9 @@ namespace Cevik.Uygulama.Siparis.Arayuzler;
 public interface ISiparisServisi
 {
     Task<SiparisDetayDto?> SiparisOlusturAsync(long kullaniciId, string? oturumAnahtari, SiparisOlusturDto dto);
-    Task<List<SiparisListelemeDto>> SiparisleriGetirAsync(long kullaniciId);
+    Task<Cevik.Uygulama.Ortak.SayfaliSonucDto<SiparisListelemeDto>> SiparisleriGetirAsync(
+        long kullaniciId,
+        int sayfaNo,
+        int sayfaBoyutu);
     Task<SiparisDetayDto?> SiparisDetayGetirAsync(long kullaniciId, long siparisId);
 }

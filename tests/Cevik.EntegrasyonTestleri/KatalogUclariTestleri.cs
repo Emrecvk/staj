@@ -46,6 +46,46 @@ public class KatalogUclariTestleri
     }
 
     [Fact]
+    public async Task KategoriAgaci_BosUrunDali_Donmez()
+    {
+        var agac = await _istemci.GetFromJsonAsync<List<KategoriAgacDto>>(
+            "/api/katalog/kategoriler/agac", JsonAyarlari);
+
+        static IEnumerable<KategoriAgacDto> Duzlestir(IEnumerable<KategoriAgacDto> dallar) =>
+            dallar.SelectMany(dal => new[] { dal }.Concat(Duzlestir(dal.AltKategoriler)));
+
+        var kategoriIdleri = Duzlestir(agac!).Select(kategori => kategori.Id).ToList();
+        var sorgu = string.Join("&", kategoriIdleri.Select(id => $"kategoriIdleri={id}"));
+        var sayilar = await _istemci.GetFromJsonAsync<Dictionary<int, int>>(
+            $"/api/katalog/kategoriler/urun-sayilari?{sorgu}", JsonAyarlari);
+
+        sayilar.Should().NotBeNull();
+        kategoriIdleri.Should().OnlyContain(id => sayilar![id] > 0,
+            "halka açık kategori menüsündeki her dal en az bir gerçek ürüne ulaşmalı");
+    }
+
+    [Fact]
+    public async Task KategoriUrunSayilari_ListelemeToplamlariylaAyni()
+    {
+        var agac = await _istemci.GetFromJsonAsync<List<KategoriAgacDto>>(
+            "/api/katalog/kategoriler/agac", JsonAyarlari);
+        var kok = agac!.First(kategori => kategori.AltKategoriler.Count > 0);
+        var yaprak = kok.AltKategoriler.First();
+
+        var sayilar = await _istemci.GetFromJsonAsync<Dictionary<int, int>>(
+            $"/api/katalog/kategoriler/urun-sayilari?kategoriIdleri={kok.Id}&kategoriIdleri={yaprak.Id}",
+            JsonAyarlari);
+        var kokListe = await _istemci.GetFromJsonAsync<UrunAramaSonucDto>(
+            $"/api/katalog/urunler?sayfaNo=1&sayfaBoyutu=1&kategoriId={kok.Id}", JsonAyarlari);
+        var yaprakListe = await _istemci.GetFromJsonAsync<UrunAramaSonucDto>(
+            $"/api/katalog/urunler?sayfaNo=1&sayfaBoyutu=1&kategoriId={yaprak.Id}", JsonAyarlari);
+
+        sayilar.Should().NotBeNull();
+        sayilar![kok.Id].Should().Be(kokListe!.Urunler.ToplamKayit);
+        sayilar[yaprak.Id].Should().Be(yaprakListe!.Urunler.ToplamKayit);
+    }
+
+    [Fact]
     public async Task UrunListeleme_SayfalamaCalisir()
     {
         var sonuc = await _istemci.GetFromJsonAsync<UrunAramaSonucDto>(

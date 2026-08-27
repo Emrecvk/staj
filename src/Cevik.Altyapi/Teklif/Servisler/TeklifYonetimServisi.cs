@@ -6,6 +6,7 @@ using Cevik.Alan.Ortak;
 using Cevik.Altyapi.Veritabani;
 using Cevik.Uygulama.Teklif.Arayuzler;
 using Cevik.Uygulama.Teklif.Dto;
+using Cevik.Uygulama.Ortak;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cevik.Altyapi.Teklif.Servisler;
@@ -19,10 +20,20 @@ public class TeklifYonetimServisi : ITeklifYonetimServisi
         _context = context;
     }
 
-    public async Task<List<TeklifListelemeDto>> TumTeklifleriGetirAsync()
+    public async Task<SayfaliSonucDto<TeklifListelemeDto>> TumTeklifleriGetirAsync(int sayfaNo, int sayfaBoyutu)
     {
-        return await _context.TeklifTalepleri
+        sayfaNo = Math.Max(1, sayfaNo);
+        sayfaBoyutu = Math.Clamp(sayfaBoyutu, 1, 100);
+        var sorgu = _context.TeklifTalepleri.AsNoTracking();
+        return new SayfaliSonucDto<TeklifListelemeDto>
+        {
+            SayfaNo = sayfaNo,
+            SayfaBoyutu = sayfaBoyutu,
+            ToplamKayit = await sorgu.CountAsync(),
+            Kayitlar = await sorgu
             .OrderByDescending(t => t.Id)
+            .Skip((sayfaNo - 1) * sayfaBoyutu)
+            .Take(sayfaBoyutu)
             .Select(t => new TeklifListelemeDto
             {
                 Id = t.Id,
@@ -30,7 +41,8 @@ public class TeklifYonetimServisi : ITeklifYonetimServisi
                 Durum = t.Durum,
                 GecerlilikTarihi = t.GecerlilikTarihi
             })
-            .ToListAsync();
+            .ToListAsync()
+        };
     }
 
     public async Task<TeklifDetayDto?> TeklifDetayGetirAsync(long teklifId)
