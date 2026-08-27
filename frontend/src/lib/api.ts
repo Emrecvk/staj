@@ -1,11 +1,14 @@
-const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL = typeof window === "undefined"
+  ? process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+  : "/api";
 
 export type Category = { id: number; ad: string; slug: string; ikonUrl: string | null; yaprakMi: boolean; sira: number; altKategoriler: Category[] };
 export type DocumentType = { tip: number; url: string; baslik: string; boyutByte?: number; dil?: string };
 export type PriceTier = { minMiktar: number; maxMiktar: number | null; birimFiyat: number; paraBirimi: string; musteriGrubuId?: number | null };
-export type PackagingOption = { ambalajId: number; ad: string; ambalajTipi?: number; mpq: number; moq: number; katlamaMiktari: number; stokMiktari: number; gelecekStokMiktari: number; gelecekStokTarihi: string | null; fiyatlar: PriceTier[]; varsayilanMi?: boolean };
-export type WarehouseStock = { depoKodu: string; depoAdi: string; stokMiktari: number; teslimSuresiGun: number };
+export type PackagingOption = { ambalajId: number; ad: string; ambalajTipi: number; mpq: number; moq: number; katlamaMiktari: number; stokMiktari: number; gelecekStokMiktari: number; gelecekStokTarihi: string | null; fiyatlar: PriceTier[]; varsayilanMi: boolean };
 export type PublicPage = { slug: string; baslik: string; icerikHtml: string; seoBaslik?: string | null; seoAciklama?: string | null };
+export type PublicAnnouncement = { id: number; baslik: string; icerik: string; gorselUrl?: string | null; linkUrl?: string | null; sira: number };
+export type PublicBanner = { id: number; konum: string; gorselUrl: string; linkUrl?: string | null; sira: number };
 export type PublicFaq = { id: number; kategoriId: number | null; soru: string; cevap: string; sira: number };
 export type BlogOzet = {
   id: number;
@@ -24,10 +27,8 @@ export type ProductSummary = {
   ureticiId?: number;
   ureticiAd: string;
   ureticiLogoUrl?: string | null;
-  kategoriId?: number;
-  kategoriYolu?: string[];
+  kategoriId: number;
   kisaAciklama: string;
-  detayliAciklama?: string | null;
   anaGorselUrl: string | null;
   gorselUrlleri?: string[];
   gorselTemsiliMi: boolean;
@@ -37,13 +38,10 @@ export type ProductSummary = {
   kampanyaliMi: boolean;
   urunDurumu?: string | null;
   rohsDurumu?: string | null;
-  montajTipi?: string | null;
-  ureticiTeslimSuresi?: string | null;
   kilif?: string;
   dokumanlar?: DocumentType[];
-  ozellikler?: Record<string, string>;
+  ozellikler: Record<string, string>;
   ambalajlarVeFiyatlar?: PackagingOption[];
-  depoStoklari?: WarehouseStock[];
 };
 
 export type UreticiOzet = {
@@ -82,17 +80,16 @@ export type ProductDetail = {
   dokumanlar: DocumentType[];
   ozellikler: Record<string, string>;
   ambalajlarVeFiyatlar: PackagingOption[];
-  depoStoklari?: WarehouseStock[];
   muadiller: RelatedProductSummary[];
   benzerUrunler: RelatedProductSummary[];
   parametrikUrunler: RelatedProductSummary[];
   birlikteKullanilanlar: RelatedProductSummary[];
 };
 
-export async function safeFetch<T>(path: string, fallback: T): Promise<T> {
+export async function safeFetch<T>(path: string, fallback: T, init?: RequestInit): Promise<T> {
   try {
     console.log(`[API] Fetching ${API_URL}${path}`);
-    const response = await fetch(`${API_URL}${path}`, { cache: "no-store" });
+    const response = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
     if (!response.ok) {
       console.error(`[API] Fetch failed for ${path}: ${response.status} ${response.statusText}`);
       return fallback;
@@ -106,9 +103,24 @@ export async function safeFetch<T>(path: string, fallback: T): Promise<T> {
   }
 }
 
-export function getCategories() { return safeFetch<Category[]>("/Katalog/kategoriler/agac", []); }
+export function getKategoriler() {
+  return safeFetch<Category[]>("/Katalog/kategoriler/agac", []);
+}
 
-export function getUreticiler() { return safeFetch<UreticiOzet[]>("/Katalog/ureticiler", []); }
+/** Eski çağıranları kırmadan Türkçe API adıyla aynı gerçek ağacı döndürür. */
+export const getCategories = getKategoriler;
+
+export function kategoriAgaciniDuzlestir(kategoriler: Category[]): Category[] {
+  return kategoriler.flatMap((kategori) => [
+    kategori,
+    ...kategoriAgaciniDuzlestir(kategori.altKategoriler ?? []),
+  ]);
+}
+
+export function getUreticiler(kategoriId?: number) {
+  const sorgu = kategoriId ? `?kategoriId=${kategoriId}` : "";
+  return safeFetch<UreticiOzet[]>(`/Katalog/ureticiler${sorgu}`, []);
+}
 
 export async function getProducts(params: Record<string, string | number | boolean | undefined | string[]> = {}) {
   const query = new URLSearchParams(); 
@@ -137,6 +149,14 @@ export function getPublicPage(slug: string) {
 
 export function getFaqs() {
   return safeFetch<PublicFaq[]>("/icerik/sss", []);
+}
+
+export function getDuyurular() {
+  return safeFetch<PublicAnnouncement[]>("/icerik/duyurular", []);
+}
+
+export function getBannerlar(konum: string) {
+  return safeFetch<PublicBanner[]>(`/icerik/bannerlar?konum=${encodeURIComponent(konum)}`, []);
 }
 
 export function getBlogYazilari() {
@@ -185,22 +205,30 @@ export async function getKatalogOzeti(): Promise<{
 }
 
 /**
- * Verilen kategoriler icin gercek urun sayilarini dondurur (id -> adet).
- * ltree sayesinde bir kok kategori sorgusu tum alt dallarini kapsar.
- * Sayfa boyutu 1: yalnizca toplamKayit'e ihtiyac var, kayit cekilmiyor.
- * Ana sayfa kategori izgarasi burayi kullanir; uydurma SKU sayisi YOK.
+ * Verilen kategoriler için gerçek ürün sayılarını tek API isteğinde döndürür
+ * (id -> adet). Kök kategorilerin sayısı tüm alt ağacı kapsar.
  */
 export async function getKategoriUrunSayilari(
   kategoriler: Category[],
 ): Promise<Record<number, number>> {
-  const sonuc = await Promise.all(
-    kategoriler.map(async (k) => {
-      const r = await safeFetch<ProductResult | null>(
-        `/Katalog/urunler?sayfaNo=1&sayfaBoyutu=1&kategoriId=${k.id}`,
-        null,
-      );
-      return [k.id, r?.urunler?.toplamKayit ?? 0] as const;
-    }),
+  const kategoriIdleri = [...new Set(kategoriler.map((kategori) => kategori.id))];
+  if (kategoriIdleri.length === 0) return {};
+
+  return safeFetch<Record<number, number>>(
+    `/Katalog/kategoriler/urun-sayilari?${kategoriIdleri
+      .map((id) => `kategoriIdleri=${id}`)
+      .join("&")}`,
+    {},
   );
-  return Object.fromEntries(sonuc);
+}
+
+/** Kategori filtresinde gösterilecek firma adedi (ürün adedi değil). */
+export async function getKategoriUreticiSayilari(
+  kategoriler: Category[],
+): Promise<Record<number, number>> {
+  if (kategoriler.length === 0) return {};
+  return safeFetch<Record<number, number>>(
+    `/Katalog/ureticiler/sayilari?${kategoriler.map((kategori) => `kategoriIdleri=${kategori.id}`).join("&")}`,
+    {},
+  );
 }

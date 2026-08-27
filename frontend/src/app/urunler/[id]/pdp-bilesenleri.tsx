@@ -46,10 +46,7 @@ import {
 import type {
   ProductDetail,
   PackagingOption,
-  PriceTier,
-  WarehouseStock,
   DocumentType,
-  RelatedProductSummary,
 } from "@/lib/api";
 
 function dokumanKullanilabilirMi(dokuman: DocumentType) {
@@ -63,12 +60,10 @@ export function PdpBreadcrumb({
   kategoriYolu,
   ureticiAd,
   ureticiUrunKodu,
-  productId,
 }: {
   kategoriYolu?: string[];
   ureticiAd: string;
   ureticiUrunKodu: string;
-  productId: number;
 }) {
   const hasPath = kategoriYolu && kategoriYolu.length > 0;
 
@@ -231,7 +226,6 @@ export function PdpSummaryHeader({
           baslangicFiyati: product.ambalajlarVeFiyatlar?.[0]?.fiyatlar?.[0]?.birimFiyat || 0,
           paraBirimi: product.ambalajlarVeFiyatlar?.[0]?.fiyatlar?.[0]?.paraBirimi || "USD",
           toplamStok:
-            product.depoStoklari?.reduce((sum, d) => sum + d.stokMiktari, 0) ||
             product.ambalajlarVeFiyatlar?.reduce((sum, a) => sum + a.stokMiktari, 0) ||
             0,
           kategoriId: product.kategoriId,
@@ -273,7 +267,7 @@ export function PdpSummaryHeader({
           <button
             type="button"
             onClick={handleCopyMpn}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-2.5 py-1 text-xs font-medium text-metin-ikincil shadow-xs transition-all hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-token-girdi border border-kenar bg-yuzey-kart px-2.5 py-1 text-xs font-medium text-metin-ikincil shadow-xs transition-all hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu active:scale-95"
             title="Parça kodunu kopyala"
             aria-label="Parça kodunu panoya kopyala"
           >
@@ -339,7 +333,7 @@ export function PdpSummaryHeader({
           type="button"
           onClick={handleToggleCompare}
           disabled={comparePending}
-          className={`inline-flex items-center gap-1.5 rounded-[var(--radius-girdi)] border px-3 py-2 text-xs font-semibold shadow-xs transition-all active:scale-95 ${
+          className={`inline-flex items-center gap-1.5 rounded-token-girdi border px-3 py-2 text-xs font-semibold shadow-xs transition-all active:scale-95 ${
             inCompare
               ? "border-vurgu bg-vurgu-zemin text-vurgu-guclu font-bold"
               : "border-kenar bg-yuzey-kart text-metin hover:border-kenar-guclu hover:bg-yuzey-gomulu"
@@ -354,7 +348,7 @@ export function PdpSummaryHeader({
           <button
             type="button"
             onClick={onOpenStockModal}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-3 py-2 text-xs font-medium text-metin shadow-xs transition-all hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-token-girdi border border-kenar bg-yuzey-kart px-3 py-2 text-xs font-medium text-metin shadow-xs transition-all hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu active:scale-95"
             title="Stok alarmı kur"
           >
             <Bell size={14} className="text-metin-ucuncul" />
@@ -415,7 +409,7 @@ export function PdpGallery({
   return (
     <div className="space-y-4">
       {/* Ana Görsel Kutusu */}
-      <div className="relative overflow-hidden rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-hafif">
+      <div className="relative overflow-hidden rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-hafif">
         {/* Temsili Görsel Uyarısı */}
         {isRepresentative && (
           <div className="absolute left-3 top-3 z-10 rounded-full bg-yuzey-gomulu/90 px-2.5 py-0.5 text-[11px] font-medium text-metin-ikincil backdrop-blur-xs border border-kenar">
@@ -437,7 +431,7 @@ export function PdpGallery({
 
         {/* Görsel / Schematic Placeholder Render */}
         <div
-          className={`flex aspect-[4/3] max-h-[460px] w-full items-center justify-center ${isBrokenOrMock ? "" : "cursor-zoom-in"}`}
+          className={`flex aspect-square min-h-[360px] w-full items-center justify-center lg:min-h-[500px] ${isBrokenOrMock ? "" : "cursor-zoom-in"}`}
           onClick={() => !isBrokenOrMock && setZoomOpen(true)}
         >
           {isBrokenOrMock ? (
@@ -467,15 +461,13 @@ export function PdpGallery({
               onClick={() => setActiveIdx(idx)}
               role="tab"
               aria-selected={activeIdx === idx}
-              className={`relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-girdi)] border bg-yuzey-kart p-1 transition-all ${
+              className={`relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-token-girdi border bg-yuzey-kart p-1 transition-all ${
                 activeIdx === idx
                   ? "border-vurgu ring-2 ring-vurgu/30 shadow-xs"
                   : "border-kenar hover:border-kenar-guclu"
               }`}
             >
-              <div className="flex h-full w-full items-center justify-center font-mono text-[10px] text-metin-ucuncul">
-                #{idx + 1}
-              </div>
+              <img src={img} alt="" className="max-h-full max-w-full object-contain" />
             </button>
           ))}
         </div>
@@ -488,7 +480,7 @@ export function PdpGallery({
             href={datasheet.url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart p-2.5 text-xs font-semibold text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
+            className="flex items-center gap-2 rounded-token-girdi border border-kenar bg-yuzey-kart p-2.5 text-xs font-semibold text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
           >
             <FileText size={15} className="shrink-0 text-vurgu" />
             <div className="min-w-0 flex-1 truncate">
@@ -502,7 +494,7 @@ export function PdpGallery({
             <Download size={13} className="shrink-0 opacity-60" />
           </a>
         ) : (
-          <div className="flex items-center gap-2 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-gomulu/50 p-2.5 text-xs text-metin-ucuncul">
+          <div className="flex items-center gap-2 rounded-token-girdi border border-kenar bg-yuzey-gomulu/50 p-2.5 text-xs text-metin-ucuncul">
             <FileText size={15} className="shrink-0 opacity-40" />
             <span className="truncate">Datasheet: Talep Et</span>
           </div>
@@ -513,7 +505,7 @@ export function PdpGallery({
             href={cadDoc.url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart p-2.5 text-xs font-semibold text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
+            className="flex items-center gap-2 rounded-token-girdi border border-kenar bg-yuzey-kart p-2.5 text-xs font-semibold text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
           >
             <Layers size={15} className="shrink-0 text-cyan-600" />
             <div className="min-w-0 flex-1 truncate">
@@ -523,7 +515,7 @@ export function PdpGallery({
             <Download size={13} className="shrink-0 opacity-60" />
           </a>
         ) : (
-          <div className="flex items-center gap-2 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-gomulu/50 p-2.5 text-xs text-metin-ucuncul">
+          <div className="flex items-center gap-2 rounded-token-girdi border border-kenar bg-yuzey-gomulu/50 p-2.5 text-xs text-metin-ucuncul">
             <Layers size={15} className="shrink-0 opacity-40" />
             <span className="truncate">CAD Model: Yok</span>
           </div>
@@ -534,7 +526,7 @@ export function PdpGallery({
             href={rohsDoc.url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart p-2.5 text-xs font-semibold text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
+            className="flex items-center gap-2 rounded-token-girdi border border-kenar bg-yuzey-kart p-2.5 text-xs font-semibold text-metin transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
           >
             <ShieldCheck size={15} className="shrink-0 text-basari-600" />
             <div className="min-w-0 flex-1 truncate">
@@ -544,7 +536,7 @@ export function PdpGallery({
             <Download size={13} className="shrink-0 opacity-60" />
           </a>
         ) : (
-          <div className="flex items-center gap-2 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-gomulu/50 p-2.5 text-xs text-metin-ucuncul">
+          <div className="flex items-center gap-2 rounded-token-girdi border border-kenar bg-yuzey-gomulu/50 p-2.5 text-xs text-metin-ucuncul">
             <ShieldCheck size={15} className="shrink-0 opacity-40" />
             <span className="truncate">Sertifika: Standart</span>
           </div>
@@ -558,7 +550,7 @@ export function PdpGallery({
           onClick={() => setZoomOpen(false)}
         >
           <div
-            className="relative max-h-[90vh] max-w-4xl rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart p-6 shadow-2xl"
+            className="relative max-h-[90vh] max-w-4xl rounded-token-panel border border-kenar bg-yuzey-kart p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -585,96 +577,50 @@ export function PdpGallery({
    5. MULTI-WAREHOUSE STOCK BREAKDOWN
    ========================================================================== */
 export function PdpDepoStoklari({
-  depoStoklari,
   ambalajlar,
   onOpenStockModal,
 }: {
-  depoStoklari?: WarehouseStock[];
   ambalajlar?: PackagingOption[];
   onOpenStockModal?: () => void;
 }) {
   const defaults = ambalajlar?.[0];
   const physicalStock =
-    depoStoklari?.reduce((sum, d) => sum + (d.teslimSuresiGun <= 3 ? d.stokMiktari : 0), 0) ??
     ambalajlar?.reduce((sum, a) => sum + a.stokMiktari, 0) ??
     0;
 
-  const merkez = depoStoklari?.find((d) => d.depoKodu.includes("MERKEZ") || d.teslimSuresiGun === 0) || {
-    depoKodu: "MERKEZ-IST",
-    depoAdi: "Merkez Depo (İstanbul)",
-    stokMiktari: defaults?.stokMiktari ?? 0,
-    teslimSuresiGun: 0,
-  };
-
-  const sube = depoStoklari?.find(
-    (d) =>
-      d.depoKodu.includes("SERBEST") ||
-      d.depoKodu.includes("SUBE") ||
-      (d.teslimSuresiGun > 0 && d.teslimSuresiGun <= 3)
-  ) || {
-    depoKodu: "SERBEST-BOLGE",
-    depoAdi: "Şube / Serbest Bölge Depo",
-    stokMiktari: Math.max(0, physicalStock - merkez.stokMiktari),
-    teslimSuresiGun: 2,
-  };
-
   const gelecekMiktar = defaults?.gelecekStokMiktari ?? 0;
   const gelecekTarih = defaults?.gelecekStokTarihi ?? null;
+  const stokRengi = physicalStock > 100
+    ? { nokta: "bg-basari-500", metin: "text-basari-600", etiket: "Stokta" }
+    : physicalStock > 0
+      ? { nokta: "bg-uyari-500", metin: "text-uyari-700", etiket: "Sınırlı stok" }
+      : { nokta: "bg-hata-500", metin: "text-hata-600", etiket: "Stok yok" };
 
   return (
-    <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-hafif">
-      <div className="mb-3 flex items-center justify-between border-b border-kenar pb-2.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-metin-ucuncul">
-          Stok & Depo Dağılımı
-        </span>
-        <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-basari-500" />
-          <span className="font-mono text-xs font-bold tabular-nums text-metin">
-            {physicalStock.toLocaleString("tr-TR")} Adet Toplam
-          </span>
+    <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-hafif">
+      <div className="flex items-center justify-between border-b border-kenar pb-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-metin-ucuncul">Stok durumu</p>
+          <div className={`mt-1 flex items-center gap-2 text-sm font-bold ${stokRengi.metin}`}>
+            <span className={`h-2.5 w-2.5 rounded-full ${stokRengi.nokta}`} />
+            {stokRengi.etiket}
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-2xl font-bold tabular-nums text-metin">{physicalStock.toLocaleString("tr-TR")}</p>
+          <p className="text-[10px] text-metin-ucuncul">adet mevcut</p>
         </div>
       </div>
 
-      <div className="space-y-2.5">
-        {/* Merkez Depo */}
-        <div className="flex items-center justify-between rounded-[var(--radius-girdi)] bg-yuzey-gomulu/70 px-3 py-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-basari-500" />
-            <div>
-              <span className="font-semibold text-metin">{merkez.depoAdi}</span>
-              <span className="ml-2 rounded-full bg-basari-50 px-1.5 py-0.2 text-[10px] font-semibold text-basari-600 border border-basari-200/50">
-                Aynı Gün Kargo
-              </span>
-            </div>
-          </div>
-          <span className="font-mono font-bold tabular-nums text-metin">
-            {merkez.stokMiktari.toLocaleString("tr-TR")} Adet
-          </span>
-        </div>
-
-        {/* Şube Depo */}
-        <div className="flex items-center justify-between rounded-[var(--radius-girdi)] bg-yuzey-gomulu/70 px-3 py-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-cyan-500" />
-            <div>
-              <span className="font-semibold text-metin">{sube.depoAdi}</span>
-              <span className="ml-2 rounded-full bg-cyan-50 px-1.5 py-0.2 text-[10px] font-medium text-cyan-700 border border-cyan-200/50">
-                {sube.teslimSuresiGun > 0 ? `${sube.teslimSuresiGun}-${sube.teslimSuresiGun + 1} İş Günü` : "2-3 İş Günü"}
-              </span>
-            </div>
-          </div>
-          <span className="font-mono font-bold tabular-nums text-metin">
-            {sube.stokMiktari.toLocaleString("tr-TR")} Adet
-          </span>
-        </div>
+      <div className="mt-3 space-y-2">
 
         {/* Gelecek Stok */}
         {gelecekMiktar > 0 && (
-          <div className="flex items-center justify-between rounded-[var(--radius-girdi)] bg-amber-50/50 border border-amber-200/40 px-3 py-2 text-xs">
+          <div className="flex items-center justify-between rounded-token-girdi bg-amber-50/50 border border-amber-200/40 px-3 py-2 text-xs">
             <div className="flex items-center gap-2">
               <Calendar size={14} className="text-amber-600" />
               <div>
-                <span className="font-semibold text-metin">Gelecek Stok (Üretici)</span>
+                <span className="font-semibold text-metin">Gelecek stok</span>
                 {gelecekTarih && (
                   <span className="ml-2 text-[10px] text-amber-700 font-mono">
                     Tahmini: {gelecekTarih}
@@ -690,7 +636,7 @@ export function PdpDepoStoklari({
       </div>
 
       {physicalStock === 0 && onOpenStockModal && (
-        <div className="mt-3 rounded-[var(--radius-girdi)] bg-uyari-50 p-2.5 text-center text-xs text-uyari-900 border border-uyari-200">
+        <div className="mt-3 rounded-token-girdi bg-uyari-50 p-2.5 text-center text-xs text-uyari-900 border border-uyari-200">
           <p className="font-medium">Şu anda fiziksel stok bulunmuyor.</p>
           <button
             type="button"
@@ -721,7 +667,7 @@ export function PdpFiyatMatrisi({
   const aktifKademe = kademeSec(tiers, enteredQuantity);
 
   return (
-    <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-hafif">
+    <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-hafif">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-metin-ucuncul">
           Kademeli Fiyatlandırma Tablosu
@@ -731,8 +677,8 @@ export function PdpFiyatMatrisi({
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-[var(--radius-girdi)] border border-kenar">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto rounded-token-girdi border border-kenar">
+        <table className="w-full min-w-[34rem] text-xs">
           <thead className="bg-yuzey-gomulu text-left text-metin-ucuncul">
             <tr>
               <th className="px-3 py-2 font-semibold">Miktar Aralığı</th>
@@ -903,7 +849,7 @@ export function PdpAmbalajVeSatinAlma({
     <div className="space-y-4">
       {/* Ambalaj Seçici */}
       {ambalajlar.length > 1 && (
-        <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-hafif">
+        <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-hafif">
           <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-metin-ucuncul">
             Ambalaj Seçeneği
           </label>
@@ -916,7 +862,7 @@ export function PdpAmbalajVeSatinAlma({
                   type="button"
                   onClick={() => onChangeAmbalaj(pkg.ambalajId)}
                   aria-pressed={isSelected}
-                  className={`flex flex-col items-start rounded-[var(--radius-girdi)] border p-2.5 text-left transition-all ${
+                  className={`flex flex-col items-start rounded-token-girdi border p-2.5 text-left transition-all ${
                     isSelected
                       ? "border-vurgu bg-vurgu-zemin text-vurgu-guclu shadow-xs"
                       : "border-kenar bg-yuzey hover:border-kenar-guclu text-metin"
@@ -935,7 +881,7 @@ export function PdpAmbalajVeSatinAlma({
       )}
 
       {/* MOQ / MPQ / Katlama Parametre Şeridi */}
-      <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-[var(--radius-kart)] border border-kenar bg-kenar shadow-xs">
+      <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-token-kart border border-kenar bg-kenar shadow-xs">
         <div className="bg-yuzey-kart p-2.5 text-center">
           <dt className="text-[10px] uppercase font-bold text-metin-ucuncul">
             <Kisaltma kod="MOQ" />
@@ -971,14 +917,14 @@ export function PdpAmbalajVeSatinAlma({
       />
 
       {/* Satın Alma & Adet Girişi Kutusu */}
-      <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-hafif space-y-3">
+      <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-hafif space-y-3">
         <label htmlFor="pdp-quantity-input" className="block text-xs font-bold uppercase tracking-wider text-metin-ucuncul">
           Sipariş Miktarı
         </label>
 
         {/* Stepper ve Miktar Girişi */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart shadow-xs">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_minmax(0,1fr)]">
+          <div className="flex items-center rounded-token-girdi border border-kenar bg-yuzey-kart shadow-xs">
             <button
               type="button"
               onClick={handleStepDecrement}
@@ -1010,9 +956,9 @@ export function PdpAmbalajVeSatinAlma({
           </div>
 
           {/* Hesaplanan Satır Tutarı */}
-          <div className="flex-1 rounded-[var(--radius-girdi)] bg-yuzey-gomulu/80 px-3 py-2 text-right">
+          <div className="min-w-0 rounded-token-girdi bg-yuzey-gomulu/80 px-3 py-2 text-right">
             <div className="text-[10px] text-metin-ucuncul">Hesaplanan Tutar (+KDV)</div>
-            <div className="font-mono text-base font-bold tabular-nums text-metin">
+            <div className="break-words font-mono text-base font-bold tabular-nums text-metin">
               {paraBicimle(totalAmount, calculation.aktifKademe?.paraBirimi || "USD", 2)}
             </div>
           </div>
@@ -1020,7 +966,7 @@ export function PdpAmbalajVeSatinAlma({
 
         {/* Doğrulama Uyarısı */}
         {!dogrulama.gecerliMi && (
-          <div className="flex items-start gap-1.5 rounded-[var(--radius-girdi)] bg-uyari-50 p-2 text-xs text-uyari-900 border border-uyari-200">
+          <div className="flex items-start gap-1.5 rounded-token-girdi bg-uyari-50 p-2 text-xs text-uyari-900 border border-uyari-200">
             <AlertTriangle size={14} className="mt-0.5 shrink-0 text-uyari-600" />
             <div className="flex-1">
               <span>{dogrulama.hata} </span>
@@ -1051,7 +997,7 @@ export function PdpAmbalajVeSatinAlma({
           <button
             type="button"
             onClick={handleRequestRfq}
-            className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-girdi)] bg-marka px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-navy-700 active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 rounded-token-girdi bg-marka px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-navy-700 active:scale-[0.98]"
           >
             <FileSpreadsheet size={16} />
             <span>Resmi Teklif İste (RFQ)</span>
@@ -1098,7 +1044,6 @@ export function PdpTeknikSekmeler({
 }) {
   const [activeTab, setActiveTab] = useState<0 | 1 | 2 | 3>(0);
   const [specSearch, setSpecSearch] = useState("");
-  const { addItem, isInComparison } = useComparisonStore();
 
   const specs = Object.entries(product.ozellikler || {});
   const filteredSpecs = specs.filter(([key, val]) =>
@@ -1109,24 +1054,6 @@ export function PdpTeknikSekmeler({
   const similarProducts = product.benzerUrunler || [];
   const parametricProducts = product.parametrikUrunler || [];
   const pairedProducts = product.birlikteKullanilanlar || [];
-
-  const handleAddSubToCompare = (sub: RelatedProductSummary) => {
-    const added = addItem({
-      id: sub.id,
-      ureticiUrunKodu: sub.ureticiUrunKodu,
-      ureticiAd: "Distribütör",
-      anaGorselUrl: sub.anaGorselUrl,
-      baslangicFiyati: 0,
-      paraBirimi: "USD",
-      toplamStok: 1000,
-      kategoriId: product.kategoriId,
-    });
-    if (added) {
-      bildir.basarili("Eklendi", `${sub.ureticiUrunKodu} karşılaştırma listesine eklendi.`);
-    } else {
-      bildir.bilgi("Limit", "En fazla 4 ürün karşılaştırabilirsiniz.");
-    }
-  };
 
   return (
     <section className="mt-10">
@@ -1217,13 +1144,13 @@ export function PdpTeknikSekmeler({
                 placeholder="Özellik ara (örn: Flash, Gerilim)..."
                 value={specSearch}
                 onChange={(e) => setSpecSearch(e.target.value)}
-                className="w-full rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart pl-8 pr-3 py-1.5 text-xs text-metin focus:border-vurgu focus:outline-hidden"
+                className="w-full rounded-token-girdi border border-kenar bg-yuzey-kart pl-8 pr-3 py-1.5 text-xs text-metin focus:border-vurgu focus:outline-hidden"
               />
             </div>
           </div>
 
           {filteredSpecs.length > 0 ? (
-            <div className="overflow-hidden rounded-[var(--radius-kart)] border border-kenar shadow-xs">
+            <div className="overflow-hidden rounded-token-kart border border-kenar shadow-xs">
               <table className="w-full text-xs">
                 <thead className="bg-yuzey-gomulu text-left text-metin-ucuncul border-b border-kenar">
                   <tr>
@@ -1249,14 +1176,14 @@ export function PdpTeknikSekmeler({
               </table>
             </div>
           ) : (
-            <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-6 text-center text-xs text-metin-ucuncul">
+            <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-6 text-center text-xs text-metin-ucuncul">
               Arama kriterinize uygun parametrik özellik bulunamadı.
             </div>
           )}
 
           {/* Detaylı Açıklama Paragrafı */}
           {product.detayliAciklama && (
-            <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-5 shadow-xs">
+            <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-5 shadow-xs">
               <h4 className="mb-2 text-sm font-bold text-metin">Ürün Fonksiyonel Tanımı</h4>
               <p className="text-xs leading-relaxed text-metin-ikincil whitespace-pre-line">
                 {product.detayliAciklama}
@@ -1275,7 +1202,7 @@ export function PdpTeknikSekmeler({
               <button
                 type="button"
                 onClick={onOpenDocModal}
-                className="rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-3 py-1.5 text-xs font-semibold text-vurgu hover:border-vurgu hover:bg-vurgu-zemin"
+                className="rounded-token-girdi border border-kenar bg-yuzey-kart px-3 py-1.5 text-xs font-semibold text-vurgu hover:border-vurgu hover:bg-vurgu-zemin"
               >
                 Doküman Talep Et
               </button>
@@ -1287,7 +1214,7 @@ export function PdpTeknikSekmeler({
               {product.dokumanlar.filter(dokumanKullanilabilirMi).map((dokuman) => (
                 <div
                   key={dokuman.url}
-                  className="flex flex-col justify-between rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-xs transition-all hover:border-vurgu hover:shadow-md"
+                  className="flex flex-col justify-between rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-xs transition-all hover:border-vurgu hover:shadow-md"
                 >
                   <div className="flex items-start gap-3">
                     <div className="rounded-lg bg-yuzey-gomulu p-2.5 text-vurgu">
@@ -1316,7 +1243,7 @@ export function PdpTeknikSekmeler({
                     href={dokuman.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-4 flex items-center justify-center gap-1.5 rounded-[var(--radius-girdi)] bg-yuzey-gomulu py-2 text-xs font-semibold text-metin transition-colors hover:bg-vurgu hover:text-white"
+                    className="mt-4 flex items-center justify-center gap-1.5 rounded-token-girdi bg-yuzey-gomulu py-2 text-xs font-semibold text-metin transition-colors hover:bg-vurgu hover:text-white"
                   >
                     <Download size={13} />
                     <span>Dosyayı İndir</span>
@@ -1325,7 +1252,7 @@ export function PdpTeknikSekmeler({
               ))}
             </div>
           ) : (
-            <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-8 text-center">
+            <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-8 text-center">
               <FileText size={36} className="mx-auto mb-2 text-metin-ucuncul opacity-40" />
               <p className="text-sm font-semibold text-metin">Henüz yayınlanmış doküman bulunmuyor</p>
               <p className="mt-1 text-xs text-metin-ucuncul">
@@ -1335,7 +1262,7 @@ export function PdpTeknikSekmeler({
                 <button
                   type="button"
                   onClick={onOpenDocModal}
-                  className="mt-4 inline-flex items-center gap-2 rounded-[var(--radius-girdi)] bg-vurgu px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  className="mt-4 inline-flex items-center gap-2 rounded-token-girdi bg-vurgu px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
                 >
                   <Send size={14} />
                   <span>Doküman Talep Et</span>
@@ -1363,11 +1290,10 @@ export function PdpTeknikSekmeler({
             {substitutes.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {substitutes.map((sub) => {
-                  const inComp = isInComparison(sub.id);
                   return (
                     <div
                       key={sub.id}
-                      className="flex flex-col justify-between rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-xs hover:border-vurgu transition-all"
+                      className="flex flex-col justify-between rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-xs hover:border-vurgu transition-all"
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2">
@@ -1377,30 +1303,14 @@ export function PdpTeknikSekmeler({
                           >
                             {sub.ureticiUrunKodu}
                           </Link>
-                          <span className="rounded-full bg-basari-50 px-2 py-0.5 text-[10px] font-bold text-basari-600 border border-basari-200/60">
-                            %48 Tasarruf
-                          </span>
                         </div>
                         <p className="mt-1 line-clamp-2 text-xs text-metin-ikincil">{sub.kisaAciklama}</p>
                       </div>
 
                       <div className="mt-4 flex items-center justify-between gap-2 border-t border-kenar pt-3">
-                        <button
-                          type="button"
-                          onClick={() => handleAddSubToCompare(sub)}
-                          className={`rounded-[var(--radius-girdi)] border px-2.5 py-1.5 text-xs font-semibold ${
-                            inComp
-                              ? "border-vurgu bg-vurgu-zemin text-vurgu-guclu"
-                              : "border-kenar bg-yuzey text-metin hover:border-kenar-guclu"
-                          }`}
-                        >
-                          <ArrowLeftRight size={13} className="inline mr-1" />
-                          {inComp ? "Listede" : "Karşılaştır"}
-                        </button>
-
                         <Link
                           href={`/urunler/${sub.id}`}
-                          className="rounded-[var(--radius-girdi)] bg-vurgu px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                          className="ml-auto rounded-token-girdi bg-vurgu px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
                         >
                           İncele
                         </Link>
@@ -1410,7 +1320,7 @@ export function PdpTeknikSekmeler({
                 })}
               </div>
             ) : (
-              <p className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 text-xs text-metin-ucuncul">
+              <p className="rounded-token-kart border border-kenar bg-yuzey-kart p-4 text-xs text-metin-ucuncul">
                 Bu ürün için tanımlı pin-to-pin muadil bulunamadı.
               </p>
             )}
@@ -1425,7 +1335,7 @@ export function PdpTeknikSekmeler({
                   <Link
                     key={p.id}
                     href={`/urunler/${p.id}`}
-                    className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-3 transition-all hover:border-vurgu hover:shadow-sm"
+                    className="rounded-token-kart border border-kenar bg-yuzey-kart p-3 transition-all hover:border-vurgu hover:shadow-sm"
                   >
                     <p className="font-mono text-xs font-bold text-metin truncate">{p.ureticiUrunKodu}</p>
                     <p className="mt-1 line-clamp-2 text-[11px] text-metin-ikincil">{p.kisaAciklama}</p>
@@ -1452,7 +1362,7 @@ export function PdpTeknikSekmeler({
               {pairedProducts.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col justify-between rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-xs hover:border-vurgu transition-all"
+                  className="flex flex-col justify-between rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-xs hover:border-vurgu transition-all"
                 >
                   <div>
                     <Link
@@ -1468,7 +1378,7 @@ export function PdpTeknikSekmeler({
                     <span className="text-xs text-basari-600 font-semibold">Stokta Var</span>
                     <Link
                       href={`/urunler/${item.id}`}
-                      className="rounded-[var(--radius-girdi)] bg-marka px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700"
+                      className="rounded-token-girdi bg-marka px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700"
                     >
                       Ürünü Gör
                     </Link>
@@ -1477,7 +1387,7 @@ export function PdpTeknikSekmeler({
               ))}
             </div>
           ) : (
-            <p className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 text-xs text-metin-ucuncul">
+            <p className="rounded-token-kart border border-kenar bg-yuzey-kart p-4 text-xs text-metin-ucuncul">
               Bu ürün için henüz tamamlayıcı komponent listesi tanımlanmamış.
             </p>
           )}
@@ -1544,7 +1454,7 @@ export function PdpMobilSatinAlmaBari({
   };
 
   return (
-    <div className="fixed bottom-0 inset-x-0 bg-yuzey-kart border-t border-kenar p-3 z-40 md:hidden flex items-center justify-between pb-safe shadow-lg gap-2">
+    <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-t border-kenar bg-yuzey-kart p-3 pb-safe shadow-lg md:hidden">
       {/* Sol Özet: MPN & Fiyat */}
       <div className="min-w-0 flex-1">
         <div className="truncate font-mono text-xs font-bold text-metin">
@@ -1552,19 +1462,31 @@ export function PdpMobilSatinAlmaBari({
         </div>
         <div className="flex items-center gap-1.5 text-[11px]">
           <span className="font-mono font-semibold tabular-nums text-vurgu-guclu">
-            $ {unitPrice.toFixed(2)}
+            {paraBicimle(unitPrice, calculation.aktifKademe?.paraBirimi || "USD")}
           </span>
-          <span className="text-metin-ucuncul font-sans truncate">· {defaultPkg.ad}</span>
+          <span className="truncate font-sans text-metin-ucuncul">{defaultPkg.ad}</span>
         </div>
       </div>
 
+      {/* Teklif İste Butonu */}
+      <button
+        type="button"
+        onClick={handleRequestQuote}
+        className="flex h-11 w-11 items-center justify-center rounded-token-girdi bg-marka text-white shadow-xs transition-opacity hover:opacity-90"
+        title="Teklif İste"
+        aria-label="Teklif İste"
+      >
+        <FileSpreadsheet size={16} />
+      </button>
+
+      <div className="col-span-2 flex min-w-0 items-center gap-2">
       {/* Miktar Stepper */}
-      <div className="flex items-center rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-gomulu">
+      <div className="flex shrink-0 items-center rounded-token-girdi border border-kenar bg-yuzey-gomulu">
         <button
           type="button"
           onClick={handleStepDecrement}
           disabled={quantity <= defaultPkg.moq}
-          className="flex h-8 w-7 items-center justify-center text-xs font-bold text-metin-ikincil disabled:opacity-30"
+          className="flex h-11 w-10 items-center justify-center text-xs font-bold text-metin-ikincil disabled:opacity-30"
           aria-label="Miktarı azalt"
         >
           -
@@ -1575,7 +1497,7 @@ export function PdpMobilSatinAlmaBari({
         <button
           type="button"
           onClick={handleStepIncrement}
-          className="flex h-8 w-7 items-center justify-center text-xs font-bold text-metin-ikincil"
+          className="flex h-11 w-10 items-center justify-center text-xs font-bold text-metin-ikincil"
           aria-label="Miktarı artır"
         >
           +
@@ -1587,115 +1509,20 @@ export function PdpMobilSatinAlmaBari({
         type="button"
         onClick={handleAddToCart}
         disabled={pending}
-        className="flex items-center gap-1 rounded-[var(--radius-girdi)] bg-vurgu px-3 py-2 text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50"
+        className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-token-girdi bg-vurgu px-3 text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50"
       >
         <ShoppingCart size={14} />
         <span>Sepete Ekle</span>
       </button>
 
-      {/* Teklif İste Butonu */}
-      <button
-        type="button"
-        onClick={handleRequestQuote}
-        className="flex items-center justify-center rounded-[var(--radius-girdi)] bg-marka p-2 text-white shadow-xs transition-opacity hover:opacity-90"
-        title="Teklif İste"
-        aria-label="Teklif İste"
-      >
-        <FileSpreadsheet size={14} />
-      </button>
-    </div>
-  );
-}
-
-/* ==========================================================================
-   10. MODALLER (STOK BİLDİRİMİ & DOKÜMAN TALEBİ)
-   ========================================================================== */
-export function StokAlarmModal({
-  isOpen,
-  onClose,
-  mpn,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  mpn: string;
-}) {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setSubmitted(true);
-    setTimeout(() => {
-      bildir.basarili("Stok Alarmı Kuruldu", `${mpn} stoğa girdiğinde ${email} adresine bildirim gönderilecek.`);
-      onClose();
-      setSubmitted(false);
-      setEmail("");
-    }, 800);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/70 p-4 backdrop-blur-xs">
-      <div className="relative w-full max-w-md rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart p-6 shadow-2xl">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 text-metin-ucuncul hover:text-metin"
-        >
-          <X size={18} />
-        </button>
-
-        <div className="mb-4 flex items-center gap-3">
-          <div className="rounded-full bg-vurgu-zemin p-2.5 text-vurgu-guclu">
-            <Bell size={20} />
-          </div>
-          <div>
-            <h3 className="font-bold text-base text-metin">Stok Alarmı Oluştur</h3>
-            <p className="text-xs text-metin-ucuncul font-mono">{mpn}</p>
-          </div>
-        </div>
-
-        <p className="mb-4 text-xs leading-relaxed text-metin-ikincil">
-          Bu parça için yeni stok girişi yapıldığında e-posta adresinize otomatik bildirim gönderilir.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="block text-xs font-semibold text-metin mb-1">E-Posta Adresiniz</label>
-            <input
-              type="email"
-              required
-              placeholder="ornek@sirket.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-xs text-metin focus:border-vurgu focus:outline-hidden"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-[var(--radius-girdi)] border border-kenar px-3 py-2 text-xs font-semibold text-metin hover:bg-yuzey-gomulu"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              disabled={submitted}
-              className="rounded-[var(--radius-girdi)] bg-vurgu px-4 py-2 text-xs font-bold text-white hover:bg-vurgu-guclu disabled:opacity-50"
-            >
-              {submitted ? "Kaydediliyor..." : "Alarm Kur"}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
 }
 
+/* ==========================================================================
+   10. DOKÜMAN TALEBİ
+   ========================================================================== */
 export function DokumanTalepModal({
   isOpen,
   onClose,
@@ -1708,29 +1535,31 @@ export function DokumanTalepModal({
   const [docType, setDocType] = useState("Datasheet");
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
-  const [submitted, setSubmitted] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      bildir.basarili("Doküman Talebi Alındı", `${mpn} için ${docType} talebiniz teknik mühendislik ekibimize iletildi.`);
-      onClose();
-      setSubmitted(false);
-      setEmail("");
-      setNote("");
-    }, 800);
+    const konu = `${mpn} - ${docType} talebi`;
+    const govde = [
+      `Ürün kodu: ${mpn}`,
+      `Doküman türü: ${docType}`,
+      `Yanıt adresi: ${email}`,
+      note ? `Proje notu: ${note}` : "",
+    ].filter(Boolean).join("\n");
+    window.location.href = `mailto:destek@cevik.com.tr?subject=${encodeURIComponent(konu)}&body=${encodeURIComponent(govde)}`;
+    bildir.bilgi("E-posta uygulaması açılıyor", "Talep, siz e-postayı gönderdikten sonra iletilecektir.");
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/70 p-4 backdrop-blur-xs">
-      <div className="relative max-w-md w-full rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart p-6 shadow-2xl">
+      <div className="relative max-w-md w-full rounded-token-panel border border-kenar bg-yuzey-kart p-6 shadow-2xl">
         <button
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 text-metin-ucuncul hover:text-metin"
+          aria-label="Kapat"
         >
           <X size={18} />
         </button>
@@ -1747,11 +1576,12 @@ export function DokumanTalepModal({
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-metin mb-1">Doküman Türü</label>
+            <label htmlFor="dokuman-turu" className="block text-xs font-semibold text-metin mb-1">Doküman Türü</label>
             <select
+              id="dokuman-turu"
               value={docType}
               onChange={(e) => setDocType(e.target.value)}
-              className="w-full rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-xs text-metin focus:border-vurgu focus:outline-hidden"
+              className="w-full rounded-token-girdi border border-kenar bg-yuzey px-3 py-2 text-xs text-metin focus:border-vurgu focus:outline-hidden"
             >
               <option value="Datasheet">Teknik Datasheet (PDF)</option>
               <option value="3D CAD / STEP">3D STEP / CAD Modeli</option>
@@ -1762,25 +1592,27 @@ export function DokumanTalepModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-metin mb-1">E-Posta Adresiniz</label>
+            <label htmlFor="dokuman-eposta" className="block text-xs font-semibold text-metin mb-1">E-Posta Adresiniz</label>
             <input
+              id="dokuman-eposta"
               type="email"
               required
               placeholder="muhendis@firma.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-xs text-metin focus:border-vurgu focus:outline-hidden"
+              className="w-full rounded-token-girdi border border-kenar bg-yuzey px-3 py-2 text-xs text-metin focus:border-vurgu focus:outline-hidden"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-metin mb-1">Açıklama / Proje Notu (Opsiyonel)</label>
+            <label htmlFor="dokuman-notu" className="block text-xs font-semibold text-metin mb-1">Açıklama / Proje Notu (Opsiyonel)</label>
             <textarea
+              id="dokuman-notu"
               rows={2}
               placeholder="Spesifik paket veya revizyon notunuz varsa belirtin..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-xs text-metin focus:border-vurgu focus:outline-hidden"
+              className="w-full rounded-token-girdi border border-kenar bg-yuzey px-3 py-2 text-xs text-metin focus:border-vurgu focus:outline-hidden"
             />
           </div>
 
@@ -1788,16 +1620,15 @@ export function DokumanTalepModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-[var(--radius-girdi)] border border-kenar px-3 py-2 text-xs font-semibold text-metin hover:bg-yuzey-gomulu"
+              className="rounded-token-girdi border border-kenar px-3 py-2 text-xs font-semibold text-metin hover:bg-yuzey-gomulu"
             >
               İptal
             </button>
             <button
               type="submit"
-              disabled={submitted}
-              className="rounded-[var(--radius-girdi)] bg-marka px-4 py-2 text-xs font-bold text-white hover:bg-navy-700 disabled:opacity-50"
+              className="rounded-token-girdi bg-marka px-4 py-2 text-xs font-bold text-white hover:bg-navy-700"
             >
-              {submitted ? "Gönderiliyor..." : "Talebi İlet"}
+              E-posta Taslağını Aç
             </button>
           </div>
         </form>

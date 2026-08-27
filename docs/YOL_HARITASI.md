@@ -276,3 +276,35 @@ datasheet bloku değil, **tüm sayfa yeniden yapılandırılması**.
 Süre tahminleri kabadır ve ölçülmemiştir; kapsam netleştikçe değişir. Kayıtlardaki
 dosya ve satır referansları 25 Ağustos 2026 itibarıyla `duzeltme/tema-marka-kontrast`
 dalında doğrulanmıştır — kod değiştikçe satır numaraları kayabilir.
+
+## Gemini Kısmı
+
+Özdisan ile yapılan kapsamlı karşılaştırma sonucunda saptanmış, ancak mevcut planlamamızda eksik veya kapsam dışı bırakılmış ek modül ve özelliklerin güncel listesi aşağıdadır. (Kullanıcı talebi doğrultusunda BOM, Boardoza, gerçek ödeme entegrasyonu ve ERP bağlantıları bu listeden çıkarılmıştır.)
+
+### 1. Üretim ve Mühendislik Hizmetleri
+*   **PCB Tedariki ve PCB-A (Kart Dizgisi) Üretimi:** E-ticaret modülüne ek olarak müşterilerin özel baskı devre kartı ve dizgi taleplerini toplayan, üretim süreçleri için teklif almasını sağlayan yapı.
+*   **Soğutucu (Heatsink) Üretimi:** Özdisan'ın üretim kabiliyetleri arasında yer alan özel soğutucu tasarım ve sipariş süreci.
+*   **FAE (Field Application Engineer) ve Ar-Ge Desteği:** "Design-in" proje desteği kapsamında müşterilere teknik destek sağlayan, proje başvuru ve takibini içeren özel modüller.
+
+### 2. Genişletilmiş Ürün Aileleri ve Çözümler
+Elektronik komponent (yarı iletken, pasif vb.) temel listesine ek olarak sistem seviyesinde sunulan şu iş kolları:
+*   **Maker & IoT Ürünleri:** Hobi elektroniği, geliştirme kartları (Arduino, Raspberry Pi vb.) ve IoT modülleri.
+*   **Üretim Ekipmanları ve Otomasyon Çözümleri:** Endüstriyel otomasyon donanımları.
+*   **LED Aydınlatma Çözümleri:** Endüstriyel ve ticari LED aydınlatma ürünleri.
+
+### 3. Özel İçerik ve Araçlar
+*   **Component by Özdisan (E-Dergi):** B2B müşterilerini bilgilendirme amacıyla çıkarılan, okunabilir formatta entegre edilmiş dijital teknoloji ve sektör dergisi modülü.
+*   **Mühendislik Hesaplayıcıları:** Ziyaretçilerin direnç renk kodları, kapasitans, frekans çevrimleri gibi mühendislik hesaplamalarını doğrudan site üzerinden yapmasını sağlayan mini web araçları.
+
+### Gemini maddeleri — mevcut durum denetimi
+
+| Madde | Durum | Not |
+|---|---|---|
+| PCB/PCBA üretim talebi | Eksik | Çözüm sayfası var; bağımsız proje talep formu ve API kaydı yok. |
+| Heatsink üretim süreci | Kısmi | Katalogda soğutucu kategorileri var; özel üretim talep akışı yok. |
+| FAE / Ar-Ge proje başvurusu | Kısmi | Çözüm sayfası var; başvuru ve takip akışı yok. |
+| Maker & IoT ürünleri | Mevcut | Katalog kategori ağacında ürün ailesi bulunuyor. |
+| Otomasyon çözümleri | Mevcut | Katalog kategorisi ve çözüm sayfası bulunuyor. |
+| LED aydınlatma | Mevcut | Katalogda LED ve aydınlatma aileleri bulunuyor. |
+| Component by Çevik e-dergi | Tamamlandı | `/dergi` CMS blog içeriklerini dergi görünümünde listeliyor; içerik yoksa dürüst boş durum gösteriyor. |
+| Mühendislik hesaplayıcıları | Mevcut | `/araclar` altında dört hesaplayıcı çalışıyor. |

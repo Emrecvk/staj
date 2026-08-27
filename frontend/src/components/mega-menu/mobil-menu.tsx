@@ -1,75 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
-  Menu,
-  X,
-  ChevronRight,
   ArrowLeft,
-  Search,
-  FileText,
-  Heart,
-  ShoppingCart,
-  Phone,
-  Layers,
   ArrowRight,
-  ShieldCheck,
   Building2,
-  Cpu,
-  ToggleLeft,
-  Cable,
-  Zap,
-  Activity,
-  Radio,
-  Monitor,
-  Boxes,
-  Wrench,
+  ChevronRight,
+  Layers,
+  Menu,
+  Phone,
+  Search,
+  X,
 } from "lucide-react";
 import { Drawer } from "vaul";
-import { useRouter } from "next/navigation";
+import { kategoriIkonunuGetir } from "@/components/kategori-ikonlari";
 import type { Category } from "@/lib/api";
-import {
-  getMergedCategories,
-  type MegaMenuCategoryItem,
-} from "./category-data";
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  Cpu,
-  Layers,
-  ToggleLeft,
-  Cable,
-  Zap,
-  Activity,
-  Radio,
-  Monitor,
-  Boxes,
-  Wrench,
-};
 
 interface MobilMenuProps {
   categories?: Category[];
+  urunSayilari?: Record<number, number>;
 }
 
-export function MobilMenu({ categories = [] }: MobilMenuProps) {
+function kategoriUrl(kategori: Category) {
+  return `/urunler?kategoriId=${kategori.id}`;
+}
+
+export function MobilMenu({
+  categories = [],
+  urunSayilari = {},
+}: MobilMenuProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<MegaMenuCategoryItem | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const menuItems = getMergedCategories(categories);
-
+  const siraliKategoriler = useMemo(
+    () => [...categories].sort((a, b) => a.sira - b.sira),
+    [categories],
+  );
+  const selectedCategory =
+    siraliKategoriler.find((kategori) => kategori.id === selectedCategoryId) ?? null;
   const handleClose = () => {
     setIsOpen(false);
-    setSelectedCategory(null);
+    setSelectedCategoryId(null);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      handleClose();
-      router.push(`/urunler?aramaMetni=${encodeURIComponent(searchQuery.trim())}`);
-    }
+  const handleSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const aramaMetni = searchQuery.trim();
+    if (!aramaMetni) return;
+
+    handleClose();
+    router.push(`/urunler?aramaMetni=${encodeURIComponent(aramaMetni)}`);
   };
 
   return (
@@ -77,212 +61,178 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
       open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open);
-        if (!open) setSelectedCategory(null);
+        if (!open) setSelectedCategoryId(null);
       }}
       direction="left"
     >
       <Drawer.Trigger asChild>
         <button
           type="button"
-          aria-label="Menüyü Aç"
-          className="p-2 text-metin hover:text-vurgu rounded-[var(--radius-girdi)] transition-colors"
+          aria-label="Menüyü aç"
+          className="rounded-token-girdi p-2 text-metin transition-colors hover:text-vurgu"
         >
-          <Menu size={24} />
+          <Menu size={24} aria-hidden="true" />
         </button>
       </Drawer.Trigger>
 
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-navy-950/60 backdrop-blur-xs" />
-        <Drawer.Content
-          className="fixed inset-y-0 left-0 z-50 flex w-[85vw] max-w-sm flex-col bg-yuzey-kart border-r border-kenar outline-none text-metin shadow-2xl"
-        >
-          {/* Mobile Drawer Header */}
-          <div className="p-4 bg-marka text-white flex items-center justify-between border-b border-navy-700">
+        <Drawer.Content className="fixed inset-y-0 left-0 z-50 flex w-[85vw] max-w-sm flex-col border-r border-kenar bg-yuzey-kart text-metin shadow-2xl outline-none">
+          <Drawer.Title className="sr-only">Ürün kategorileri ve site menüsü</Drawer.Title>
+
+          <div className="flex items-center justify-between border-b border-navy-700 bg-marka p-4 text-white">
             {selectedCategory ? (
               <button
                 type="button"
-                onClick={() => setSelectedCategory(null)}
-                className="flex items-center gap-1.5 text-xs font-bold text-cyan-300 hover:text-white transition-colors"
+                onClick={() => setSelectedCategoryId(null)}
+                className="flex items-center gap-1.5 text-xs font-bold text-cyan-300 transition-colors hover:text-white"
               >
-                <ArrowLeft size={16} /> Ana Kategoriler
+                <ArrowLeft size={16} aria-hidden="true" /> Ana Kategoriler
               </button>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm tracking-wide">ÇEVİK ELEKTRONİK</span>
-              </div>
+              <span className="text-sm font-bold tracking-wide">ÇEVİK ELEKTRONİK</span>
             )}
             <button
               type="button"
               onClick={handleClose}
-              aria-label="Menüyü Kapat"
-              className="p-1 rounded text-navy-300 hover:text-white transition-colors"
+              aria-label="Menüyü kapat"
+              className="rounded p-1 text-navy-300 transition-colors hover:text-white"
             >
-              <X size={20} />
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
 
-          {/* Quick Mobile Search */}
-          <div className="p-3 bg-yuzey-gomulu border-b border-kenar">
+          <div className="border-b border-kenar bg-yuzey-gomulu p-3">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center">
               <input
-                type="text"
+                type="search"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Komponent veya parça ara..."
-                className="w-full h-9 pl-3 pr-8 rounded-[var(--radius-girdi)] bg-yuzey-kart border border-kenar text-xs text-metin placeholder:text-metin-ucuncul outline-none focus:border-vurgu"
+                aria-label="Komponent veya parça ara"
+                className="h-9 w-full rounded-token-girdi border border-kenar bg-yuzey-kart pl-3 pr-8 text-xs text-metin outline-none placeholder:text-metin-ucuncul focus:border-vurgu"
               />
               <button
                 type="submit"
                 aria-label="Ara"
                 className="absolute right-2 text-metin-ucuncul hover:text-vurgu"
               >
-                <Search size={14} />
+                <Search size={14} aria-hidden="true" />
               </button>
             </form>
           </div>
 
-          {/* Scrollable Navigation Body */}
           <div className="flex-grow overflow-y-auto overscroll-contain">
             {selectedCategory ? (
-              /* LEVEL 2 & 3: Selected Category Drill-down */
-              <div className="p-4 space-y-5 animate-in fade-in duration-150">
-                <div className="pb-3 border-b border-kenar flex items-center justify-between">
+              <div className="space-y-5 p-4 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between border-b border-kenar pb-3">
                   <div>
-                    <h3 className="font-bold text-base text-metin-marka">{selectedCategory.ad}</h3>
-                    <span className="text-xs text-metin-ikincil font-mono">
-                      {selectedCategory.toplamUrun.toLocaleString("tr-TR")} Ürün
-                    </span>
+                    <h3 className="text-base font-bold text-metin-marka">{selectedCategory.ad}</h3>
+                    {typeof urunSayilari[selectedCategory.id] === "number" && (
+                      <span className="font-mono text-xs text-metin-ikincil">
+                        {urunSayilari[selectedCategory.id].toLocaleString("tr-TR")} ürün
+                      </span>
+                    )}
                   </div>
                   <Link
-                    href={`/urunler?kategoriId=${selectedCategory.id}`}
+                    href={kategoriUrl(selectedCategory)}
                     onClick={handleClose}
-                    className="text-xs font-bold text-vurgu hover:underline flex items-center gap-1"
+                    className="flex items-center gap-1 text-xs font-bold text-vurgu hover:underline"
                   >
-                    Tümünü Gör <ArrowRight size={12} />
+                    Tümünü Gör <ArrowRight size={12} aria-hidden="true" />
                   </Link>
                 </div>
 
-                {/* Subcategories */}
-                <div className="space-y-4">
-                  {selectedCategory.altKategoriler.map((sub, idx) => (
-                    <div key={idx} className="space-y-1.5">
+                <div>
+                  <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul">
+                    Alt Kategoriler
+                  </div>
+                  <div className="divide-y divide-kenar">
+                    {selectedCategory.altKategoriler.map((altKategori) => (
                       <Link
-                        href={`/urunler?aramaMetni=${encodeURIComponent(sub.ad)}`}
+                        key={altKategori.id}
+                        href={kategoriUrl(altKategori)}
                         onClick={handleClose}
-                        className="block font-bold text-xs text-metin-marka hover:text-vurgu py-1 border-b border-kenar"
+                        className="flex items-center justify-between py-2.5 text-xs text-metin-ikincil transition-colors hover:text-vurgu"
                       >
-                        {sub.ad}
+                        <span className="pr-3 font-semibold">{altKategori.ad}</span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          {typeof urunSayilari[altKategori.id] === "number" && (
+                            <span className="font-mono text-[10px] tabular-nums text-metin-ucuncul">
+                              {urunSayilari[altKategori.id].toLocaleString("tr-TR")}
+                            </span>
+                          )}
+                          <ChevronRight size={13} aria-hidden="true" />
+                        </span>
                       </Link>
-                      <ul className="pl-2 space-y-1 pt-1">
-                        {sub.yapraklar.map((leaf, leafIdx) => (
-                          <li key={leafIdx}>
-                            <Link
-                              href={`/urunler?aramaMetni=${encodeURIComponent(leaf.ad)}`}
-                              onClick={handleClose}
-                              className="flex items-center justify-between py-1 text-xs text-metin-ikincil hover:text-vurgu"
-                            >
-                              <span>{leaf.ad}</span>
-                              {leaf.urunSayisi && (
-                                <span className="text-[10px] font-mono text-metin-ucuncul">
-                                  {leaf.urunSayisi}
-                                </span>
-                              )}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                    ))}
+                    {selectedCategory.altKategoriler.length === 0 && (
+                      <p className="py-3 text-xs text-metin-ikincil">
+                        Bu kategori doğrudan ürünlere bağlanıyor.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                {/* Featured Brands for Category */}
-                {selectedCategory.oneCikanMarkalar.length > 0 && (
-                  <div className="pt-3 border-t border-kenar space-y-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul flex items-center gap-1">
-                      <ShieldCheck size={12} className="text-vurgu" /> Yetkili Markalar
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedCategory.oneCikanMarkalar.map((b, i) => (
-                        <Link
-                          key={i}
-                          href={`/urunler?aramaMetni=${encodeURIComponent(b.ad)}`}
-                          onClick={handleClose}
-                          className="px-2 py-1 bg-yuzey-gomulu rounded text-xs font-semibold text-metin-marka border border-kenar"
-                        >
-                          {b.ad}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
-              /* LEVEL 1: Root Categories & Quick Navigation */
-              <div className="p-3 space-y-4">
-                {/* Categories List */}
+              <div className="space-y-4 p-3">
                 <div>
                   <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul">
                     Ürün Kategorileri
                   </div>
-                  <div className="space-y-0.5 mt-1">
-                    {menuItems.map((cat) => {
-                      const IconComponent = ICON_MAP[cat.ikonAdi] || Cpu;
+                  <div className="mt-1 space-y-0.5">
+                    {siraliKategoriler.map((kategori) => {
+                      const Icon = kategoriIkonunuGetir(kategori.slug);
                       return (
                         <button
-                          key={cat.id}
+                          key={kategori.id}
                           type="button"
-                          onClick={() => setSelectedCategory(cat)}
-                          className="w-full flex items-center justify-between p-2.5 rounded-[var(--radius-girdi)] hover:bg-yuzey-gomulu text-left transition-colors group"
+                          onClick={() => setSelectedCategoryId(kategori.id)}
+                          className="group flex w-full items-center justify-between rounded-token-girdi p-2.5 text-left transition-colors hover:bg-yuzey-gomulu"
                         >
-                          <div className="flex items-center gap-2.5">
-                            <IconComponent size={17} className="text-vurgu" />
-                            <span className="text-xs font-bold text-metin group-hover:text-vurgu">
-                              {cat.ad}
+                          <span className="flex min-w-0 items-center gap-2.5">
+                            <Icon size={17} className="shrink-0 text-vurgu" aria-hidden="true" />
+                            <span className="truncate text-xs font-bold text-metin group-hover:text-vurgu">
+                              {kategori.ad}
                             </span>
-                          </div>
-                          <ChevronRight size={14} className="text-metin-ucuncul group-hover:text-vurgu" />
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            {typeof urunSayilari[kategori.id] === "number" && (
+                              <span className="font-mono text-[10px] tabular-nums text-metin-ucuncul">
+                                {urunSayilari[kategori.id].toLocaleString("tr-TR")}
+                              </span>
+                            )}
+                            <ChevronRight size={14} className="text-metin-ucuncul group-hover:text-vurgu" aria-hidden="true" />
+                          </span>
                         </button>
                       );
                     })}
+                    {siraliKategoriler.length === 0 && (
+                      <p className="px-2 py-3 text-xs text-metin-ikincil">
+                        Kategori verisi şu anda alınamıyor.
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* B2B Services & Quick Shortcuts */}
-                <div className="pt-3 border-t border-kenar">
+                <div className="border-t border-kenar pt-3">
                   <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul">
                     B2B Hızlı İşlemler
                   </div>
-                  <div className="space-y-1 mt-1">
-                    <Link
-                      href="/bom"
-                      onClick={handleClose}
-                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-metin-marka hover:bg-vurgu-zemin transition-colors"
-                    >
-                      <FileText size={16} className="text-vurgu" /> BOM Yükle (Excel/CSV)
+                  <div className="mt-1 space-y-1">
+                    <Link href="/teklif-iste" onClick={handleClose} className="flex items-center gap-2.5 rounded-token-girdi p-2.5 text-xs font-semibold text-metin-marka transition-colors hover:bg-vurgu-zemin">
+                      <Building2 size={16} className="text-vurgu" aria-hidden="true" /> Resmi Teklif Talebi (RFQ)
                     </Link>
-                    <Link
-                      href="/teklif-iste"
-                      onClick={handleClose}
-                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-metin-marka hover:bg-vurgu-zemin transition-colors"
-                    >
-                      <Building2 size={16} className="text-vurgu" /> Resmi Teklif Talebi (RFQ)
-                    </Link>
-                    <Link
-                      href="/karsilastirma"
-                      onClick={handleClose}
-                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--radius-girdi)] text-xs font-semibold text-metin-marka hover:bg-vurgu-zemin transition-colors"
-                    >
-                      <Layers size={16} className="text-vurgu" /> Ürün Karşılaştırma
+                    <Link href="/karsilastirma" onClick={handleClose} className="flex items-center gap-2.5 rounded-token-girdi p-2.5 text-xs font-semibold text-metin-marka transition-colors hover:bg-vurgu-zemin">
+                      <Layers size={16} className="text-vurgu" aria-hidden="true" /> Ürün Karşılaştırma
                     </Link>
                   </div>
                 </div>
 
-                {/* Corporate Links */}
-                <div className="pt-3 border-t border-kenar">
-                  <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul">
-                    Kurumsal
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-1 px-2 text-xs text-metin-ikincil">
+                <div className="border-t border-kenar pt-3">
+                  <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul">Kurumsal</div>
+                  <div className="mt-1 grid grid-cols-2 gap-2 px-2 text-xs text-metin-ikincil">
                     <Link href="/hakkimizda" onClick={handleClose} className="hover:text-vurgu">Hakkımızda</Link>
                     <a href="mailto:destek@cevik.com.tr" onClick={handleClose} className="hover:text-vurgu">İletişim</a>
                     <Link href="/kayit/kurumsal" onClick={handleClose} className="hover:text-vurgu">Kurumsal Üyelik</Link>
@@ -293,17 +243,14 @@ export function MobilMenu({ categories = [] }: MobilMenuProps) {
             )}
           </div>
 
-          {/* Mobile Drawer Footer */}
-          <div className="p-4 bg-yuzey-gomulu border-t border-kenar text-xs space-y-2">
+          <div className="space-y-2 border-t border-kenar bg-yuzey-gomulu p-4 text-xs">
             <div className="flex items-center justify-between text-metin-ikincil">
               <span className="flex items-center gap-1">
-                <Phone size={12} className="text-vurgu" /> 0850 304 44 00
+                <Phone size={12} className="text-vurgu" aria-hidden="true" /> 0850 304 44 00
               </span>
               <span className="font-mono font-bold text-metin-marka">TR · USD</span>
             </div>
-            <div className="text-[11px] text-metin-ucuncul">
-              Hafta içi 08:30 – 18:00 Müşteri Desteği
-            </div>
+            <div className="text-[11px] text-metin-ucuncul">Hafta içi 08:30 – 18:00 Müşteri Desteği</div>
           </div>
         </Drawer.Content>
       </Drawer.Portal>

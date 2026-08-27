@@ -3,64 +3,64 @@
 /* ===========================================================================
    ÇEVİK ELEKTRONİK — TASARIM SİSTEMİ
 
-   Marka renkleri korunmuştur:  Lacivert #0F2740 · Camgöbeği #00B4D8
+   Yeni görsel yön: grafit-mürdüm · sıcak kâğıt · sinyal turuncusu
 
    İki katman:
      1. Ham ölçekler   @theme → bg-navy-800, text-cyan-500 …
      2. Semantik renkler @theme → bg-yuzey, text-metin, border-kenar …
 
-   Koyu tema, 2. katmandaki değişkenlerin :root[data-theme="dark"] altında
-   ezilmesiyle çalışır. Hiçbir bileşende dark: varyantı yazmaya gerek yok.
+   Arayüz açık temaya kilitlidir. Koyu tema ancak tüm ekranlar semantik
+   tokenlara taşınıp birlikte test edildiğinde yeniden eklenmelidir.
 
-   DİKKAT — `@theme inline` KULLANMAYIN: inline anahtar kelimesi üretilen
+   DİKKAT - `@theme inline` KULLANMAYIN: inline anahtar kelimesi üretilen
    utility'ye değeri GÖMER, var() referansı bırakmaz. Öyle olunca koyu temada
    değişkeni değiştirmek hiçbir şey yapmaz. Düz @theme ise
    `border-color: var(--color-kenar)` üretir ve tema geçişi çalışır.
    =========================================================================== */
 
 @theme {
-  /* --- Lacivert ölçeği ---------------------------------------------------
-     Marka rengi #0F2740 ölçeğin 800'ü; ortada durur ki iki yöne de yer kalsın. */
-  --color-navy-50: #f2f6fa;
-  --color-navy-100: #e3ecf4;
-  --color-navy-200: #c6d8e8;
-  --color-navy-300: #9bbad4;
-  --color-navy-400: #6893bb;
-  --color-navy-500: #4573a1;
-  --color-navy-600: #345b86;
-  --color-navy-700: #2b4a6d;
-  --color-navy-800: #0f2740;
-  --color-navy-900: #0c1f34;
-  --color-navy-950: #071523;
+  /* --- Grafit-mürdüm ölçeği -----------------------------------------------
+     Eski navy yardımcı adları bileşen uyumluluğu için korunuyor. */
+  --color-navy-50: #faf5f8;
+  --color-navy-100: #f3e9ef;
+  --color-navy-200: #e8d2de;
+  --color-navy-300: #d5adc1;
+  --color-navy-400: #b77d9a;
+  --color-navy-500: #965b77;
+  --color-navy-600: #774158;
+  --color-navy-700: #5f3247;
+  --color-navy-800: #452638;
+  --color-navy-900: #32202b;
+  --color-navy-950: #21171f;
 
-  /* --- Camgöbeği ölçeği --------------------------------------------------- */
-  --color-cyan-50: #ecfdff;
-  --color-cyan-100: #cff7fe;
-  --color-cyan-200: #a5eefc;
-  --color-cyan-300: #67e0f9;
-  --color-cyan-400: #22c9ee;
-  --color-cyan-500: #00b4d8;
-  --color-cyan-600: #0389b0;
-  --color-cyan-700: #0a6e8f;
-  --color-cyan-800: #115a74;
-  --color-cyan-900: #134b62;
-  --color-cyan-950: #063143;
+  /* --- Sinyal turuncusu ölçeği --------------------------------------------
+     Eski cyan yardımcı adları bileşen uyumluluğu için korunuyor. */
+  --color-cyan-50: #fff4eb;
+  --color-cyan-100: #ffe4cf;
+  --color-cyan-200: #ffc49e;
+  --color-cyan-300: #ff9b66;
+  --color-cyan-400: #f7763f;
+  --color-cyan-500: #df572a;
+  --color-cyan-600: #bd3f1c;
+  --color-cyan-700: #963219;
+  --color-cyan-800: #782b1c;
+  --color-cyan-900: #632719;
+  --color-cyan-950: #351109;
 
-  /* --- Nötrler -------------------------------------------------------------
-     Lacivere doğru hafif soğutuldu; saf gri marka renginin yanında ölü durur.
-     Saf siyah ve saf beyaz bilerek yok, ikisi de derinliği öldürür. */
-  --color-notr-0: #ffffff;
-  --color-notr-50: #f8fafc;
-  --color-notr-100: #f1f5f9;
-  --color-notr-200: #e2e8f0;
-  --color-notr-300: #cbd5e1;
-  --color-notr-400: #94a3b8;
-  --color-notr-500: #64748b;
-  --color-notr-600: #475569;
-  --color-notr-700: #334155;
-  --color-notr-800: #1e293b;
-  --color-notr-900: #0f172a;
-  --color-notr-950: #080d18;
+  /* --- Sıcak nötrler -------------------------------------------------------
+     Kâğıt tonu arayüzü steril beyazdan çıkarırken veri yoğunluğunu korur. */
+  --color-notr-0: #fffdf8;
+  --color-notr-50: #f8f4ed;
+  --color-notr-100: #f0eae1;
+  --color-notr-200: #e2d9ce;
+  --color-notr-300: #d0c4b6;
+  --color-notr-400: #aa9c8f;
+  --color-notr-500: #81756e;
+  --color-notr-600: #625853;
+  --color-notr-700: #4b4240;
+  --color-notr-800: #352d30;
+  --color-notr-900: #282024;
+  --color-notr-950: #1c151a;
 
   /* --- Durum renkleri ------------------------------------------------------
      Doygunluk %80 altında: katalogda yan yana çok sayıda rozet duruyor,
@@ -83,8 +83,9 @@
   /* --- Tipografi -----------------------------------------------------------
      Mono dekoratif değil işlevsel: MPN, parça kodu, miktar ve fiyat
      mono ile sütun halinde hizalanır. */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), var(--font-instrument-sans), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", monospace;
 
   /* --- Yarıçap: TEK sistem, belgelenmiş kural ------------------------------
        girdi ve buton 6px · kart 8px · panel 12px · rozet full-pill
@@ -93,12 +94,12 @@
   --radius-kart: 0.5rem;
   --radius-panel: 0.75rem;
 
-  /* --- Gölgeler: lacivert tonuna boyalı ------------------------------------
+  /* --- Gölgeler: mürdüm tonuna boyalı --------------------------------------
      Açık zeminde saf siyah gölge kirli görünür. */
-  --shadow-hafif: 0 1px 2px 0 rgb(15 39 64 / 0.06);
-  --shadow-kart: 0 1px 3px 0 rgb(15 39 64 / 0.08), 0 1px 2px -1px rgb(15 39 64 / 0.04);
-  --shadow-yukselti: 0 4px 12px -2px rgb(15 39 64 / 0.10), 0 2px 6px -2px rgb(15 39 64 / 0.06);
-  --shadow-katman: 0 12px 32px -8px rgb(15 39 64 / 0.18), 0 4px 12px -4px rgb(15 39 64 / 0.10);
+  --shadow-hafif: 0 1px 2px 0 rgb(50 32 43 / 0.07);
+  --shadow-kart: 0 1px 3px 0 rgb(50 32 43 / 0.09), 0 1px 2px -1px rgb(50 32 43 / 0.05);
+  --shadow-yukselti: 0 5px 16px -4px rgb(50 32 43 / 0.14), 0 2px 6px -2px rgb(50 32 43 / 0.08);
+  --shadow-katman: 0 16px 38px -10px rgb(50 32 43 / 0.24), 0 4px 14px -5px rgb(50 32 43 / 0.14);
 
   /* --- Hareket -------------------------------------------------------------
      Yerleşik CSS easing'leri fazla yumuşak, niyetli hissettirmiyor.
@@ -120,46 +121,75 @@
    =========================================================================== */
 
 @theme {
-  --color-yuzey: #f8fafc;
-  --color-yuzey-kart: #ffffff;
-  --color-yuzey-gomulu: #f1f5f9;
-  --color-yuzey-ters: #0f2740;
+  --color-yuzey: #f6f1e9;
+  --color-yuzey-kart: #fffdf8;
+  --color-yuzey-gomulu: #eee7dd;
+  --color-yuzey-ters: #21171f;
 
-  --color-kenar: #e2e8f0;
-  --color-kenar-guclu: #cbd5e1;
+  --color-kenar: #ded4c8;
+  --color-kenar-guclu: #c8baab;
 
-  --color-metin: #0f172a;
-  --color-metin-ikincil: #475569;
-  --color-metin-ucuncul: #5b6b7f;
-  --color-metin-ters: #ffffff;
+  --color-metin: #2a2427;
+  --color-metin-ikincil: #625853;
+  --color-metin-ucuncul: #786c66;
+  --color-metin-ters: #fffdf8;
 
   /* Marka renkli BAŞLIK METNİ. `marka` ile ayrı tutuluyor: `marka` bir dolgu
      rengi, bu ise bir metin rengi. Koyu temada biri koyu kalmak, digeri
      acilmak zorunda; tek token ikisini birden yapamaz. */
-  --color-metin-marka: #0f2740;
+  --color-metin-marka: #32202b;
 
   /* Koyu dolgu (marka/vurgu zemini) uzerindeki metin. Temayla DEGISMEZ:
      altindaki dolgu da degismiyor. `metin-ters` bu is icin kullanilirsa
      koyu temada lacivert-uzerine-lacivert cikiyor. */
-  --color-dolgu-uzeri: #ffffff;
+  --color-dolgu-uzeri: #fffdf8;
 
-  /* Camgobegi iki role ayrildi (docs/marka/tokens.css'teki kurala uygun):
-       vurgu       → METIN ve LINK. #00728c beyazda 5.6:1, AA gecer.
-                     Eski #0389b0 yalnizca 4.08:1 idi, gecmiyordu.
+  /* Sinyal turuncusu iki role ayrıldı:
+       vurgu       → METİN, link ve koyu dolgu. Açık zeminde AA kontrastlı.
        vurgu-dolgu → BUTON ZEMINI, ikon, kenarlik. Metin icin kullanma. */
-  --color-vurgu: #00728c;
-  --color-vurgu-guclu: #005a70;
-  --color-vurgu-dolgu: #00b4d8;
-  --color-vurgu-zemin: #ecfdff;
+  --color-vurgu: #963219;
+  --color-vurgu-guclu: #782b1c;
+  --color-vurgu-dolgu: #f7763f;
+  --color-vurgu-zemin: #fff4eb;
 
   /* Yalnizca DOLGU rolu: header, footer, buton zemini. Metin icin
      `metin-marka` kullan. */
-  --color-marka: #0f2740;
-  --color-marka-hover: #2b4a6d;
+  --color-marka: #32202b;
+  --color-marka-hover: #5f3247;
 
   /* Mevcut rotalarda brand-navy / brand-cyan kullanimda; kirmamak icin kopru. */
-  --color-brand-navy: #0f2740;
-  --color-brand-cyan: #00728c;
+  --color-brand-navy: #32202b;
+  --color-brand-cyan: #963219;
+}
+
+/* Tailwind arbitrary var() siniflari Turbopack'ta bozuk CSS escape uretebildigi
+   icin tasarim token'larini adlandirilmis yardimci siniflerle kullaniyoruz. */
+@utility rounded-token-girdi {
+  border-radius: var(--radius-girdi);
+}
+
+@utility rounded-token-kart {
+  border-radius: var(--radius-kart);
+}
+
+@utility rounded-token-panel {
+  border-radius: var(--radius-panel);
+}
+
+@utility shadow-token-hafif {
+  box-shadow: var(--shadow-hafif);
+}
+
+@utility shadow-token-kart {
+  box-shadow: var(--shadow-kart);
+}
+
+@utility shadow-token-yukselti {
+  box-shadow: var(--shadow-yukselti);
+}
+
+@utility shadow-token-katman {
+  box-shadow: var(--shadow-katman);
 }
 
 :root {
@@ -172,45 +202,30 @@
   --sure-cekmece: 400ms;
 }
 
-/* --- Koyu tema -------------------------------------------------------------
-   @theme'in :root'a bastigi ayni degiskenler eziliyor. Camgobegi bir basamak
-   aciliyor: 600 tonu koyu zeminde WCAG AA kontrastini tutturmuyor.
-
-   DIKKAT — bu blok bilerek `prefers-color-scheme` DEGIL. Isletim sistemi
-   koyu temadayken otomatik devreye girdiginde /bom gibi hala ciplak
-   `gray-*` sinifiyla yazilmis sayfalar acik ada olarak kaliyor ve arayuz
-   yarisi koyu yarisi acik gorunuyor. Tum ekranlar token'lara tasinip tek tek
-   test edilene kadar opt-in: <html data-theme="dark">.
-
-   `marka` ve `dolgu-uzeri` BILEREK ezilmiyor: ikisi de dolgu rolu, altindaki
-   zemin zaten her iki temada koyu lacivert. Ezilirlerse lacivert uzerine
-   lacivert metin cikiyor. */
-:root[data-theme="dark"] {
-    --color-yuzey: #071523;
-    --color-yuzey-kart: #0c1f34;
-    --color-yuzey-gomulu: #0a1a2b;
-    --color-yuzey-ters: #f1f5f9;
-
-    --color-kenar: #1c344c;
-    --color-kenar-guclu: #27496b;
-
-    --color-metin: #f1f5f9;
-    --color-metin-ikincil: #94a3b8;
-    --color-metin-ucuncul: #64748b;
-    --color-metin-ters: #071523;
-
-    /* Koyu zeminde marka renkli baslik: laciverdin acik basamagi. */
-    --color-metin-marka: #9bbad4;
-
-    --color-vurgu: #38c9e6;
-    --color-vurgu-guclu: #7bdcf0;
-    --color-vurgu-dolgu: #00b4d8;
-    --color-vurgu-zemin: #063143;
-
-    --color-brand-navy: #0c1f34;
-    --color-brand-cyan: #38c9e6;
+@keyframes marka-giris {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
+.marka-giris {
+  animation: marka-giris 220ms var(--ease-cikis) both;
+}
+
+@keyframes sayfalama-dolum {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.sayfalama-dolum {
+  animation: sayfalama-dolum var(--sayfalama-suresi) linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sayfalama-dolum {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
 
 /* ===========================================================================
    Temel katman
@@ -224,9 +239,14 @@
 
   body {
     background-color: var(--color-yuzey);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgb(247 118 63 / 0.055), transparent 24rem),
+      radial-gradient(circle at 88% 20%, rgb(50 32 43 / 0.045), transparent 28rem);
+    background-attachment: fixed;
     color: var(--color-metin);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   /* Odak halkası her zaman görünür: klavye kullanıcısı nerede olduğunu
@@ -246,6 +266,8 @@
   }
 
   h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.035em;
     text-wrap: balance;
   }
 

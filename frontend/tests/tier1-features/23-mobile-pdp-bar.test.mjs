@@ -1,14 +1,15 @@
 import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { MOCK_PRODUCTS } from "../test-helpers.mjs";
 
 describe("Feature 23: Sticky Mobile PDP Action Bar", () => {
-  it("Test 23.1: Sticky bottom action bar layout classes target mobile viewports (< 768px)", () => {
-    const stickyBarClasses = "fixed bottom-0 inset-x-0 bg-yuzey-kart border-t border-kenar p-3 z-40 md:hidden flex items-center justify-between";
+  const pdpSource = readFileSync(new URL("../../src/app/urunler/[id]/pdp-bilesenleri.tsx", import.meta.url), "utf8");
 
-    assert.ok(stickyBarClasses.includes("fixed bottom-0"));
-    assert.ok(stickyBarClasses.includes("md:hidden"));
-    assert.ok(stickyBarClasses.includes("bg-yuzey-kart"));
+  it("Test 23.1: Sticky bottom action bar layout classes target mobile viewports (< 768px)", () => {
+    assert.match(pdpSource, /fixed inset-x-0 bottom-0/);
+    assert.match(pdpSource, /md:hidden/);
+    assert.match(pdpSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
   });
 
   it("Test 23.2: Compact summary renders truncated MPN, live unit price, and packaging tag", () => {
@@ -17,13 +18,15 @@ describe("Feature 23: Sticky Mobile PDP Action Bar", () => {
 
     const mobileSummary = {
       mpn: product.ureticiUrunKodu,
-      price: `$ ${defaultPkg.fiyatlar[0].birimFiyat.toFixed(2)}`,
+      price: new Intl.NumberFormat("tr-TR", { style: "currency", currency: defaultPkg.fiyatlar[0].paraBirimi }).format(defaultPkg.fiyatlar[0].birimFiyat),
       packaging: defaultPkg.ad,
     };
 
     assert.equal(mobileSummary.mpn, "STM32F407VGT6");
-    assert.equal(mobileSummary.price, "$ 12.50");
+    assert.match(mobileSummary.price, /12,50/);
     assert.equal(mobileSummary.packaging, "Tepsi (Tray)");
+    assert.match(pdpSource, /paraBicimle\(unitPrice/);
+    assert.doesNotMatch(pdpSource, /\$ \{unitPrice\.toFixed/);
   });
 
   it("Test 23.3: Mobile quantity decrement / increment buttons respect packaging step multiplier", () => {

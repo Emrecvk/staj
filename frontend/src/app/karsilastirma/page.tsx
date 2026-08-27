@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { getCategories, getProduct } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -9,7 +10,7 @@ import type { ComparisonItem } from "@/lib/stores/comparison-store";
 import { ArrowLeftRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Ürün Karşılaştırma | Çevik Elektronik",
+  title: "Ürün Karşılaştırma",
   description: "Elektronik komponentleri yan yana parametrik olarak karşılaştırın, teknik farkları ve fiyat kademelerini anında inceleyin.",
 };
 
@@ -18,6 +19,8 @@ interface PageProps {
 }
 
 export default async function KarsilastirmaPage({ searchParams }: PageProps) {
+  const cookieStore = await cookies();
+  const seciliParaBirimi = cookieStore.get("site_para_birimi")?.value === "USD" ? "USD" : "TRY";
   const [{ ids }, categories] = await Promise.all([
     searchParams,
     getCategories(),
@@ -30,7 +33,7 @@ export default async function KarsilastirmaPage({ searchParams }: PageProps) {
     const fetched = await Promise.all(
       rawIds.slice(0, 4).map(async (idStr) => {
         try {
-          const detail = await getProduct(idStr);
+          const detail = await getProduct(idStr, seciliParaBirimi);
           if (!detail) return null;
           const item: ComparisonItem = {
             id: detail.id,
@@ -39,7 +42,7 @@ export default async function KarsilastirmaPage({ searchParams }: PageProps) {
             anaGorselUrl: detail.anaGorselUrl,
             baslangicFiyati: detail.ambalajlarVeFiyatlar?.[0]?.fiyatlar?.[0]?.birimFiyat || 0,
             paraBirimi: detail.ambalajlarVeFiyatlar?.[0]?.fiyatlar?.[0]?.paraBirimi || "USD",
-            toplamStok: detail.depoStoklari?.reduce((acc, d) => acc + d.stokMiktari, 0) || 0,
+            toplamStok: detail.ambalajlarVeFiyatlar.reduce((acc, a) => acc + a.stokMiktari, 0),
             kategoriId: detail.kategoriId,
             ozellikler: detail.ozellikler,
           };
@@ -54,7 +57,7 @@ export default async function KarsilastirmaPage({ searchParams }: PageProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-yuzey">
-      <SiteHeader categories={categories} />
+      <SiteHeader categories={categories} initialCurrency={seciliParaBirimi} />
 
       <main className="flex-grow container mx-auto px-4 py-8" id="icerik">
         {/* Breadcrumb & Başlık */}

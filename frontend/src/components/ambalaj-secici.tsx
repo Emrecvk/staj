@@ -85,7 +85,7 @@ export function AmbalajSecici({ ambalajlar }: { ambalajlar: PackagingOption[] })
                 type="button"
                 onClick={() => ambalajDegistir(a.ambalajId)}
                 aria-pressed={a.ambalajId === seciliId}
-                className={`rounded-[var(--radius-girdi)] border px-3 py-2 text-sm font-medium
+                className={`rounded-token-girdi border px-3 py-2 text-sm font-medium
                             transition-[background-color,border-color,color,transform]
                             duration-[var(--sure-basma)] ease-[var(--ease-cikis)] active:scale-[0.97]
                             ${a.ambalajId === seciliId
@@ -104,7 +104,7 @@ export function AmbalajSecici({ ambalajlar }: { ambalajlar: PackagingOption[] })
 
       {/* Sipariş kuralları. Kısaltmalar ipucuyla açıklanıyor: satın almacı
           MOQ ile MPQ farkını bilmek zorunda değil. */}
-      <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-[var(--radius-kart)] border border-kenar bg-kenar">
+      <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-token-kart border border-kenar bg-kenar">
         {[
           { kod: "MOQ", deger: secili.moq, aciklama: "Minimum sipariş" },
           { kod: "MPQ", deger: secili.mpq, aciklama: "Ambalaj içi adet" },
@@ -128,7 +128,7 @@ export function AmbalajSecici({ ambalajlar }: { ambalajlar: PackagingOption[] })
           <StokRozeti miktar={secili.stokMiktari} gelecekStok={secili.gelecekStokMiktari} />
         </div>
 
-        <div className="overflow-hidden rounded-[var(--radius-kart)] border border-kenar">
+        <div className="overflow-hidden rounded-token-kart border border-kenar">
           <table className="w-full text-sm">
             <thead className="bg-yuzey-gomulu text-left text-xs text-metin-ucuncul">
               <tr>
@@ -188,7 +188,7 @@ export function AmbalajSecici({ ambalajlar }: { ambalajlar: PackagingOption[] })
         )}
       </div>
 
-      <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-gomulu p-4">
+      <div className="rounded-token-kart border border-kenar bg-yuzey-gomulu p-4">
         <label htmlFor="miktar-girdisi" className="mb-1.5 block text-sm font-medium text-metin">
           Miktar
         </label>
@@ -204,7 +204,7 @@ export function AmbalajSecici({ ambalajlar }: { ambalajlar: PackagingOption[] })
             onChange={(olay) => setMiktar(parseInt(olay.target.value, 10) || 0)}
             aria-invalid={!dogrulama.gecerliMi}
             aria-describedby="miktar-yardim"
-            className={`w-36 rounded-[var(--radius-girdi)] border bg-yuzey-kart px-3 py-2
+            className={`w-36 rounded-token-girdi border bg-yuzey-kart px-3 py-2
                         text-center font-mono tabular-nums text-metin
                         ${dogrulama.gecerliMi ? "border-kenar" : "border-uyari-500"}`}
           />

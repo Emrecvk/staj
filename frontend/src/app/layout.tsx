@@ -1,12 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Instrument_Sans, Space_Grotesk } from "next/font/google";
 import type { ReactNode } from "react";
 import { Bildirimler } from "@/components/ui/bildirim";
 import { KarsilastirmaDock } from "@/components/karsilastirma/karsilastirma-dock";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -28,14 +42,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="tr" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="tr"
+      data-theme="light"
+      className={`${instrumentSans.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+    >
       <body>
         {/* Klavye kullanıcısı her sayfada gezinmeyi atlayabilsin. Odaklanana
             kadar görünmez, odaklanınca sol üstte belirir. */}
         <a
           href="#icerik"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]
-                     focus:rounded-[var(--radius-girdi)] focus:bg-marka focus:px-4 focus:py-2
+                     focus:rounded-token-girdi focus:bg-marka focus:px-4 focus:py-2
                      focus:text-sm focus:font-semibold focus:text-dolgu-uzeri"
         >
           İçeriğe geç

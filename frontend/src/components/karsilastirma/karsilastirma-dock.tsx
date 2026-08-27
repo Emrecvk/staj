@@ -29,7 +29,7 @@ export function KarsilastirmaDock() {
       aria-label="Ürün Karşılaştırma Çubuğu"
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-5"
     >
-      <div className="rounded-[var(--radius-kart)] border-2 border-kenar-guclu bg-yuzey-kart p-3 sm:p-4 shadow-2xl backdrop-blur-md">
+      <div className="rounded-token-kart border-2 border-kenar-guclu bg-yuzey-kart p-3 sm:p-4 shadow-2xl backdrop-blur-md">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Sol Başlık & Bilgi */}
           <div className="flex items-center justify-between sm:justify-start gap-3 border-b sm:border-b-0 border-kenar pb-2 sm:pb-0">
@@ -130,7 +130,7 @@ export function KarsilastirmaDock() {
 
             <Link
               href={compareUrl}
-              className={`flex items-center justify-center gap-1.5 rounded-[var(--radius-girdi)] px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
+              className={`flex items-center justify-center gap-1.5 rounded-token-girdi px-4 py-2 text-xs font-bold transition-colors shadow-sm ${
                 items.length >= 2
                   ? "bg-vurgu hover:bg-vurgu-guclu text-white"
                   : "bg-yuzey-gomulu text-metin-ikincil hover:bg-kenar"

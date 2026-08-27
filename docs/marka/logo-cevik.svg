@@ -1,28 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Cevik Elektronik">
-  <title>Cevik Elektronik</title>
-  <!-- Govde: entegre devre (IC) silueti -->
-  <rect x="12" y="12" width="96" height="96" rx="22" fill="#0F2740"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Çevik Elektronik">
+  <title>Çevik Elektronik</title>
+  <!-- Kırpılmış gövde: endüstriyel komponent ve yön işareti -->
+  <path d="M24 8h64l24 24v62l-18 18H24L8 96V24Z" fill="#32202B"/>
+  <path d="M88 8l24 24H88Z" fill="#F7763F"/>
 
-  <!-- Bacaklar (pin) -->
-  <g fill="#00B4D8">
-    <rect x="2"   y="34" width="11" height="8" rx="3"/>
-    <rect x="2"   y="54" width="11" height="8" rx="3"/>
-    <rect x="2"   y="74" width="11" height="8" rx="3"/>
-    <rect x="107" y="34" width="11" height="8" rx="3"/>
-    <rect x="107" y="54" width="11" height="8" rx="3"/>
-    <rect x="107" y="74" width="11" height="8" rx="3"/>
-  </g>
-
-  <!-- C halkasi -->
-  <path d="M 76.71 38.08 A 26 26 0 1 0 76.71 77.92"
-        fill="none" stroke="#00B4D8" stroke-width="11" stroke-linecap="round"/>
-
-  <!-- Cedilla (C'nin kuyrugu) -->
-  <path d="M 62 83 C 62 92 63 97 55 99"
-        fill="none" stroke="#00B4D8" stroke-width="7" stroke-linecap="round"/>
-
-  <!-- Cevikligi anlatan ileri chevron -->
-  <path d="M 57 48 L 68 58 L 57 68"
-        fill="none" stroke="#00B4D8" stroke-width="7.5"
+  <!-- Açık Ç formu: bağlantı ve süreklilik -->
+  <path d="M82 37H55c-15 0-25 9-25 23s10 23 25 23h27"
+        fill="none" stroke="#FFFDF8" stroke-width="10" stroke-linecap="round"/>
+  <path d="M58 83v11l-8 8" fill="none" stroke="#FFFDF8" stroke-width="7"
         stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- İleri hareket ve devre uçları -->
+  <path d="M62 50l13 10-13 10" fill="none" stroke="#F7763F" stroke-width="7"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="84" cy="37" r="5" fill="#F7763F"/>
+  <circle cx="84" cy="83" r="5" fill="#F7763F"/>
+  <circle cx="48" cy="104" r="4" fill="#F7763F"/>
 </svg>

@@ -14,11 +14,16 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import type { Category } from "@/lib/api";
-import { getMergedCategories } from "./category-data";
+import {
+  getProducts,
+  type Category,
+  type UreticiOzet,
+} from "@/lib/api";
 
 interface SmartSearchProps {
   categories?: Category[];
+  urunSayilari?: Record<number, number>;
+  ureticiler?: UreticiOzet[];
   className?: string;
 }
 
@@ -34,16 +39,11 @@ interface ProductSuggestion {
 }
 
 interface CategorySuggestion {
+  id: number;
   ad: string;
   path: string;
   url: string;
-  id?: number;
-}
-
-interface BrandSuggestion {
-  ad: string;
-  logoMetin?: string;
-  yetkiliDistribitor: boolean;
+  urunSayisi?: number;
 }
 
 const POPULER_ONERILER = [
@@ -57,10 +57,11 @@ const POPULER_ONERILER = [
 
 export function SmartSearchCombobox({
   categories = [],
+  urunSayilari = {},
+  ureticiler = [],
   className = "",
 }: SmartSearchProps) {
   const router = useRouter();
-  const menuData = getMergedCategories(categories);
   const [query, setQuery] = useState("");
   const selectedCategory = "tum";
   const [isOpen, setIsOpen] = useState(false);
@@ -72,7 +73,7 @@ export function SmartSearchCombobox({
   const [categorySuggestions, setCategorySuggestions] = useState<
     CategorySuggestion[]
   >([]);
-  const [brandSuggestions, setBrandSuggestions] = useState<BrandSuggestion[]>(
+  const [brandSuggestions, setBrandSuggestions] = useState<UreticiOzet[]>(
     [],
   );
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -80,6 +81,7 @@ export function SmartSearchCombobox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const searchRequestRef = useRef(0);
 
   // Global shortcut Ctrl+K or / to focus search input
   useEffect(() => {
@@ -91,12 +93,21 @@ export function SmartSearchCombobox({
           document.activeElement?.tagName !== "TEXTAREA")
       ) {
         e.preventDefault();
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        if (inputRef.current?.offsetParent !== null) {
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      searchRequestRef.current += 1;
+    };
   }, []);
 
   // Close popup on outside click
@@ -115,8 +126,9 @@ export function SmartSearchCombobox({
 
   // Perform multi-group search
   const performSearch = async (searchTerm: string, catId: string) => {
-    const trimmed = searchTerm.trim().toLowerCase();
-    if (trimmed.length < 2) {
+    const aramaMetni = searchTerm.trim();
+    const normalized = aramaMetni.toLocaleLowerCase("tr-TR");
+    if (normalized.length < 2) {
       setProductSuggestions([]);
       setCategorySuggestions([]);
       setBrandSuggestions([]);
@@ -125,90 +137,64 @@ export function SmartSearchCombobox({
       return;
     }
 
+    const istekNo = ++searchRequestRef.current;
     setIsLoading(true);
 
-    // 1. Local fast search in taxonomy (Categories & Brands)
+    // Kategori ve üretici önerileri yalnızca gerçek API verisinden türetilir.
     const matchingCats: CategorySuggestion[] = [];
-    const matchingBrands: BrandSuggestion[] = [];
-    const seenBrands = new Set<string>();
+    const kategorileriTara = (dallar: Category[], ustYol: string[] = []) => {
+      for (const kategori of dallar) {
+        if (catId !== "tum" && ustYol.length === 0 && String(kategori.id) !== catId) {
+          continue;
+        }
 
-    menuData.forEach((mainCat) => {
-      if (catId !== "tum" && String(mainCat.id) !== catId) {
-        return;
-      }
-
-      // Check main category
-      if (mainCat.ad.toLowerCase().includes(trimmed)) {
-        matchingCats.push({
-          ad: mainCat.ad,
-          path: mainCat.ad,
-          url: `/urunler?kategoriId=${mainCat.id}`,
-          id: mainCat.id,
-        });
-      }
-
-      // Check subcategories & leaves
-      mainCat.altKategoriler.forEach((sub) => {
-        if (sub.ad.toLowerCase().includes(trimmed)) {
+        const yol = [...ustYol, kategori.ad];
+        if (kategori.ad.toLocaleLowerCase("tr-TR").includes(normalized)) {
           matchingCats.push({
-            ad: sub.ad,
-            path: `${mainCat.ad} > ${sub.ad}`,
-            url: `/urunler?aramaMetni=${encodeURIComponent(sub.ad)}`,
+            id: kategori.id,
+            ad: kategori.ad,
+            path: yol.join(" > "),
+            url: `/urunler?kategoriId=${kategori.id}`,
+            urunSayisi: urunSayilari[kategori.id],
           });
         }
-        sub.yapraklar.forEach((leaf) => {
-          if (leaf.ad.toLowerCase().includes(trimmed)) {
-            matchingCats.push({
-              ad: leaf.ad,
-              path: `${mainCat.ad} > ${sub.ad} > ${leaf.ad}`,
-              url: `/urunler?aramaMetni=${encodeURIComponent(leaf.ad)}`,
-            });
-          }
-        });
-      });
+        kategorileriTara(kategori.altKategoriler ?? [], yol);
+      }
+    };
 
-      // Check brands
-      mainCat.oneCikanMarkalar.forEach((brand) => {
-        if (
-          brand.ad.toLowerCase().includes(trimmed) &&
-          !seenBrands.has(brand.ad.toLowerCase())
-        ) {
-          seenBrands.add(brand.ad.toLowerCase());
-          matchingBrands.push(brand);
-        }
-      });
-    });
+    kategorileriTara(categories);
+    const matchingBrands = ureticiler.filter((uretici) =>
+      uretici.ad.toLocaleLowerCase("tr-TR").includes(normalized),
+    );
 
     setCategorySuggestions(matchingCats.slice(0, 4));
     setBrandSuggestions(matchingBrands.slice(0, 4));
 
-    // 2. Fetch products from API
+    // Ürün önerileri de ortak, tipli API istemcisinden gelir.
     try {
-      const params = new URLSearchParams({
-        aramaMetni: trimmed,
-        sayfaBoyutu: "5",
-      });
-      if (catId !== "tum") {
-        params.set("kategoriId", catId);
-      }
+      const siteParaBirimi = document.cookie
+        .split("; ")
+        .find((satir) => satir.startsWith("site_para_birimi="))
+        ?.split("=")[1];
 
-      const res = await fetch(`/api/Katalog/urunler?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        const records: ProductSuggestion[] = data.urunler?.kayitlar || [];
-        setProductSuggestions(records);
-        setTotalCount(data.urunler?.toplamKayit || records.length);
-      } else {
-        // API hata donduyse sahte urun UYDURULMAZ; bos sonuc gosterilir.
-        setProductSuggestions([]);
-        setTotalCount(0);
-      }
+      const data = await getProducts({
+        aramaMetni,
+        sayfaNo: 1,
+        sayfaBoyutu: 5,
+        kategoriId: catId === "tum" ? undefined : catId,
+        paraBirimi: siteParaBirimi === "USD" ? "USD" : "TRY",
+      });
+      if (istekNo !== searchRequestRef.current) return;
+
+      const records: ProductSuggestion[] = data.urunler.kayitlar;
+      setProductSuggestions(records);
+      setTotalCount(data.urunler.toplamKayit);
     } catch {
-      // Fallback graceful
+      if (istekNo !== searchRequestRef.current) return;
       setProductSuggestions([]);
       setTotalCount(0);
     } finally {
-      setIsLoading(false);
+      if (istekNo === searchRequestRef.current) setIsLoading(false);
     }
   };
 
@@ -223,6 +209,7 @@ export function SmartSearchCombobox({
         performSearch(value, selectedCategory);
       }, 250);
     } else {
+      searchRequestRef.current += 1;
       setIsOpen(false);
       setProductSuggestions([]);
       setCategorySuggestions([]);
@@ -255,6 +242,7 @@ export function SmartSearchCombobox({
   };
 
   const clearSearch = () => {
+    searchRequestRef.current += 1;
     setQuery("");
     setIsOpen(false);
     setProductSuggestions([]);
@@ -272,7 +260,7 @@ export function SmartSearchCombobox({
     <div ref={containerRef} className={`relative w-full ${className}`}>
       <form
         onSubmit={handleFormSubmit}
-        className="flex items-center w-full bg-yuzey-kart border-2 border-marka rounded-[var(--radius-girdi)] overflow-hidden shadow-[var(--shadow-hafif)] focus-within:border-vurgu focus-within:ring-2 focus-within:ring-vurgu/20 transition-all"
+        className="flex items-center w-full bg-yuzey-kart border-2 border-marka rounded-token-girdi overflow-hidden shadow-token-hafif focus-within:border-vurgu focus-within:ring-2 focus-within:ring-vurgu/20 transition-all"
         role="search"
       >
         {/* Search Input Field */}
@@ -316,7 +304,7 @@ export function SmartSearchCombobox({
         <button
           type="submit"
           aria-label="Ara"
-          className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#2375c4] text-white transition-colors hover:bg-[#24547E]"
+          className="flex h-14 w-14 shrink-0 items-center justify-center bg-vurgu text-white transition-colors hover:bg-vurgu-guclu"
         >
           <Search size={17} />
         </button>
@@ -326,7 +314,7 @@ export function SmartSearchCombobox({
       {isOpen && (
         <div
           id="search-suggestions-list"
-          className="absolute left-0 right-0 top-full mt-1.5 bg-yuzey-kart border border-kenar rounded-[var(--radius-kart)] shadow-[var(--shadow-katman)] z-50 overflow-hidden text-metin animate-in fade-in slide-in-from-top-2 duration-150"
+          className="absolute left-0 right-0 top-full mt-1.5 bg-yuzey-kart border border-kenar rounded-token-kart shadow-token-katman z-50 overflow-hidden text-metin animate-in fade-in slide-in-from-top-2 duration-150"
           role="listbox"
         >
           {isLoading && !hasSuggestions ? (
@@ -345,7 +333,7 @@ export function SmartSearchCombobox({
                       Komponentler
                     </span>
                     <span className="text-[11px] font-mono text-metin-ikincil">
-                      {totalCount} sonuç bulundu
+                      {totalCount.toLocaleString("tr-TR")} sonuç bulundu
                     </span>
                   </div>
                   <div className="space-y-1">
@@ -354,7 +342,7 @@ export function SmartSearchCombobox({
                         key={prod.id}
                         href={`/urunler/${prod.id}`}
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center justify-between p-2 rounded-[var(--radius-girdi)] hover:bg-vurgu-zemin hover:border-vurgu border border-transparent transition-all group"
+                        className="flex items-center justify-between p-2 rounded-token-girdi hover:bg-vurgu-zemin hover:border-vurgu border border-transparent transition-all group"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-10 h-10 rounded border border-kenar bg-yuzey-gomulu flex items-center justify-center shrink-0 overflow-hidden p-1">
@@ -414,18 +402,25 @@ export function SmartSearchCombobox({
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {categorySuggestions.map((cat, idx) => (
+                    {categorySuggestions.map((cat) => (
                       <Link
-                        key={idx}
+                        key={cat.id}
                         href={cat.url}
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center justify-between px-3 py-2 rounded-[var(--radius-girdi)] bg-yuzey-kart border border-kenar hover:border-vurgu hover:text-vurgu text-xs font-medium transition-all group"
+                        className="flex items-center justify-between px-3 py-2 rounded-token-girdi bg-yuzey-kart border border-kenar hover:border-vurgu hover:text-vurgu text-xs font-medium transition-all group"
                       >
                         <span className="truncate">{cat.path}</span>
-                        <ArrowRight
-                          size={12}
-                          className="shrink-0 text-metin-ucuncul group-hover:text-vurgu group-hover:translate-x-0.5 transition-transform"
-                        />
+                        <span className="ml-2 flex shrink-0 items-center gap-2">
+                          {typeof cat.urunSayisi === "number" && (
+                            <span className="font-mono text-[10px] tabular-nums text-metin-ucuncul">
+                              {cat.urunSayisi.toLocaleString("tr-TR")}
+                            </span>
+                          )}
+                          <ArrowRight
+                            size={12}
+                            className="text-metin-ucuncul transition-transform group-hover:translate-x-0.5 group-hover:text-vurgu"
+                          />
+                        </span>
                       </Link>
                     ))}
                   </div>
@@ -442,15 +437,15 @@ export function SmartSearchCombobox({
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 px-2">
-                    {brandSuggestions.map((brand, idx) => (
+                    {brandSuggestions.map((brand) => (
                       <Link
-                        key={idx}
-                        href={`/urunler?aramaMetni=${encodeURIComponent(brand.ad)}`}
+                        key={brand.id}
+                        href={`/urunler?ureticiId=${brand.id}`}
                         onClick={() => setIsOpen(false)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-kenar bg-yuzey-kart hover:border-vurgu hover:bg-vurgu-zemin text-xs font-semibold text-metin-marka transition-all"
                       >
                         <span>{brand.ad}</span>
-                        {brand.yetkiliDistribitor && (
+                        {brand.yetkiliDistributorMu && (
                           <span className="text-[9px] bg-cyan-100 text-vurgu-guclu px-1.5 py-0.2 rounded-full uppercase font-bold">
                             Yetkili
                           </span>
@@ -501,7 +496,7 @@ export function SmartSearchCombobox({
                       key={item}
                       type="button"
                       onClick={() => selectPopularTerm(item)}
-                      className="px-2.5 py-1 rounded-[var(--radius-girdi)] bg-yuzey-gomulu hover:bg-vurgu-zemin hover:text-vurgu text-xs font-mono border border-kenar transition-colors"
+                      className="px-2.5 py-1 rounded-token-girdi bg-yuzey-gomulu hover:bg-vurgu-zemin hover:text-vurgu text-xs font-mono border border-kenar transition-colors"
                     >
                       {item}
                     </button>

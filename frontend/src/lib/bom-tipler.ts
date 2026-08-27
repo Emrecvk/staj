@@ -22,6 +22,7 @@ export type SecilenEslesme = {
   ambalajId: number;
   ambalajAdi: string;
   moq: number;
+  mpq: number;
   katlamaMiktari: number;
   stokMiktari: number;
   birimFiyat: number | null;
@@ -35,6 +36,8 @@ export type SecilenEslesme = {
 export type BomDurumu = "eslesti" | "coklu" | "eslesmedi" | "ambalajsiz";
 
 export type BomEslesmeSonucu = BomSatiri & {
+  listeId: number;
+  kalemId: number;
   durum: BomDurumu;
   adaylar: EslesmeAdayi[];
   secilen: SecilenEslesme | null;

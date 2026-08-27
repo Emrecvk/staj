@@ -3,7 +3,8 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
-const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { yetkiliIstek } from "./oturum";
+import { ERISIM_CEREZI, MISAFIR_SEPET_CEREZI, YENILEME_CEREZI } from "./oturum-ortak";
 
 export type EylemSonucu = { success: boolean; message?: string };
 
@@ -13,14 +14,17 @@ export type EylemSonucu = { success: boolean; message?: string };
  */
 async function basliklar(oturumluOlmali: boolean): Promise<Record<string, string> | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  const token = cookieStore.get(ERISIM_CEREZI)?.value;
+  const yenilemeTokeni = cookieStore.get(YENILEME_CEREZI)?.value;
 
-  if (oturumluOlmali && !token) return null;
+  // Erişim token'ı dolmuş olsa da refresh token duruyorsa oturum sürüyordur;
+  // `yetkiliIstek` 401'de tazeleyip isteği tekrarlar.
+  if (oturumluOlmali && !token && !yenilemeTokeni) return null;
 
+  // `Authorization` başlığını `yetkiliIstek` koyar.
   const h: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) h["Authorization"] = `Bearer ${token}`;
 
-  const oturumAnahtari = cookieStore.get("guestCartId")?.value;
+  const oturumAnahtari = cookieStore.get(MISAFIR_SEPET_CEREZI)?.value;
   if (!token && oturumAnahtari) h["X-Session-Key"] = oturumAnahtari;
 
   return h;
@@ -35,7 +39,7 @@ async function istek(
   if (!h) return { success: false, message: "Bu işlem için giriş yapmalısınız." };
 
   try {
-    const yanit = await fetch(`${API_URL}${yol}`, { ...secenekler, headers: h, cache: "no-store" });
+    const yanit = await yetkiliIstek(yol, { ...secenekler, headers: h });
 
     if (yanit.status === 401) return { success: false, message: "Oturumunuz sona ermiş." };
     if (!yanit.ok) return { success: false, message: `İşlem başarısız (HTTP ${yanit.status}).` };
@@ -71,9 +75,10 @@ export async function favorileriGetir() {
   if (!h) return [];
 
   try {
-    const yanit = await fetch(`${API_URL}/Profil/favoriler`, { headers: h, cache: "no-store" });
+    const yanit = await yetkiliIstek("/Profil/favoriler", { headers: h });
     if (!yanit.ok) return [];
-    return await yanit.json();
+    const sonuc = await yanit.json() as { kayitlar?: unknown[] };
+    return sonuc.kayitlar ?? [];
   } catch {
     return [];
   }
@@ -99,7 +104,7 @@ export async function karsilastirmaListesiGetir() {
   const h = await basliklar(false);
 
   try {
-    const yanit = await fetch(`${API_URL}/Katalog/karsilastirma`, { headers: h!, cache: "no-store" });
+    const yanit = await yetkiliIstek("/Katalog/karsilastirma", { headers: h! });
     if (!yanit.ok) return null;
     return await yanit.json();
   } catch {

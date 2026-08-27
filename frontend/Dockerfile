@@ -13,10 +13,13 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Setting environment variables during build is required for Next.js if they affect static generation
-# We will just pass NEXT_PUBLIC_API_URL or it will fallback to http://localhost:5000/api
+# Next.js rewrite hedefini derleme anında manifest dosyasına yazar. Container
+# içindeki /api vekilinin localhost yerine API servisine gitmesi için dahili
+# adres de builder aşamasında bulunmalıdır.
 ARG NEXT_PUBLIC_API_URL
+ARG API_INTERNAL_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV API_INTERNAL_URL=$API_INTERNAL_URL
 
 RUN npm run build
 

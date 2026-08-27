@@ -30,6 +30,7 @@ export interface MiniCartItem {
   id: number;
   mpn: string;
   baslik: string;
+  anaGorselUrl: string | null;
   miktar: number;
   birimFiyat: number;
   toplamFiyat: number;
@@ -69,6 +70,7 @@ export function useHeaderCart() {
             id: item.kalemId,
             mpn: item.urunKodu || `PARCA-${item.urunId}`,
             baslik: item.kisaAciklama || "Komponent",
+            anaGorselUrl: item.anaGorselUrl,
             miktar: item.miktar,
             birimFiyat: item.birimFiyat,
             toplamFiyat: item.toplamFiyat,

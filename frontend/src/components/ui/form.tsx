@@ -17,7 +17,7 @@ import { AlertCircle } from "lucide-react";
    --------------------------------------------------------------------------- */
 
 const girdiTemel = [
-  "w-full rounded-[var(--radius-girdi)] border bg-yuzey-kart px-3 text-sm text-metin",
+  "w-full rounded-token-girdi border bg-yuzey-kart px-3 text-sm text-metin",
   "placeholder:text-metin-ucuncul",
   "transition-[border-color,box-shadow] duration-[var(--sure-ipucu)] ease-[var(--ease-cikis)]",
   "disabled:cursor-not-allowed disabled:bg-yuzey-gomulu disabled:text-metin-ucuncul",

@@ -3,17 +3,18 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import type {
-  Adres, EylemSonucu, Favori, FirmaBilgisi, SiparisOzeti, TeklifDetayi, TeklifOzeti,
+  Adres, EylemSonucu, Favori, FirmaBilgisi, MusteriUrunKodu, SiparisOzeti, TeklifDetayi, TeklifOzeti,
 } from "./profil-tipler";
+import { yetkiliIstek } from "./oturum";
+import { ERISIM_CEREZI, YENILEME_CEREZI } from "./oturum-ortak";
 
-const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-
-async function yetkiBasliklari() {
+/**
+ * Oturum var mı? (Erişim token'ı süresi dolmuşsa bile refresh token duruyorsa
+ * oturum sürüyor sayılır — `yetkiliIstek` 401'de token'ı tazeler.)
+ */
+async function oturumVarMi() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
-  if (!token) return null;
-
-  return { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+  return Boolean(cookieStore.get(ERISIM_CEREZI)?.value || cookieStore.get(YENILEME_CEREZI)?.value);
 }
 
 async function hataMesaji(yanit: Response): Promise<string> {
@@ -31,12 +32,12 @@ async function hataMesaji(yanit: Response): Promise<string> {
 }
 
 async function istek<T>(yol: string, secenekler: RequestInit = {}): Promise<EylemSonucu<T>> {
-  const basliklar = await yetkiBasliklari();
-  if (!basliklar) return { success: false, message: "Giriş yapmalısınız." };
+  if (!(await oturumVarMi())) return { success: false, message: "Giriş yapmalısınız." };
 
   try {
-    const yanit = await fetch(`${API_URL}${yol}`, {
-      ...secenekler, headers: basliklar, cache: "no-store",
+    const yanit = await yetkiliIstek(yol, {
+      ...secenekler,
+      headers: { "Content-Type": "application/json", ...secenekler.headers },
     });
 
     if (!yanit.ok) return { success: false, message: await hataMesaji(yanit) };
@@ -54,6 +55,14 @@ async function istek<T>(yol: string, secenekler: RequestInit = {}): Promise<Eyle
 async function liste<T>(yol: string): Promise<T[]> {
   const sonuc = await istek<T[]>(yol);
   return sonuc.success ? sonuc.data : [];
+}
+
+type SayfaliSonuc<T> = { kayitlar: T[] };
+
+async function sayfaliListe<T>(yol: string): Promise<T[]> {
+  const ayirici = yol.includes("?") ? "&" : "?";
+  const sonuc = await istek<SayfaliSonuc<T>>(`${yol}${ayirici}sayfaNo=1&sayfaBoyutu=100`);
+  return sonuc.success ? sonuc.data.kayitlar : [];
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +92,37 @@ export async function adresSil(id: number) {
 // ---------------------------------------------------------------------------
 
 export async function favorileriGetirTam() {
-  return liste<Favori>("/Profil/favoriler");
+  return sayfaliListe<Favori>("/Profil/favoriler");
+}
+
+// ---------------------------------------------------------------------------
+// Müşteri ürün kodları
+// ---------------------------------------------------------------------------
+
+export async function musteriUrunKodlariniGetir() {
+  return sayfaliListe<MusteriUrunKodu>("/Profil/musteri-urun-kodlari");
+}
+
+export async function musteriUrunKoduEkle(dto: { urunId: number; musteriKodu: string; aciklama?: string }) {
+  const sonuc = await istek<MusteriUrunKodu>("/Profil/musteri-urun-kodlari", {
+    method: "POST", body: JSON.stringify(dto),
+  });
+  if (sonuc.success) revalidatePath("/profil/urun-kodlarim");
+  return sonuc;
+}
+
+export async function musteriUrunKoduGuncelle(id: number, dto: { musteriKodu: string; aciklama?: string }) {
+  const sonuc = await istek<void>(`/Profil/musteri-urun-kodlari/${id}`, {
+    method: "PUT", body: JSON.stringify(dto),
+  });
+  if (sonuc.success) revalidatePath("/profil/urun-kodlarim");
+  return sonuc;
+}
+
+export async function musteriUrunKoduSil(id: number) {
+  const sonuc = await istek<void>(`/Profil/musteri-urun-kodlari/${id}`, { method: "DELETE" });
+  if (sonuc.success) revalidatePath("/profil/urun-kodlarim");
+  return sonuc;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,7 +139,7 @@ export async function firmaBilgisiGetir(): Promise<FirmaBilgisi | null> {
 // ---------------------------------------------------------------------------
 
 export async function siparisleriGetir() {
-  return liste<SiparisOzeti>("/Siparis");
+  return sayfaliListe<SiparisOzeti>("/Siparis");
 }
 
 export async function siparisDetayGetir(id: number) {
@@ -113,7 +152,7 @@ export async function siparisDetayGetir(id: number) {
 // ---------------------------------------------------------------------------
 
 export async function teklifleriGetir() {
-  return liste<TeklifOzeti>("/Teklif");
+  return sayfaliListe<TeklifOzeti>("/Teklif");
 }
 
 export async function teklifDetayGetir(id: number) {

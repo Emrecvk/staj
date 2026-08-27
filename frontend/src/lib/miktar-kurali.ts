@@ -127,10 +127,12 @@ export function hesaplaB2BFiyat(
   };
 }
 
-export function paraBicimle(deger: number, paraBirimi: string, basamak = 4): string {
+export function paraBicimle(deger: number, paraBirimi: string, basamak?: number): string {
+  const ondalik = basamak ?? (paraBirimi === "TRY" ? 2 : 4);
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",
     currency: paraBirimi,
-    maximumFractionDigits: basamak,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: ondalik,
   }).format(deger);
 }

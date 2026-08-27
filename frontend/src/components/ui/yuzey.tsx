@@ -23,9 +23,9 @@ export function Kart({
 }) {
   return (
     <div
-      className={`rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart shadow-[var(--shadow-kart)]
+      className={`rounded-token-kart border border-kenar bg-yuzey-kart shadow-token-kart
         ${tiklanabilir
-          ? "transition-[box-shadow,border-color] duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-kenar-guclu hover:shadow-[var(--shadow-yukselti)]"
+          ? "transition-[box-shadow,border-color] duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-kenar-guclu hover:shadow-token-yukselti"
           : ""
         } ${className}`}
     >
@@ -68,7 +68,7 @@ export function Iskelet({ className = "" }: { className?: string }) {
   return (
     <div
       aria-hidden
-      className={`animate-pulse rounded-[var(--radius-girdi)] bg-yuzey-gomulu ${className}`}
+      className={`animate-pulse rounded-token-girdi bg-yuzey-gomulu ${className}`}
     />
   );
 }

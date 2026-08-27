@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { resetPasswordRequest, type ActionResponse } from "@/lib/auth";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -13,12 +14,12 @@ export default function PasswordResetPage() {
   const [state, formAction, isPending] = useActionState(resetPasswordRequest, initialState);
 
   return (
-    <div className="min-h-screen bg-yuzey flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <main id="icerik" className="min-h-screen bg-yuzey flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center mb-6">
-          <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
+          <Image src="/logo-cevik-yatay.svg" alt="Çevik Elektronik" width={180} height={48} priority className="h-12 w-auto" />
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">Şifrenizi mi unuttunuz?</h2>
+        <h1 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">Şifrenizi mi unuttunuz?</h1>
         <p className="mt-2 text-center text-sm text-metin-ikincil">
           E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.
         </p>
@@ -85,6 +86,6 @@ export default function PasswordResetPage() {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

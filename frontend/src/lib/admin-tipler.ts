@@ -37,6 +37,14 @@ export type YonetimSonuc<T = void> =
   | { success: true; data: T }
   | { success: false; message: string };
 
+export type AdminSayfa<T> = {
+  sayfaNo: number;
+  sayfaBoyutu: number;
+  toplamKayit: number;
+  toplamSayfa: number;
+  kayitlar: T[];
+};
+
 export type AdminUrun = {
   id: number;
   ureticiUrunKodu: string;
@@ -49,12 +57,7 @@ export type AdminUrun = {
   toplamStok: number;
 };
 
-export type AdminUrunSayfasi = {
-  toplam: number;
-  sayfa: number;
-  boyut: number;
-  kayitlar: AdminUrun[];
-};
+export type AdminUrunSayfasi = AdminSayfa<AdminUrun>;
 
 export type AdminKategori = {
   id: number; ustKategoriId: number | null; adTr: string; adEn: string;

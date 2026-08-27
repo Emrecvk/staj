@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { bomEslestir, bomAdaySec } from "@/lib/bom-actions";
 import { bomMetniniAyristir, type BomEslesmeSonucu, type EslesmeAdayi } from "@/lib/bom-tipler";
 import { addToCart } from "@/lib/cart-actions";
+import { notifyCartUpdated } from "@/lib/stores/header-state";
 
 const KABUL_EDILEN = ".csv,.tsv,.txt";
 
@@ -58,7 +59,11 @@ export default function BomPage() {
 
   const adaySec = (indeks: number, aday: EslesmeAdayi) => {
     basla(async () => {
-      const secilen = await bomAdaySec(aday.id, sonuclar[indeks].miktar);
+      const secilen = await bomAdaySec(
+        sonuclar[indeks].listeId,
+        sonuclar[indeks].kalemId,
+        aday.id,
+      );
       setSonuclar(mevcut => mevcut.map((s, i) =>
         i === indeks
           ? { ...s, secilen, durum: secilen ? "eslesti" : "ambalajsiz" }
@@ -83,6 +88,7 @@ export default function BomPage() {
     }
 
     setSepeteEkleniyor(false);
+    if (hatalar.length < eslesenler.length) notifyCartUpdated();
 
     // Kısmi başarıda kullanıcıyı sessizce sepete atmak yerine ne olduğunu göster.
     if (hatalar.length > 0) { setSepetHatalari(hatalar); return; }
@@ -249,7 +255,7 @@ export default function BomPage() {
                                 {s.secilen.gecerliMiktar} adet
                                 {s.secilen.miktarDuzeltildiMi && (
                                   <span className="ml-1 text-amber-700">
-                                    (MOQ {s.secilen.moq}
+                                    (MOQ {s.secilen.moq}, MPQ {s.secilen.mpq}
                                     {s.secilen.katlamaMiktari > 1 && `, ${s.secilen.katlamaMiktari}'li katlama`}
                                     {" "}nedeniyle yukarı yuvarlandı)
                                   </span>

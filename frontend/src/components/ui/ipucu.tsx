@@ -69,8 +69,8 @@ export function Ipucu({
           id={id}
           role="tooltip"
           className={`pointer-events-none absolute left-1/2 z-40 w-max max-w-xs -translate-x-1/2
-                      rounded-[var(--radius-girdi)] bg-navy-900 px-2.5 py-1.5
-                      text-xs font-medium leading-relaxed text-white shadow-[var(--shadow-katman)]
+                      rounded-token-girdi bg-navy-900 px-2.5 py-1.5
+                      text-xs font-medium leading-relaxed text-white shadow-token-katman
                       ${yon === "ust" ? "bottom-full mb-1.5" : "top-full mt-1.5"}`}
           style={{
             // Komşu ipuçları animasyonsuz; ilk ipucu yumuşak açılır.

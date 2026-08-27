@@ -2,140 +2,49 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { AlertCircle, ArrowRight, Building2, Loader2, UserRound } from "lucide-react";
 import { registerCompany, type ActionResponse } from "@/lib/auth";
-import { AlertCircle, Building2, User } from "lucide-react";
+import { KimlikSayfaKabugu, kimlikGirdiSinifi } from "@/components/auth/kimlik-sayfa-kabugu";
 
-const initialState: ActionResponse = {
-  success: false,
-};
+const initialState: ActionResponse = { success: false };
+
+function Alan({ id, etiket, type = "text", autoComplete, inputMode, placeholder, hata, required = true }: { id: string; etiket: string; type?: string; autoComplete?: string; inputMode?: "numeric"; placeholder?: string; hata?: string[]; required?: boolean }) {
+  return <div><label htmlFor={id} className="text-sm font-semibold text-metin">{etiket}</label><input id={id} name={id} type={type} autoComplete={autoComplete} inputMode={inputMode} required={required} placeholder={placeholder} aria-invalid={Boolean(hata)} className={`${kimlikGirdiSinifi} ${hata ? "border-hata-500 focus:border-hata-500 focus:ring-hata-50" : ""}`} />{hata && <p className="mt-2 text-sm text-hata-600">{hata[0]}</p>}</div>;
+}
 
 export default function CompanyRegisterPage() {
   const [state, formAction, isPending] = useActionState(registerCompany, initialState);
 
   return (
-    <div className="min-h-screen bg-yuzey flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-2xl">
-        <Link href="/" className="flex justify-center mb-6">
-          <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">Firma Başvurusu</h2>
-        <p className="mt-2 text-center text-sm text-metin-ikincil max-w-xl mx-auto">
-          Kurumsal hesabınızla kademeli fiyat avantajlarından yararlanabilir, tekliflerinizi yönetebilir ve özel müşteri temsilcinizle çalışabilirsiniz.
-        </p>
+    <KimlikSayfaKabugu baslik="Firma hesabı başvurusu">
+      <div className="mb-7 grid grid-cols-2 rounded-token-girdi bg-yuzey-gomulu p-1" aria-label="Hesap türü seçimi">
+        <Link href="/kayit" className="flex min-h-11 items-center justify-center gap-2 rounded-token-girdi px-3 text-sm font-semibold text-metin-ikincil transition-colors hover:bg-yuzey-kart hover:text-metin-marka"><UserRound size={17} /> Bireysel</Link>
+        <Link href="/kayit/kurumsal" aria-current="page" className="flex min-h-11 items-center justify-center gap-2 rounded-token-girdi bg-yuzey-kart px-3 text-sm font-bold text-metin-marka shadow-token-hafif"><Building2 size={17} /> Firma hesabı</Link>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
-        <div className="bg-yuzey-kart py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-kenar">
-          
-          <div className="flex bg-yuzey-gomulu p-1 rounded-lg mb-8">
-            <Link href="/kayit" className="flex-1 text-center py-2 text-sm font-medium text-metin-ucuncul hover:text-metin-marka flex items-center justify-center gap-2">
-              <User size={16} /> Bireysel Kayıt
-            </Link>
-            <Link href="/kayit/kurumsal" className="flex-1 text-center py-2 text-sm font-bold bg-yuzey-kart rounded-md shadow-sm text-metin-marka flex items-center justify-center gap-2">
-              <Building2 size={16} /> Firma Başvurusu
-            </Link>
-          </div>
+      {!state.success && state.message && <div role="alert" className="mb-5 flex items-start gap-3 rounded-token-girdi border border-hata-500/30 bg-hata-50 p-4 text-sm text-hata-600"><AlertCircle size={19} className="mt-0.5 shrink-0" /><span>{state.message}</span></div>}
 
-          {!state.success && state.message && (
-            <div className="mb-4 p-4 rounded-md bg-hata-50 border border-hata-500 flex items-start gap-3 text-hata-600 text-sm">
-              <AlertCircle size={18} className="mt-0.5 shrink-0" />
-              <span>{state.message}</span>
-            </div>
-          )}
+      <form action={formAction} className="space-y-7">
+        <fieldset className="space-y-5">
+          <legend className="mb-4 w-full border-b border-kenar pb-3 text-sm font-bold uppercase tracking-[0.08em] text-metin-marka">Yetkili kişi</legend>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2"><Alan id="ad" etiket="Ad" autoComplete="given-name" placeholder="Adınız" hata={state.errors?.ad} /><Alan id="soyad" etiket="Soyad" autoComplete="family-name" placeholder="Soyadınız" hata={state.errors?.soyad} /></div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2"><Alan id="eposta" etiket="İş e-posta adresi" type="email" autoComplete="email" placeholder="ad@firma.com" hata={state.errors?.eposta} /><Alan id="telefon" etiket="Telefon numarası" type="tel" autoComplete="tel" placeholder="05xx xxx xx xx" hata={state.errors?.telefon} /></div>
+          <Alan id="sifre" etiket="Şifre" type="password" autoComplete="new-password" placeholder="En az 8 karakter" hata={state.errors?.sifre} />
+        </fieldset>
 
-          <form action={formAction} className="space-y-6">
-            <div className="border-b border-kenar pb-6">
-              <h3 className="text-lg font-medium text-metin mb-4">Yetkili Kişi Bilgileri</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="ad" className="block text-sm font-medium text-metin-ikincil">Ad</label>
-                  <input id="ad" name="ad" type="text" required className="mt-1 block w-full px-3 py-2 border border-kenar-guclu rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm" />
-                </div>
-                <div>
-                  <label htmlFor="soyad" className="block text-sm font-medium text-metin-ikincil">Soyad</label>
-                  <input id="soyad" name="soyad" type="text" required className="mt-1 block w-full px-3 py-2 border border-kenar-guclu rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm" />
-                </div>
-                <div>
-                  <label htmlFor="eposta" className="block text-sm font-medium text-metin-ikincil">İş E-posta Adresi</label>
-                  <input id="eposta" name="eposta" type="email" required className="mt-1 block w-full px-3 py-2 border border-kenar-guclu rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm" />
-                </div>
-                <div>
-                  <label htmlFor="telefon" className="block text-sm font-medium text-metin-ikincil">Telefon Numarası</label>
-                  <input id="telefon" name="telefon" type="tel" required className="mt-1 block w-full px-3 py-2 border border-kenar-guclu rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm" />
-                </div>
-                <div className="md:col-span-2">
-                  <label htmlFor="sifre" className="block text-sm font-medium text-metin-ikincil">Şifre</label>
-                  <input id="sifre" name="sifre" type="password" required className="mt-1 block w-full px-3 py-2 border border-kenar-guclu rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm" />
-                </div>
-              </div>
-            </div>
+        <fieldset className="space-y-5">
+          <legend className="mb-4 w-full border-b border-kenar pb-3 text-sm font-bold uppercase tracking-[0.08em] text-metin-marka">Firma bilgileri</legend>
+          <Alan id="firmaAdi" etiket="Firma unvanı" autoComplete="organization" placeholder="Firma ticari unvanı" hata={state.errors?.firmaAdi} />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2"><Alan id="vergiDairesi" etiket="Vergi dairesi" hata={state.errors?.vergiDairesi} /><Alan id="vergiNo" etiket="Vergi numarası / TCKN" inputMode="numeric" hata={state.errors?.vergiNo} /></div>
+          <Alan id="kepAdresi" etiket="KEP adresi (isteğe bağlı)" type="email" placeholder="firma@hs01.kep.tr" required={false} />
+        </fieldset>
 
-            <div className="pt-2">
-              <h3 className="text-lg font-medium text-metin mb-4">Firma Bilgileri</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label htmlFor="firmaAdi" className="block text-sm font-medium text-metin-ikincil">Firma Ünvanı</label>
-                  <input
-                    id="firmaAdi" name="firmaAdi" type="text" required
-                    className={`mt-1 block w-full px-3 py-2 border ${state.errors?.firmaAdi ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-                  />
-                  {state.errors?.firmaAdi && <p className="mt-1 text-xs text-hata-600">{state.errors.firmaAdi[0]}</p>}
-                </div>
-                
-                <div>
-                  <label htmlFor="vergiDairesi" className="block text-sm font-medium text-metin-ikincil">Vergi Dairesi</label>
-                  <input
-                    id="vergiDairesi" name="vergiDairesi" type="text" required
-                    className={`mt-1 block w-full px-3 py-2 border ${state.errors?.vergiDairesi ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-                  />
-                  {state.errors?.vergiDairesi && <p className="mt-1 text-xs text-hata-600">{state.errors.vergiDairesi[0]}</p>}
-                </div>
-                
-                <div>
-                  <label htmlFor="vergiNo" className="block text-sm font-medium text-metin-ikincil">Vergi Numarası / TCKN</label>
-                  <input
-                    id="vergiNo" name="vergiNo" type="text" required
-                    className={`mt-1 block w-full px-3 py-2 border ${state.errors?.vergiNo ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-                  />
-                  {state.errors?.vergiNo && <p className="mt-1 text-xs text-hata-600">{state.errors.vergiNo[0]}</p>}
-                </div>
+        <label className="flex cursor-pointer items-start gap-3 rounded-token-girdi border border-kenar bg-yuzey-kart p-4 text-sm leading-5 text-metin-ikincil"><input id="sozlesme" name="sozlesme" type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 rounded border-kenar-guclu text-vurgu focus:ring-vurgu" /><span><Link href="/sozlesmeler/ozdisan-elektronik-kvkk-politikasi" className="font-semibold text-vurgu hover:text-vurgu-guclu">KVKK Aydınlatma Metni</Link>&apos;ni okudum ve başvuru koşullarını kabul ediyorum.</span></label>
+        {state.errors?.general && <div role="alert" className="rounded-token-girdi bg-hata-50 p-3 text-sm font-medium text-hata-600">{state.errors.general[0]}</div>}
+        <button type="submit" disabled={isPending} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-token-girdi bg-marka px-5 text-sm font-bold text-dolgu-uzeri shadow-token-hafif transition-[background-color,transform] hover:bg-marka-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{isPending ? <><Loader2 size={18} className="animate-spin" /> Başvuru gönderiliyor</> : <>Firma Başvurusunu Tamamla <ArrowRight size={18} /></>}</button>
+      </form>
 
-                <div className="md:col-span-2">
-                  <label htmlFor="kepAdresi" className="block text-sm font-medium text-metin-ikincil">KEP Adresi (Opsiyonel)</label>
-                  <input id="kepAdresi" name="kepAdresi" type="text" className="mt-1 block w-full px-3 py-2 border border-kenar-guclu rounded-md shadow-sm focus:ring-vurgu focus:border-vurgu sm:text-sm" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
-                <input id="sozlesme" name="sozlesme" type="checkbox" required className="h-4 w-4 text-vurgu focus:ring-vurgu border-kenar-guclu rounded" />
-              </div>
-              <div className="ml-2 text-sm">
-                <label htmlFor="sozlesme" className="text-metin-ucuncul">
-                  <a href="/sozlesmeler/uyelik" className="text-vurgu hover:underline">Üyelik Sözleşmesi</a>&apos;ni ve <a href="/sozlesmeler/kvkk" className="text-vurgu hover:underline">KVKK Aydınlatma Metni</a>&apos;ni okudum, onaylıyorum.
-                </label>
-              </div>
-            </div>
-            
-            {state.errors?.general && (
-              <div className="text-sm text-hata-600 font-medium text-center">
-                {state.errors.general[0]}
-              </div>
-            )}
-
-            <div>
-              <button
-                type="submit"
-                disabled={isPending}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-marka hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-navy disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isPending ? "Başvuru Gönderiliyor..." : "Firma Başvurusunu Tamamla"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+      <p className="mt-7 border-t border-kenar pt-6 text-center text-sm text-metin-ikincil">Zaten hesabınız var mı? <Link href="/giris" className="font-bold text-vurgu hover:text-vurgu-guclu">Giriş yapın</Link></p>
+    </KimlikSayfaKabugu>
   );
 }

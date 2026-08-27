@@ -66,7 +66,7 @@ services:
       - "5000:8080"
     environment:
       # ASP.NET Core yapılandırma anahtarları: bölüm ayracı "__"
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=cevik;Username=cevik;Password=${POSTGRES_PASSWORD:?.env dosyasinda POSTGRES_PASSWORD tanimlayin}"
       ConnectionStrings__Redis: "redis:6379"
       # Jwt:Key en az 32 karakter olmalı — kısa anahtarda uygulama açılışta durur.
@@ -99,6 +99,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000/api}
+        API_INTERNAL_URL: http://api:8080/api
     container_name: cevik-frontend
     restart: unless-stopped
     ports:

@@ -19,6 +19,7 @@ import { UrunGorseli } from "@/components/urun-gorseli";
 import type { ProductSummary, PackagingOption } from "@/lib/api";
 import { paraBicimle } from "@/lib/miktar-kurali";
 import { FavoriButonu } from "@/components/favori-karsilastirma-butonlari";
+import { vitrinUrunGorseliGetir } from "@/lib/vitrin-gorselleri";
 
 type TabId = "yeni" | "coksatan" | "firsat" | "onecikan";
 
@@ -52,9 +53,9 @@ const TABS: TabConfig[] = [
     id: "firsat",
     label: "Fırsat",
     icon: Flame,
-    description: "Yüksek hacimli makara ve tepsi alımlarında özel fiyat avantajlı stoklar.",
+    description: "Uygun birim fiyatlı, stoktan teslim edilebilen ürünler.",
     linkText: "Fırsat Ürünleri",
-    linkHref: "/urunler?kampanyaliMi=true",
+    linkHref: "/urunler?siralama=fiyat_artan&sadeceStoktakiler=true",
   },
   {
     id: "onecikan",
@@ -70,7 +71,12 @@ export function VitrinSekmeleri({ urunGruplari }: { urunGruplari: Record<TabId, 
   const router = useRouter();
   const [addingId, setAddingId] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
-
+  const [secilenNoktalar, setSecilenNoktalar] = useState<Record<TabId, number>>({
+    coksatan: 0,
+    yeni: 0,
+    firsat: 0,
+    onecikan: 0,
+  });
   // Listedeki ozet urunun varsayilan ambalaji (yoksa ilki). Ozet DTO'su
   // ambalaj/fiyat verisini icermeyebilir; o durumda null doner.
   const varsayilanAmbalaj = (p: ProductSummary): PackagingOption | null =>
@@ -117,7 +123,7 @@ export function VitrinSekmeleri({ urunGruplari }: { urunGruplari: Record<TabId, 
       {TABS.map((bolum, bolumIndex) => {
         const urunler = urunGruplari[bolum.id] ?? [];
         const koyuBolum = bolum.id === "firsat";
-        const arkaPlan = koyuBolum ? "bg-[#1A3F63]" : bolumIndex % 2 === 0 ? "bg-yuzey-kart" : "bg-yuzey";
+        const arkaPlan = koyuBolum ? "bg-navy-800" : bolumIndex % 2 === 0 ? "bg-yuzey-kart" : "bg-yuzey";
 
         return (
           <section key={bolum.id} className={`${arkaPlan} py-12 md:py-16`} aria-labelledby={`vitrin-${bolum.id}`}>
@@ -128,9 +134,25 @@ export function VitrinSekmeleri({ urunGruplari }: { urunGruplari: Record<TabId, 
                     {bolum.label} Ürünler
                   </h2>
                 </div>
-                <Link href={bolum.linkHref} className={`inline-flex min-h-11 items-center font-bold transition-colors ${koyuBolum ? "text-cyan-300 hover:text-white" : "text-vurgu hover:text-vurgu-guclu"}`}>
-                  {bolum.linkText}
-                </Link>
+                <div className="flex items-center gap-0" aria-label={`${bolum.label} ürün sayfaları`}>
+                  {[0, 1, 2].map((nokta) => {
+                    const secili = secilenNoktalar[bolum.id] === nokta;
+                    return (
+                      <button
+                        key={nokta}
+                        type="button"
+                        onClick={() => {
+                          setSecilenNoktalar((onceki) => ({ ...onceki, [bolum.id]: nokta }));
+                        }}
+                        aria-label={`${bolum.label} ürün sayfası ${nokta + 1}`}
+                        aria-current={secili ? "true" : undefined}
+                        className="flex h-6 w-6 items-center justify-center rounded-full"
+                      >
+                        <span className={`h-2 w-2 rounded-full transition-colors duration-[var(--sure-acilir)] ${secili ? (koyuBolum ? "bg-cyan-300" : "bg-vurgu") : (koyuBolum ? "bg-white/40 hover:bg-cyan-200/70" : "bg-kenar-guclu hover:bg-vurgu/50")}`} />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {urunler.length === 0 ? (
@@ -140,8 +162,11 @@ export function VitrinSekmeleri({ urunGruplari }: { urunGruplari: Record<TabId, 
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:gap-7 lg:grid-cols-4 xl:gap-8">
-                  {urunler.slice(0, 4).map((product) => {
+                  {urunler
+                    .slice(secilenNoktalar[bolum.id] * 4, secilenNoktalar[bolum.id] * 4 + 4)
+                    .map((product) => {
               const isAdding = addingId === product.id && isPending;
+              const urunGorseli = vitrinUrunGorseliGetir(product);
 
               return (
                 <article
@@ -154,8 +179,13 @@ export function VitrinSekmeleri({ urunGruplari }: { urunGruplari: Record<TabId, 
                   </div>
 
                   {/* Image */}
-                  <Link href={`/urunler/${product.id}`} className="flex h-40 items-center justify-center p-2" aria-hidden="true" tabIndex={-1}>
-                    <UrunGorseli src={product.anaGorselUrl} urunKodu={product.ureticiUrunKodu} className="max-h-full max-w-full" />
+                  <Link href={`/urunler/${product.id}`} className="relative flex h-40 items-center justify-center p-2" aria-hidden="true" tabIndex={-1}>
+                    <UrunGorseli src={urunGorseli.url} urunKodu={product.ureticiUrunKodu} className="max-h-full max-w-full" />
+                    {urunGorseli.url && urunGorseli.temsiliMi && (
+                      <span className="absolute bottom-1 left-1 rounded-full border border-kenar bg-white/90 px-2 py-1 text-[9px] font-semibold text-metin-ucuncul shadow-token-hafif">
+                        Temsili görsel
+                      </span>
+                    )}
                   </Link>
 
                   {/* Info */}
@@ -181,9 +211,9 @@ export function VitrinSekmeleri({ urunGruplari }: { urunGruplari: Record<TabId, 
 
                   {/* Quantity Input */}
                   <div className="mt-4 mx-2 flex h-[38px] items-center justify-between rounded-full bg-white border border-kenar px-1">
-                      <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f0f2f5] text-metin hover:bg-[#e2e6eb] transition-colors">-</button>
+                      <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full bg-notr-100 text-metin transition-colors hover:bg-notr-200">-</button>
                       <span className="text-sm font-bold text-metin">1</span>
-                      <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f0f2f5] text-metin hover:bg-[#e2e6eb] transition-colors">+</button>
+                      <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full bg-notr-100 text-metin transition-colors hover:bg-notr-200">+</button>
                     </div>
 
                   {/* Prices */}
@@ -204,10 +234,10 @@ export function VitrinSekmeleri({ urunGruplari }: { urunGruplari: Record<TabId, 
                     <Link href={`/urunler/${product.id}`} className="rounded-full border border-kenar px-3 py-2 text-[10px] font-bold text-metin hover:bg-yuzey-gomulu flex-1 text-center whitespace-nowrap transition-colors">
                       Fiyatları Gör
                     </Link>
-                    <button type="button" aria-label={`${product.ureticiUrunKodu} ürününü sepete ekle`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#7a9ed4] text-white hover:bg-[#688bc0] transition-colors" onClick={() => handleQuickAdd(product)} disabled={isAdding}>
+                    <button type="button" aria-label={`${product.ureticiUrunKodu} ürününü sepete ekle`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-vurgu text-white transition-colors hover:bg-vurgu-guclu" onClick={() => handleQuickAdd(product)} disabled={isAdding}>
                       {isAdding ? <Loader2 size={13} className="animate-spin" /> : <ShoppingCart size={13} />}
                     </button>
-                    <button type="button" className="rounded-full bg-[#1834b8] px-3 py-2 text-[10px] font-bold text-white hover:bg-[#11288f] flex-1 text-center whitespace-nowrap transition-colors" onClick={() => handleQuickAdd(product)} disabled={isAdding}>
+                    <button type="button" className="flex-1 whitespace-nowrap rounded-full bg-vurgu px-3 py-2 text-center text-[10px] font-bold text-white transition-colors hover:bg-vurgu-guclu" onClick={() => handleQuickAdd(product)} disabled={isAdding}>
                       Hemen Al
                     </button>
                   </div>

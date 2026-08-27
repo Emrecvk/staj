@@ -2,7 +2,8 @@
 
 import { cookies } from "next/headers";
 
-const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { yetkiliIstek } from "./oturum";
+import { ERISIM_CEREZI, YENILEME_CEREZI } from "./oturum-ortak";
 
 export type OdemeYaniti = {
   basarili: boolean;
@@ -22,9 +23,12 @@ export type OdemeYaniti = {
  */
 export async function odemeYap(siparisId: number, odemeJetonu: string, kartSahibi?: string) {
   const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  // Erişim token'ı dolmuş olabilir; refresh token duruyorsa oturum sürüyordur
+  // ve `yetkiliIstek` 401'de token'ı tazeleyip isteği tekrarlar.
+  const oturumVar =
+    cookieStore.get(ERISIM_CEREZI)?.value || cookieStore.get(YENILEME_CEREZI)?.value;
 
-  if (!token) {
+  if (!oturumVar) {
     return {
       basarili: false,
       mesaj: "Ödeme için giriş yapmalısınız.",
@@ -34,14 +38,10 @@ export async function odemeYap(siparisId: number, odemeJetonu: string, kartSahib
   }
 
   try {
-    const yanit = await fetch(`${API_URL}/Odeme/${siparisId}`, {
+    const yanit = await yetkiliIstek(`/Odeme/${siparisId}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ odemeJetonu, kartSahibi }),
-      cache: "no-store",
     });
 
     if (yanit.status === 429) {

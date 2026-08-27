@@ -20,7 +20,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useComparisonStore, type ComparisonItem } from "@/lib/stores/comparison-store";
-import { addToCart } from "@/lib/cart-actions";
+import { addProductToCart } from "@/lib/cart-actions";
+import { notifyCartUpdated } from "@/lib/stores/header-state";
 import { bildir } from "@/components/ui/bildirim";
 import { StokRozeti } from "@/components/ui/rozet";
 
@@ -83,17 +84,18 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
   const handleAddToCart = async (product: ComparisonItem) => {
     setSepeteEkleniyorId(product.id);
     try {
-      // Default packaging id or mock
-      const ambalajId = product.id * 10;
-      const res = await addToCart(ambalajId, 1);
+      // Karşılaştırma listesi ambalaj bilgisi tutmuyor; varsayılan ambalajı
+      // sunucu çözer. Kimliği burada hesaplamak (eski hali: product.id * 10)
+      // gerçek ambalajla ilgisi olmayan bir sayı üretiyordu.
+      const res = await addProductToCart(product.id);
       if (res.success) {
         bildir.basarili(`${product.ureticiUrunKodu} sepete eklendi.`);
+        notifyCartUpdated();
       } else {
-        // Still give feedback
-        bildir.bilgi(`${product.ureticiUrunKodu} sepete eklendi.`);
+        bildir.hata("Sepete eklenemedi", res.message);
       }
     } catch {
-      bildir.bilgi(`${product.ureticiUrunKodu} sepete eklendi.`);
+      bildir.hata("Sepete eklenemedi", "Beklenmeyen bir hata oluştu.");
     } finally {
       setSepeteEkleniyorId(null);
     }
@@ -199,7 +201,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
   // Empty state: less than 2 products
   if (products.length < 2) {
     return (
-      <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-8 sm:p-12 text-center shadow-sm">
+      <div className="rounded-token-kart border border-kenar bg-yuzey-kart p-8 sm:p-12 text-center shadow-sm">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-vurgu-zemin text-vurgu">
           <ArrowLeftRight size={36} />
         </div>
@@ -227,7 +229,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/urunler"
-            className="inline-flex items-center gap-2 bg-vurgu hover:bg-vurgu-guclu text-white font-bold px-6 py-3 rounded-[var(--radius-girdi)] transition-colors shadow-sm text-sm"
+            className="inline-flex items-center gap-2 bg-vurgu hover:bg-vurgu-guclu text-white font-bold px-6 py-3 rounded-token-girdi transition-colors shadow-sm text-sm"
           >
             <Plus size={16} />
             Katalogdan Ürün Ekle
@@ -240,7 +242,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
   return (
     <div className="space-y-6">
       {/* Kontrol Çubuğu */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-token-kart border border-kenar bg-yuzey-kart p-4 shadow-sm">
         <div className="flex items-center gap-4">
           <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-metin select-none">
             <input
@@ -260,7 +262,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-xs font-medium text-metin hover:bg-kenar transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-token-girdi border border-kenar bg-yuzey px-3 py-2 text-xs font-medium text-metin hover:bg-kenar transition-colors"
             title="Yazdır / PDF Olarak Kaydet"
           >
             <Printer size={14} />
@@ -270,7 +272,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
           <button
             type="button"
             onClick={exportToCsv}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-xs font-medium text-metin hover:bg-kenar transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-token-girdi border border-kenar bg-yuzey px-3 py-2 text-xs font-medium text-metin hover:bg-kenar transition-colors"
             title="Excel / CSV Formatında İndir"
           >
             <FileSpreadsheet size={14} />
@@ -280,7 +282,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
           <button
             type="button"
             onClick={() => clear()}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-xs font-medium text-hata-600 hover:bg-hata-50 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-token-girdi border border-kenar bg-yuzey px-3 py-2 text-xs font-medium text-hata-600 hover:bg-hata-50 transition-colors"
             title="Tüm Ürünleri Temizle"
           >
             <Trash2 size={14} />
@@ -290,7 +292,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
       </div>
 
       {/* Karşılaştırma Matris Tablosu */}
-      <div className="overflow-x-auto rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart shadow-sm">
+      <div className="overflow-x-auto rounded-token-kart border border-kenar bg-yuzey-kart shadow-sm">
         <table className="w-full min-w-[760px] border-collapse text-left text-sm" role="table">
           {/* Ürün Başlık Kartları (Sticky / Top Header) */}
           <thead>
@@ -405,7 +407,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
                           type="button"
                           onClick={() => handleAddToCart(product)}
                           disabled={sepeteEkleniyorId === product.id}
-                          className="w-full flex items-center justify-center gap-1.5 rounded-[var(--radius-girdi)] bg-marka hover:bg-marka/90 text-white px-3 py-2 text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
+                          className="w-full flex items-center justify-center gap-1.5 rounded-token-girdi bg-marka hover:bg-marka/90 text-white px-3 py-2 text-xs font-bold transition-colors disabled:opacity-50 shadow-sm"
                         >
                           {sepeteEkleniyorId === product.id ? (
                             <Loader2 size={13} className="animate-spin" />
@@ -417,7 +419,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
 
                         <Link
                           href={`/teklif-iste?urunId=${product.id}`}
-                          className="w-full flex items-center justify-center gap-1.5 rounded-[var(--radius-girdi)] border border-vurgu text-vurgu hover:bg-vurgu-zemin px-3 py-1.5 text-xs font-semibold transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 rounded-token-girdi border border-vurgu text-vurgu hover:bg-vurgu-zemin px-3 py-1.5 text-xs font-semibold transition-colors"
                         >
                           <FileText size={13} />
                           <span>Teklif İste</span>

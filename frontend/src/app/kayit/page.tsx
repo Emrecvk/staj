@@ -2,123 +2,36 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { registerUser, type ActionResponse } from "@/lib/auth";
-import { AlertCircle, Building2, User } from "lucide-react";
+import { KimlikSayfaKabugu, kimlikGirdiSinifi } from "@/components/auth/kimlik-sayfa-kabugu";
 
-const initialState: ActionResponse = {
-  success: false,
-};
+const initialState: ActionResponse = { success: false };
+
+function Alan({ id, etiket, type = "text", autoComplete, placeholder, hata }: { id: string; etiket: string; type?: string; autoComplete?: string; placeholder?: string; hata?: string[] }) {
+  return <div><label htmlFor={id} className="text-sm font-semibold text-metin">{etiket}</label><input id={id} name={id} type={type} autoComplete={autoComplete} required placeholder={placeholder} aria-invalid={Boolean(hata)} className={`${kimlikGirdiSinifi} ${hata ? "border-hata-500 focus:border-hata-500 focus:ring-hata-50" : ""}`} />{hata && <p className="mt-2 text-sm text-hata-600">{hata[0]}</p>}</div>;
+}
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(registerUser, initialState);
 
   return (
-    <div className="min-h-screen bg-yuzey flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link href="/" className="flex justify-center mb-6">
-          <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">Yeni Hesap Oluşturun</h2>
-        <p className="mt-2 text-center text-sm text-metin-ikincil">
-          Zaten hesabınız var mı? <Link href="/giris" className="font-medium text-vurgu hover:text-metin-marka transition-colors">Giriş yapın</Link>
-        </p>
-      </div>
+    <KimlikSayfaKabugu baslik="Hesabınızı oluşturun">
+      {!state.success && state.message && <div role="alert" className="mb-5 flex items-start gap-3 rounded-token-girdi border border-hata-500/30 bg-hata-50 p-4 text-sm text-hata-600"><AlertCircle size={19} className="mt-0.5 shrink-0" /><span>{state.message}</span></div>}
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-yuzey-kart py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-kenar">
-          
-          <div className="flex bg-yuzey-gomulu p-1 rounded-lg mb-8">
-            <Link href="/kayit" className="flex-1 text-center py-2 text-sm font-bold bg-yuzey-kart rounded-md shadow-sm text-metin-marka flex items-center justify-center gap-2">
-              <User size={16} /> Bireysel Kayıt
-            </Link>
-            <Link href="/kayit/kurumsal" className="flex-1 text-center py-2 text-sm font-medium text-metin-ucuncul hover:text-metin-marka flex items-center justify-center gap-2">
-              <Building2 size={16} /> Firma Başvurusu
-            </Link>
-          </div>
+      <form action={formAction} className="space-y-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2"><Alan id="ad" etiket="Ad" autoComplete="given-name" placeholder="Adınız" hata={state.errors?.ad} /><Alan id="soyad" etiket="Soyad" autoComplete="family-name" placeholder="Soyadınız" hata={state.errors?.soyad} /></div>
+        <Alan id="eposta" etiket="E-posta adresi" type="email" autoComplete="email" placeholder="ornek@firma.com" hata={state.errors?.eposta} />
+        <Alan id="telefon" etiket="Telefon numarası" type="tel" autoComplete="tel" placeholder="05xx xxx xx xx" hata={state.errors?.telefon} />
+        <Alan id="sifre" etiket="Şifre" type="password" autoComplete="new-password" placeholder="En az 8 karakter" hata={state.errors?.sifre} />
 
-          {!state.success && state.message && (
-            <div className="mb-4 p-4 rounded-md bg-hata-50 border border-hata-500 flex items-start gap-3 text-hata-600 text-sm">
-              <AlertCircle size={18} className="mt-0.5 shrink-0" />
-              <span>{state.message}</span>
-            </div>
-          )}
+        <label className="flex cursor-pointer items-start gap-3 rounded-token-girdi border border-kenar bg-yuzey-kart p-4 text-sm leading-5 text-metin-ikincil"><input id="sozlesme" name="sozlesme" type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 rounded border-kenar-guclu text-vurgu focus:ring-vurgu" /><span><Link href="/sozlesmeler/ozdisan-elektronik-kvkk-politikasi" className="font-semibold text-vurgu hover:text-vurgu-guclu">KVKK Aydınlatma Metni</Link>&apos;ni okudum ve üyelik koşullarını kabul ediyorum.</span></label>
 
-          <form action={formAction} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="ad" className="block text-sm font-medium text-metin-ikincil">Ad</label>
-                <input
-                  id="ad" name="ad" type="text" required
-                  className={`mt-1 appearance-none block w-full px-3 py-2 border ${state.errors?.ad ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-                />
-                {state.errors?.ad && <p className="mt-1 text-xs text-hata-600">{state.errors.ad[0]}</p>}
-              </div>
-              <div>
-                <label htmlFor="soyad" className="block text-sm font-medium text-metin-ikincil">Soyad</label>
-                <input
-                  id="soyad" name="soyad" type="text" required
-                  className={`mt-1 appearance-none block w-full px-3 py-2 border ${state.errors?.soyad ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-                />
-                {state.errors?.soyad && <p className="mt-1 text-xs text-hata-600">{state.errors.soyad[0]}</p>}
-              </div>
-            </div>
+        {state.errors?.general && <div role="alert" className="rounded-token-girdi bg-hata-50 p-3 text-sm font-medium text-hata-600">{state.errors.general[0]}</div>}
+        <button type="submit" disabled={isPending} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-token-girdi bg-marka px-5 text-sm font-bold text-dolgu-uzeri shadow-token-hafif transition-[background-color,transform] hover:bg-marka-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{isPending ? <><Loader2 size={18} className="animate-spin" /> Hesap oluşturuluyor</> : <>Hesap Oluştur <ArrowRight size={18} /></>}</button>
+      </form>
 
-            <div>
-              <label htmlFor="eposta" className="block text-sm font-medium text-metin-ikincil">E-posta Adresi</label>
-              <input
-                id="eposta" name="eposta" type="email" autoComplete="email" required
-                className={`mt-1 appearance-none block w-full px-3 py-2 border ${state.errors?.eposta ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-              />
-              {state.errors?.eposta && <p className="mt-1 text-xs text-hata-600">{state.errors.eposta[0]}</p>}
-            </div>
-            
-            <div>
-              <label htmlFor="telefon" className="block text-sm font-medium text-metin-ikincil">Telefon Numarası</label>
-              <input
-                id="telefon" name="telefon" type="tel" required
-                className={`mt-1 appearance-none block w-full px-3 py-2 border ${state.errors?.telefon ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-              />
-              {state.errors?.telefon && <p className="mt-1 text-xs text-hata-600">{state.errors.telefon[0]}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="sifre" className="block text-sm font-medium text-metin-ikincil">Şifre</label>
-              <input
-                id="sifre" name="sifre" type="password" required
-                className={`mt-1 appearance-none block w-full px-3 py-2 border ${state.errors?.sifre ? 'border-hata-500' : 'border-kenar-guclu'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-vurgu focus:border-vurgu sm:text-sm`}
-              />
-              {state.errors?.sifre && <p className="mt-1 text-xs text-hata-600">{state.errors.sifre[0]}</p>}
-            </div>
-            
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
-                <input id="sozlesme" name="sozlesme" type="checkbox" required className="h-4 w-4 text-vurgu focus:ring-vurgu border-kenar-guclu rounded" />
-              </div>
-              <div className="ml-2 text-sm">
-                <label htmlFor="sozlesme" className="text-metin-ucuncul">
-                  <a href="/sozlesmeler/uyelik" className="text-vurgu hover:underline">Üyelik Sözleşmesi</a>&apos;ni ve <a href="/sozlesmeler/kvkk" className="text-vurgu hover:underline">KVKK Aydınlatma Metni</a>&apos;ni okudum, onaylıyorum.
-                </label>
-              </div>
-            </div>
-            
-            {state.errors?.general && (
-              <div className="text-sm text-hata-600 font-medium text-center">
-                {state.errors.general[0]}
-              </div>
-            )}
-
-            <div>
-              <button
-                type="submit"
-                disabled={isPending}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-vurgu hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-vurgu disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isPending ? "Kaydediliyor..." : "Hesap Oluştur"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+      <p className="mt-7 border-t border-kenar pt-6 text-center text-sm text-metin-ikincil">Zaten hesabınız var mı? <Link href="/giris" className="font-bold text-vurgu hover:text-vurgu-guclu">Giriş yapın</Link></p>
+    </KimlikSayfaKabugu>
   );
 }

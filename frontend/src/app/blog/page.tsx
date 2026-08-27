@@ -46,7 +46,7 @@ export default async function BlogPage() {
           </header>
 
           {yazilar.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-[var(--radius-panel)] border border-dashed border-kenar py-20 text-center">
+            <div className="flex flex-col items-center justify-center rounded-token-panel border border-dashed border-kenar py-20 text-center">
               <Newspaper size={40} strokeWidth={1.5} className="mb-3 text-metin-ucuncul" />
               <p className="text-sm font-semibold text-metin">Henüz yayınlanmış içerik yok</p>
               <p className="mt-1 text-xs text-metin-ucuncul">Yakında teknik makaleler burada olacak.</p>
@@ -59,7 +59,7 @@ export default async function BlogPage() {
                   <Link
                     key={yazi.id}
                     href={`/blog/${yazi.slug}`}
-                    className="group flex flex-col overflow-hidden rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:shadow-[var(--shadow-yukselti)]"
+                    className="group flex flex-col overflow-hidden rounded-token-kart border border-kenar bg-yuzey-kart transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:shadow-token-yukselti"
                   >
                     <div className="relative flex aspect-[16/9] items-center justify-center overflow-hidden bg-yuzey-gomulu">
                       {yazi.kapakGorselUrl ? (
