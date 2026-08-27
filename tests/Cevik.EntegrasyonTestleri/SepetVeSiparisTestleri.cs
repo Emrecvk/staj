@@ -41,6 +41,47 @@ public class SepetVeSiparisTestleri
     // Sepet kuralları
     // -----------------------------------------------------------------------
 
+    /// <summary>
+    /// GET yan etkisiz olmalı.
+    ///
+    /// Önceki sürüm okuma yolunda da "bul VEYA OLUŞTUR" çağırıyordu:
+    /// <c>X-Session-Key</c> göndermeyen her anonim <c>GET /api/Sepet</c>
+    /// kalıcı bir Sepetler satırı bırakıyordu. Oran sınırı da olmadığı için
+    /// bu, sınırsız tablo büyümesiydi; frontend çağrıyı atlayarak sorunu
+    /// maskeliyordu.
+    /// </summary>
+    [Fact]
+    public async Task AnonimSepetOkuma_VeritabanindaSatirYaratmaz()
+    {
+        var oncekiSayi = await _fabrika.Veritabaniyla(db => db.Sepetler.CountAsync());
+
+        for (var i = 0; i < 5; i++)
+        {
+            var yanit = await _istemci.GetAsync("/api/Sepet");
+            yanit.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        var sonrakiSayi = await _fabrika.Veritabaniyla(db => db.Sepetler.CountAsync());
+
+        sonrakiSayi.Should().Be(oncekiSayi,
+            "oturum anahtarsız GET /api/Sepet hiçbir satır yazmamalı");
+    }
+
+    [Fact]
+    public async Task OlmayanOturumAnahtariyla_SepetOkuma_BosSepetDoner()
+    {
+        using var istek = new HttpRequestMessage(HttpMethod.Get, "/api/Sepet");
+        istek.Headers.Add("X-Session-Key", Guid.NewGuid().ToString("N"));
+
+        var yanit = await _istemci.SendAsync(istek);
+        yanit.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var sepet = await yanit.Content.ReadFromJsonAsync<SepetDto>(JsonAyarlari);
+        sepet.Should().NotBeNull();
+        sepet!.Kalemler.Should().BeEmpty();
+        sepet.GenelToplam.Should().Be(0);
+    }
+
     [Fact]
     public async Task MisafirSepetineEkleme_Calisir()
     {
@@ -58,12 +99,44 @@ public class SepetVeSiparisTestleri
     [Fact]
     public async Task MoqAltiMiktar_422Doner()
     {
-        // MOQ'su 1'den büyük bir ambalaj bul (ör. Tape & Reel).
-        var ambalaj = await _fabrika.Veritabaniyla(db => db.UrunAmbalajlari
-            .Where(a => a.Moq > 100 && a.StokMiktari > 0)
-            .OrderBy(a => a.Id)
-            .Select(a => new AmbalajBilgisi(a.Id, a.Moq, a.KatlamaMiktari, a.StokMiktari))
-            .FirstAsync());
+        // MOQ'su yüksek bir ambalajı test KENDİSİ kurar.
+        //
+        // Önceki sürüm katalogda "Moq > 100 ve stoklu" bir ambalaj arıyordu;
+        // güncel katalogda böyle bir kayıt YOK (12.000 ambalajın 10.244'ünde
+        // MOQ 1, en yükseği 100) ve test "Sequence contains no elements" ile
+        // düşüyordu. Kuralın kendisi seed verisine bağlı olmamalı.
+        var ambalaj = await _fabrika.Veritabaniyla(async db =>
+        {
+            var kaynak = await db.UrunAmbalajlari
+                .Where(a => a.StokMiktari >= 5000)
+                .OrderBy(a => a.Id)
+                .FirstAsync();
+
+            var yeni = new Cevik.Alan.Fiyatlama.UrunAmbalaji
+            {
+                UrunId = kaynak.UrunId,
+                Ad = "MOQ testi ambalajı",
+                AmbalajTipi = Cevik.Alan.Ortak.AmbalajTipi.TapeReel,
+                Moq = 500,
+                Mpq = 500,
+                KatlamaMiktari = 500,
+                StokMiktari = 5000,
+                VarsayilanMi = false
+            };
+            db.UrunAmbalajlari.Add(yeni);
+            await db.SaveChangesAsync();
+
+            db.FiyatKademeleri.Add(new Cevik.Alan.Fiyatlama.FiyatKademesi
+            {
+                UrunAmbalajId = yeni.Id,
+                MinMiktar = 1,
+                BirimFiyat = 0.5m,
+                ParaBirimi = "USD"
+            });
+            await db.SaveChangesAsync();
+
+            return new AmbalajBilgisi(yeni.Id, yeni.Moq, yeni.KatlamaMiktari, yeni.StokMiktari);
+        });
 
         var yanit = await _istemci.SendAsync(SepetIstegi(
             Guid.NewGuid().ToString("N"), ambalaj.Id, 1));

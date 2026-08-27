@@ -16,18 +16,18 @@ public class SiparisServisi : ISiparisServisi
     private readonly CevikDbContext _context;
     private readonly ISepetServisi _sepetServisi;
     private readonly IDovizKuruServisi _dovizKuruServisi;
-    private readonly TicariAyarlar _ticari;
+    private readonly SiparisKurucu _kurucu;
 
     public SiparisServisi(
         CevikDbContext context,
         ISepetServisi sepetServisi,
         IDovizKuruServisi dovizKuruServisi,
-        IOptions<TicariAyarlar> ticari)
+        SiparisKurucu kurucu)
     {
         _context = context;
         _sepetServisi = sepetServisi;
         _dovizKuruServisi = dovizKuruServisi;
-        _ticari = ticari.Value;
+        _kurucu = kurucu;
     }
 
     public async Task<SiparisDetayDto?> SiparisOlusturAsync(long kullaniciId, string? oturumAnahtari, SiparisOlusturDto dto)
@@ -50,69 +50,40 @@ public class SiparisServisi : ISiparisServisi
 
         // Sipariş anındaki kuru sabitliyoruz: kur yarın değişse bile bu siparişin
         // TL karşılığı değişmemeli.
-        var kur = await _dovizKuruServisi.KurGetirAsync(sepetDto.ParaBirimi, _ticari.AnaParaBirimi);
+        var kur = await _dovizKuruServisi.KurGetirAsync(sepetDto.ParaBirimi, _kurucu.Ticari.AnaParaBirimi);
 
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var siparis = new SiparisVarligi
             {
-                SiparisNo = await SiparisNoUretAsync(),
+                SiparisNo = await _kurucu.SiparisNoUretAsync(),
                 KullaniciId = kullaniciId,
                 FirmaId = kullanici.FirmaId,
                 Durum = SiparisDurumu.Olusturuldu,
                 ParaBirimi = sepetDto.ParaBirimi,
                 Kur = kur,
                 MusteriNotu = dto.MusteriNotu,
-                FaturaAdresiJson = AdresSnapshotAl(faturaAdresi),
-                TeslimatAdresiJson = AdresSnapshotAl(teslimatAdresi)
+                FaturaAdresiJson = SiparisKurucu.AdresSnapshotAl(faturaAdresi),
+                TeslimatAdresiJson = SiparisKurucu.AdresSnapshotAl(teslimatAdresi)
             };
 
             decimal araToplam = 0;
+            decimal indirimTutari = 0;
 
             foreach (var kalem in sepetDto.Kalemler)
             {
-                var ambalaj = await _context.UrunAmbalajlari
-                    .Include(a => a.Urun)
-                    .FirstOrDefaultAsync(a => a.Id == kalem.UrunAmbalajId)
-                    ?? throw new KeyNotFoundException($"Ürün ambalajı bulunamadı (Id: {kalem.UrunAmbalajId}).");
+                // Doğrulama + stok düşümü + snapshot tek yerde: SiparisKurucu.
+                // Teklif dönüşümü de aynı metodu çağırır, iki yol ayrışamaz.
+                var siparisKalemi = await _kurucu.KalemKurAsync(
+                    kalem.UrunAmbalajId, kalem.Miktar, kalem.BirimFiyat);
 
-                // MOQ / katlama kuralı: sepete eklerken kontrol ediliyor ama
-                // ambalaj kuralları o günden sonra değişmiş olabilir.
-                var miktarKontrol = SiparisMiktarKurali.Dogrula(kalem.Miktar, ambalaj);
-                if (!miktarKontrol.Gecerli)
-                    throw new IsKuraliIhlaliException(
-                        $"{ambalaj.Urun.UreticiUrunKodu}: {miktarKontrol.Hata} " +
-                        $"(önerilen miktar: {miktarKontrol.OnerilenMiktar})");
-
-                if (ambalaj.StokMiktari < kalem.Miktar)
-                    throw new IsKuraliIhlaliException(
-                        $"Stok yetersiz. Ürün: {ambalaj.Urun.UreticiUrunKodu}, " +
-                        $"istenen: {kalem.Miktar}, mevcut: {ambalaj.StokMiktari}");
-
-                ambalaj.StokMiktari -= kalem.Miktar;
-
-                siparis.Kalemler.Add(new SiparisKalemi
-                {
-                    UrunId = ambalaj.UrunId,
-                    UrunAmbalajId = ambalaj.Id,
-                    // Snapshot: ürün 6 ay sonra yeniden adlandırılsa bile fatura bozulmasın.
-                    UrunKoduSnapshot = ambalaj.Urun.UreticiUrunKodu,
-                    UrunAdiSnapshot = ambalaj.Urun.KisaAciklama,
-                    AmbalajAdiSnapshot = ambalaj.Ad,
-                    KdvOrani = _ticari.KdvOrani,
-                    Miktar = kalem.Miktar,
-                    BirimFiyat = kalem.BirimFiyat,
-                    SatirToplami = kalem.ToplamFiyat
-                });
-
-                araToplam += kalem.ToplamFiyat;
+                siparis.Kalemler.Add(siparisKalemi);
+                araToplam += kalem.ListeBirimFiyati * kalem.Miktar;
+                indirimTutari += kalem.IndirimTutari;
             }
 
-            siparis.AraToplam = araToplam;
-            siparis.KdvTutari = Yuvarla(araToplam * (_ticari.KdvOrani / 100m));
-            siparis.KargoUcreti = KargoUcretiHesapla(araToplam, kur);
-            siparis.GenelToplam = siparis.AraToplam + siparis.KdvTutari + siparis.KargoUcreti;
+            _kurucu.ToplamlariYaz(siparis, araToplam, indirimTutari);
 
             _context.Siparisler.Add(siparis);
             await _context.SaveChangesAsync();
@@ -147,65 +118,23 @@ public class SiparisServisi : ISiparisServisi
         }
     }
 
-    /// <summary>
-    /// Kargo eşiği ana para birimi (varsayılan TRY) cinsindendir; sepet USD ise
-    /// karşılaştırmadan önce çevrilir. Önceki sürüm USD tutarı doğrudan
-    /// 1000 TL eşiğiyle karşılaştırıyor ve neredeyse her siparişe kargo yazıyordu.
-    /// </summary>
-    private decimal KargoUcretiHesapla(decimal araToplam, decimal kur)
+    public async Task<SayfaliSonucDto<SiparisListelemeDto>> SiparisleriGetirAsync(
+        long kullaniciId,
+        int sayfaNo,
+        int sayfaBoyutu)
     {
-        var anaParaBirimindeTutar = araToplam * kur;
-
-        if (anaParaBirimindeTutar >= _ticari.UcretsizKargoEsigi)
-            return 0m;
-
-        // Kargo ücreti de siparişin para biriminde yazılmalı.
-        return kur == 0 ? _ticari.KargoUcreti : Yuvarla(_ticari.KargoUcreti / kur);
-    }
-
-    private static decimal Yuvarla(decimal deger) => Math.Round(deger, 4, MidpointRounding.AwayFromZero);
-
-    private static string AdresSnapshotAl(Cevik.Alan.Kimlik.Adres adres) =>
-        JsonSerializer.Serialize(new
+        sayfaNo = Math.Max(1, sayfaNo);
+        sayfaBoyutu = Math.Clamp(sayfaBoyutu, 1, 100);
+        var sorgu = _context.Siparisler.Where(s => s.KullaniciId == kullaniciId);
+        return new SayfaliSonucDto<SiparisListelemeDto>
         {
-            adres.Baslik,
-            adres.AdSoyad,
-            adres.Telefon,
-            adres.Il,
-            adres.Ilce,
-            adres.AcikAdres,
-            adres.PostaKodu
-        });
-
-    /// <summary>
-    /// SIP-2026-000123 biçiminde, yıl içinde artan sipariş numarası.
-    /// Önceki sürüm saniye damgası kullanıyordu; aynı saniyede iki sipariş
-    /// aynı numarayı alabiliyordu.
-    /// </summary>
-    private async Task<string> SiparisNoUretAsync()
-    {
-        var yil = DateTimeOffset.UtcNow.Year;
-        var onEk = $"SIP-{yil}-";
-
-        var sonNumara = await _context.Siparisler
-            .IgnoreQueryFilters()
-            .Where(s => s.SiparisNo.StartsWith(onEk))
+            SayfaNo = sayfaNo,
+            SayfaBoyutu = sayfaBoyutu,
+            ToplamKayit = await sorgu.CountAsync(),
+            Kayitlar = await sorgu
             .OrderByDescending(s => s.Id)
-            .Select(s => s.SiparisNo)
-            .FirstOrDefaultAsync();
-
-        var siradaki = 1;
-        if (sonNumara is not null && int.TryParse(sonNumara[onEk.Length..], out var mevcut))
-            siradaki = mevcut + 1;
-
-        return onEk + siradaki.ToString("D6");
-    }
-
-    public async Task<List<SiparisListelemeDto>> SiparisleriGetirAsync(long kullaniciId)
-    {
-        return await _context.Siparisler
-            .Where(s => s.KullaniciId == kullaniciId)
-            .OrderByDescending(s => s.Id)
+            .Skip((sayfaNo - 1) * sayfaBoyutu)
+            .Take(sayfaBoyutu)
             .Select(s => new SiparisListelemeDto
             {
                 Id = s.Id,
@@ -215,7 +144,8 @@ public class SiparisServisi : ISiparisServisi
                 ParaBirimi = s.ParaBirimi,
                 Tarih = s.GuncellemeTarihi ?? s.OlusturmaTarihi
             })
-            .ToListAsync();
+            .ToListAsync()
+        };
     }
 
     public async Task<SiparisDetayDto?> SiparisDetayGetirAsync(long kullaniciId, long siparisId)

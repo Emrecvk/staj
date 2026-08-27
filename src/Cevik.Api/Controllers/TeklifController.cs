@@ -31,48 +31,67 @@ public class TeklifController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> TeklifleriGetir()
+    [ProducesResponseType(typeof(Cevik.Uygulama.Ortak.SayfaliSonucDto<TeklifListelemeDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Cevik.Uygulama.Ortak.SayfaliSonucDto<TeklifListelemeDto>>> TeklifleriGetir(
+        [FromQuery] int sayfaNo = 1,
+        [FromQuery] int sayfaBoyutu = 25)
     {
-        var teklifler = await _teklifServisi.TeklifleriGetirAsync(GetUserId());
+        var teklifler = await _teklifServisi.TeklifleriGetirAsync(GetUserId(), sayfaNo, sayfaBoyutu);
         return Ok(teklifler);
     }
 
     [HttpGet("{id:long}")]
-    public async Task<IActionResult> Detay(long id)
+    [ProducesResponseType(typeof(TeklifDetayDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TeklifDetayDto>> Detay(long id)
     {
         var teklif = await _teklifServisi.TeklifDetayGetirAsync(GetUserId(), id);
         return teklif == null ? NotFound() : Ok(teklif);
     }
 
+    /// <summary>
+    /// Yetki kontrolü bilerek burada DEĞİL, serviste yapılır.
+    ///
+    /// Önceki sürüm JWT'deki "FirmaYetkilisi" talebini <c>!= "True"</c> ile
+    /// karşılaştırıyordu; talep <see cref="Cevik.Altyapi.Kimlik.Servisler.KimlikServisi"/>
+    /// tarafından küçük harfle ("true") yazıldığı için koşul HER ZAMAN doğruydu.
+    /// Üstelik <c>Forbid(string)</c> aşırı yüklemesi metni kimlik doğrulama
+    /// ŞEMA ADI sayar, mesaj değil — kayıtlı tek şema "Bearer" olduğu için
+    /// ForbidResult çalışırken InvalidOperationException fırlatıyor ve uç
+    /// 403 yerine 500 dönüyordu. Yani teklif oluşturma hiç çalışmıyordu.
+    ///
+    /// Talep zaten güvenilir bir kaynak değil: firma onayı token verildikten
+    /// sonra geldiğinde talep bayatlar. Yetkinin tek doğru yeri veritabanıdır.
+    /// </summary>
     [HttpPost]
-    public async Task<IActionResult> TeklifOlustur(TeklifOlusturDto dto)
+    [ProducesResponseType(typeof(TeklifListelemeDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<TeklifListelemeDto>> TeklifOlustur(TeklifOlusturDto dto)
     {
-        var isFirma = User.FindFirst("FirmaYetkilisi")?.Value;
-        if (isFirma != "True") return Forbid("Sadece firmalar teklif talebinde bulunabilir.");
-
         var sonuc = await _teklifServisi.TeklifTalebiOlusturAsync(GetUserId(), GetSessionKey(), dto);
-        if (sonuc == null) return BadRequest("Teklif oluşturulamadı. Sepetinizi kontrol edin.");
         return Ok(sonuc);
     }
 
     [HttpPost("{id:long}/kabul")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> KabulEt(long id)
     {
         await _teklifServisi.DurumDegistirMusteriAsync(GetUserId(), id, kabul: true);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPost("{id:long}/red")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Reddet(long id)
     {
         await _teklifServisi.DurumDegistirMusteriAsync(GetUserId(), id, kabul: false);
-        return Ok();
+        return NoContent();
     }
 
     [HttpPost("{id:long}/siparis")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> SipariseDonustur(long id)
     {
         await _teklifServisi.SipariseDonusturAsync(GetUserId(), id);
-        return Ok();
+        return NoContent();
     }
 }

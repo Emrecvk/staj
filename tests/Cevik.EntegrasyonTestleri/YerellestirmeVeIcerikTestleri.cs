@@ -56,8 +56,19 @@ public class YerellestirmeVeIcerikTestleri : IClassFixture<CevikUygulamaFabrikas
         urunUsd.Should().NotBeNull();
         urunTry.Should().NotBeNull();
 
-        // USD 1 ise, TRY kuru 34.12 civarıdır (seed verisine göre), TRY fiyatı her zaman USD'den büyük olmalı
-        urunTry!.BaslangicFiyati.Should().BeGreaterThan(urunUsd!.BaslangicFiyati);
+        using var scope = _fabrika.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Cevik.Altyapi.Veritabani.CevikDbContext>();
+        var usdSatisKuru = await db.DovizKurlari
+            .Where(k => k.ParaBirimi == "USD")
+            .OrderByDescending(k => k.Tarih)
+            .Select(k => k.Satis)
+            .FirstAsync();
+
+        // Yalnız "TRY daha büyük" demek kültür hatasıyla 34.12 değerinin
+        // 3412 okunmasını yakalamaz. Dönüşüm gerçek kur oranına yakın olmalı.
+        urunTry!.BaslangicFiyati.Should().BeApproximately(
+            urunUsd!.BaslangicFiyati * usdSatisKuru,
+            0.01m);
     }
 
     [Fact]

@@ -21,6 +21,8 @@ public interface IKatalogServisi
     /// <summary>Ürünü olan aktif üreticileri, gerçek ürün sayılarıyla döner (marka vitrini).</summary>
     Task<List<UreticiOzetDto>> UreticileriGetirAsync(int? kategoriId = null);
 
+    Task<Dictionary<int, int>> KategoriUrunSayilariniGetirAsync(IReadOnlyCollection<int> kategoriIdleri);
+
     Task<Dictionary<int, int>> KategoriUreticiSayilariniGetirAsync(IReadOnlyCollection<int> kategoriIdleri);
 
     Task IliskiliUrunEkleAsync(long urunId, long iliskiliUrunId, short tip, int sira = 0);

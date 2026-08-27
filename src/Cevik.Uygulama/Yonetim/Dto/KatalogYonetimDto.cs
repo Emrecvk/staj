@@ -117,3 +117,81 @@ public class KullaniciRolGuncelleDto
     /// <summary>Cevik.Alan.Ortak.KullaniciRolu değeri.</summary>
     public short Rol { get; set; }
 }
+
+public class KimlikDto
+{
+    public long Id { get; set; }
+}
+
+public class UrunYonetimOzetDto
+{
+    public long Id { get; set; }
+    public required string UreticiUrunKodu { get; set; }
+    public required string KisaAciklama { get; set; }
+    public int KategoriId { get; set; }
+    public int UreticiId { get; set; }
+    public short UrunDurumu { get; set; }
+    public bool Aktif { get; set; }
+    public bool SilindiMi { get; set; }
+    public int ToplamStok { get; set; }
+}
+
+public class UrunYonetimSayfasiDto : Cevik.Uygulama.Ortak.SayfaliSonucDto<UrunYonetimOzetDto>
+{
+}
+
+public class UrunYonetimDetayDto : UrunYonetimOzetDto
+{
+    public string? DetayliAciklamaTr { get; set; }
+    public string? AnaGorselUrl { get; set; }
+    public short RohsDurumu { get; set; }
+    public short MontajTipi { get; set; }
+    public bool KampanyaliMi { get; set; }
+}
+
+public class KategoriYonetimDto
+{
+    public int Id { get; set; }
+    public int? UstKategoriId { get; set; }
+    public required string AdTr { get; set; }
+    public required string AdEn { get; set; }
+    public required string SlugTr { get; set; }
+    public required string Yol { get; set; }
+    public short Seviye { get; set; }
+    public int Sira { get; set; }
+    public bool YaprakMi { get; set; }
+    public bool Aktif { get; set; }
+    public bool SilindiMi { get; set; }
+}
+
+public class KategoriOlusturmaSonucuDto : KimlikDto
+{
+    public required string Yol { get; set; }
+}
+
+public class UreticiYonetimDto
+{
+    public int Id { get; set; }
+    public required string Ad { get; set; }
+    public required string Slug { get; set; }
+    public string? LogoUrl { get; set; }
+    public string? WebSitesi { get; set; }
+    public bool YetkiliDistributorMu { get; set; }
+    public bool Aktif { get; set; }
+    public bool SilindiMi { get; set; }
+    public int UrunSayisi { get; set; }
+}
+
+public class OzellikYonetimDto
+{
+    public int Id { get; set; }
+    public required string Kod { get; set; }
+    public required string AdTr { get; set; }
+    public required string AdEn { get; set; }
+    public short VeriTipi { get; set; }
+    public string? Birim { get; set; }
+    public bool FiltrelenebilirMi { get; set; }
+    public bool SiralanabilirMi { get; set; }
+    public short GosterimTipi { get; set; }
+    public int KullanildigiKategoriSayisi { get; set; }
+}

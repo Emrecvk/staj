@@ -22,15 +22,31 @@ public static class SiparisMiktarKurali
     /// Miktarın MOQ ve katlama (multiple) kurallarına uyup uymadığını denetler.
     /// Uymuyorsa geçerli en yakın ÜST miktarı önerir — aşağı yuvarlamak
     /// müşterinin istediğinden az göndermek demektir, bu yüzden hep yukarı.
+    ///
+    /// MPQ bilerek BU KURALIN PARÇASI DEĞİLDİR. PLANLAMA.md 5.3 domain
+    /// kuralını tek cümleyle tanımlıyor: "miktar >= moq VE
+    /// miktar % katlama_miktari == 0". <c>mpq</c> aynı bölümde ambalajın
+    /// paket büyüklüğünü TARİF eden bir alandır ("Minimum paket miktarı
+    /// (1.500)"), sipariş doğrulama kısıtı değil.
+    ///
+    /// Bir ara MPQ <c>Math.Max(moq, mpq)</c> ile alt sınıra dahil edildi;
+    /// katalogdaki 12.000 ambalajın 10.775'inde MPQ (3000, 1000, 500...)
+    /// MOQ'dan büyük olduğu için MOQ'su 1 olan üründen 10 adet almak bile
+    /// 422 dönmeye başladı ve beş entegrasyon testi kırıldı. Paket katı
+    /// kısıtı gerekiyorsa doğru alan <c>KatlamaMiktari</c>'dır.
     /// </summary>
     public static MiktarKontrolSonucu Dogrula(int miktar, int moq, int katlamaMiktari)
     {
-        if (miktar <= 0)
-            return MiktarKontrolSonucu.Basarisiz("Miktar sıfırdan büyük olmalıdır.", Math.Max(moq, 1));
-
         // Bozuk/eksik veri: katlama 0 veya negatifse 1 kabul et, yoksa modulo patlar.
         var katlama = katlamaMiktari > 0 ? katlamaMiktari : 1;
         var enAzMiktar = moq > 0 ? moq : 1;
+
+        // Önerilen miktar her zaman KATLAMAYA UYMALI; aksi halde kullanıcı
+        // önerilen değeri aynen girip yeniden 422 alır.
+        if (miktar <= 0)
+            return MiktarKontrolSonucu.Basarisiz(
+                "Miktar sıfırdan büyük olmalıdır.",
+                YukariYuvarla(enAzMiktar, katlama));
 
         if (miktar < enAzMiktar)
             return MiktarKontrolSonucu.Basarisiz(

@@ -25,6 +25,7 @@ public class ProfilController : ControllerBase
     }
 
     [HttpGet("adresler")]
+    [ProducesResponseType(typeof(List<AdresDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> AdresleriGetir()
     {
         var adresler = await _profilServisi.AdresleriGetirAsync(GetUserId());
@@ -32,6 +33,7 @@ public class ProfilController : ControllerBase
     }
 
     [HttpPost("adresler")]
+    [ProducesResponseType(typeof(AdresDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> AdresEkle(AdresEkleDto dto)
     {
         var sonuc = await _profilServisi.AdresEkleAsync(GetUserId(), dto);
@@ -39,38 +41,43 @@ public class ProfilController : ControllerBase
     }
 
     [HttpDelete("adresler/{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AdresSil(long id)
     {
         var sonuc = await _profilServisi.AdresSilAsync(GetUserId(), id);
         if (!sonuc) return NotFound();
-        return Ok();
+        return NoContent();
     }
 
     [HttpGet("favoriler")]
-    public async Task<IActionResult> FavorileriGetir()
+    [ProducesResponseType(typeof(Cevik.Uygulama.Ortak.SayfaliSonucDto<FavoriDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> FavorileriGetir([FromQuery] int sayfaNo = 1, [FromQuery] int sayfaBoyutu = 25)
     {
-        var favoriler = await _profilServisi.FavorileriGetirAsync(GetUserId());
+        var favoriler = await _profilServisi.FavorileriGetirAsync(GetUserId(), sayfaNo, sayfaBoyutu);
         return Ok(favoriler);
     }
 
     [HttpPost("favoriler")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> FavoriEkle(FavoriEkleDto dto)
     {
         var sonuc = await _profilServisi.FavoriEkleAsync(GetUserId(), dto);
         if (!sonuc) return BadRequest();
-        return Ok();
+        return NoContent();
     }
 
     [HttpDelete("favoriler/{urunId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> FavoriSil(long urunId)
     {
         var sonuc = await _profilServisi.FavoriSilAsync(GetUserId(), urunId);
         if (!sonuc) return NotFound();
-        return Ok();
+        return NoContent();
     }
 
     /// <summary>Kullanicinin bagli oldugu firma bilgisi.</summary>
     [HttpGet("firma")]
+    [ProducesResponseType(typeof(FirmaBilgiDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> FirmaBilgisi()
     {
         var firma = await _profilServisi.FirmaBilgisiGetirAsync(GetUserId());
@@ -78,13 +85,15 @@ public class ProfilController : ControllerBase
     }
 
     [HttpGet("musteri-urun-kodlari")]
-    public async Task<IActionResult> MusteriUrunKodlariniGetir()
+    [ProducesResponseType(typeof(Cevik.Uygulama.Ortak.SayfaliSonucDto<MusteriUrunKoduDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MusteriUrunKodlariniGetir([FromQuery] int sayfaNo = 1, [FromQuery] int sayfaBoyutu = 25)
     {
-        var kodlar = await _profilServisi.MusteriUrunKodlariniGetirAsync(GetUserId());
+        var kodlar = await _profilServisi.MusteriUrunKodlariniGetirAsync(GetUserId(), sayfaNo, sayfaBoyutu);
         return Ok(kodlar);
     }
 
     [HttpPost("musteri-urun-kodlari")]
+    [ProducesResponseType(typeof(MusteriUrunKoduDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> MusteriUrunKoduEkle(MusteriUrunKoduEkleDto dto)
     {
         var sonuc = await _profilServisi.MusteriUrunKoduEkleAsync(GetUserId(), dto);
@@ -92,18 +101,20 @@ public class ProfilController : ControllerBase
     }
 
     [HttpPut("musteri-urun-kodlari/{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> MusteriUrunKoduGuncelle(long id, MusteriUrunKoduGuncelleDto dto)
     {
         var sonuc = await _profilServisi.MusteriUrunKoduGuncelleAsync(GetUserId(), id, dto);
         if (!sonuc) return NotFound();
-        return Ok();
+        return NoContent();
     }
 
     [HttpDelete("musteri-urun-kodlari/{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> MusteriUrunKoduSil(long id)
     {
         var sonuc = await _profilServisi.MusteriUrunKoduSilAsync(GetUserId(), id);
         if (!sonuc) return NotFound();
-        return Ok();
+        return NoContent();
     }
 }

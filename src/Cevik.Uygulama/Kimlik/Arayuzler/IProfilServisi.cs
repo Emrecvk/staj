@@ -10,11 +10,11 @@ public interface IProfilServisi
     Task<AdresDto?> AdresEkleAsync(long kullaniciId, AdresEkleDto dto);
     Task<bool> AdresSilAsync(long kullaniciId, long adresId);
 
-    Task<List<FavoriDto>> FavorileriGetirAsync(long kullaniciId);
+    Task<Cevik.Uygulama.Ortak.SayfaliSonucDto<FavoriDto>> FavorileriGetirAsync(long kullaniciId, int sayfaNo, int sayfaBoyutu);
     Task<bool> FavoriEkleAsync(long kullaniciId, FavoriEkleDto dto);
     Task<bool> FavoriSilAsync(long kullaniciId, long urunId);
 
-    Task<List<MusteriUrunKoduDto>> MusteriUrunKodlariniGetirAsync(long kullaniciId);
+    Task<Cevik.Uygulama.Ortak.SayfaliSonucDto<MusteriUrunKoduDto>> MusteriUrunKodlariniGetirAsync(long kullaniciId, int sayfaNo, int sayfaBoyutu);
     Task<MusteriUrunKoduDto> MusteriUrunKoduEkleAsync(long kullaniciId, MusteriUrunKoduEkleDto dto);
     Task<bool> MusteriUrunKoduGuncelleAsync(long kullaniciId, long id, MusteriUrunKoduGuncelleDto dto);
     Task<bool> MusteriUrunKoduSilAsync(long kullaniciId, long id);

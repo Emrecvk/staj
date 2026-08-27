@@ -55,7 +55,7 @@ public class GelismisKimlikTestleri
     }
 
     [Fact]
-    public async Task TokenYenile_KullanilmisToken_AileyiIptalEder()
+    public async Task TokenYenile_KisaSureliTekrar_AyniArdilTokeniVerir()
     {
         var options = GetDbOptions("TokenReuse_Db");
         using var context = new CevikDbContext(options);
@@ -68,14 +68,149 @@ public class GelismisKimlikTestleri
         // 1. kullanım - başarılı
         var yenile1 = await servis.TokenYenileAsync(new TokenYenileDto { RefreshToken = giris!.RefreshToken });
         
-        // 2. kullanım - aynı token tekrar (çalınmış senaryosu)
+        // 2. kullanım - çerezlerin henüz güncellenmediği kısa yarış penceresi
         var yenile2 = await servis.TokenYenileAsync(new TokenYenileDto { RefreshToken = giris.RefreshToken });
-        
-        yenile2.Should().BeNull(); // Engellenmeli
-        
-        // 3. kullanım - yenilenmiş token da iptal edilmiş olmalı
+
+        yenile2.Should().NotBeNull();
+        yenile2!.RefreshToken.Should().Be(yenile1!.RefreshToken);
+
+        // Ardıl token aile iptal edilmeden normal biçimde kullanılabilmeli.
         var yenile3 = await servis.TokenYenileAsync(new TokenYenileDto { RefreshToken = yenile1!.RefreshToken });
-        yenile3.Should().BeNull(); 
+        yenile3.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Girisler_FarkliAileOlusturur_RotasyonAileyiKorur()
+    {
+        var options = GetDbOptions("TokenFamily_Db");
+        using var context = new CevikDbContext(options);
+        var servis = new KimlikServisi(
+            context,
+            GetJwtOptions(),
+            new Mock<Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi>().Object);
+
+        await servis.KayitOlAsync(new KullaniciKayitDto
+        {
+            Ad = "Aile",
+            Soyad = "Testi",
+            Eposta = "aile@test.com",
+            Sifre = "Sifre123",
+            Telefon = "1"
+        });
+
+        var ilkGiris = await servis.GirisYapAsync(new KullaniciGirisDto
+        {
+            Eposta = "aile@test.com",
+            Sifre = "Sifre123"
+        });
+        var ikinciGiris = await servis.GirisYapAsync(new KullaniciGirisDto
+        {
+            Eposta = "aile@test.com",
+            Sifre = "Sifre123"
+        });
+
+        await servis.TokenYenileAsync(new TokenYenileDto { RefreshToken = ilkGiris!.RefreshToken });
+
+        var aileBoyutlari = await context.KullaniciRefreshTokens
+            .GroupBy(x => x.AileId)
+            .Select(x => new { AileId = x.Key, Adet = x.Count() })
+            .OrderBy(x => x.Adet)
+            .ToListAsync();
+
+        ikinciGiris.Should().NotBeNull();
+        aileBoyutlari.Should().HaveCount(2);
+        aileBoyutlari.Should().OnlyContain(x => x.AileId != Guid.Empty);
+        aileBoyutlari.Select(x => x.Adet).Should().Equal(1, 2);
+    }
+
+    [Fact]
+    public async Task SupheliTekrar_YalnizIlgiliOturumAilesiniIptalEder()
+    {
+        var options = GetDbOptions("TokenFamilyReplay_Db");
+        using var context = new CevikDbContext(options);
+        var servis = new KimlikServisi(
+            context,
+            GetJwtOptions(),
+            new Mock<Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi>().Object);
+
+        await servis.KayitOlAsync(new KullaniciKayitDto
+        {
+            Ad = "Cihaz",
+            Soyad = "Testi",
+            Eposta = "cihaz@test.com",
+            Sifre = "Sifre123",
+            Telefon = "1"
+        });
+
+        var ilkCihaz = await servis.GirisYapAsync(new KullaniciGirisDto
+        {
+            Eposta = "cihaz@test.com",
+            Sifre = "Sifre123"
+        });
+        var ilkAileKoku = await context.KullaniciRefreshTokens.SingleAsync();
+
+        var ikinciCihaz = await servis.GirisYapAsync(new KullaniciGirisDto
+        {
+            Eposta = "cihaz@test.com",
+            Sifre = "Sifre123"
+        });
+
+        var ilkCihazArdili = await servis.TokenYenileAsync(new TokenYenileDto
+        {
+            RefreshToken = ilkCihaz!.RefreshToken
+        });
+
+        // Tolerans penceresi geçmiş bir eski-token kullanımı çalıntı sayılır.
+        ilkAileKoku.GuncellemeTarihi = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(1));
+        var supheliTekrar = await servis.TokenYenileAsync(new TokenYenileDto
+        {
+            RefreshToken = ilkCihaz.RefreshToken
+        });
+
+        supheliTekrar.Should().BeNull();
+        (await servis.TokenYenileAsync(new TokenYenileDto
+        {
+            RefreshToken = ilkCihazArdili!.RefreshToken
+        })).Should().BeNull("şüpheli tekrarın ait olduğu aile kapatılmalı");
+        (await servis.TokenYenileAsync(new TokenYenileDto
+        {
+            RefreshToken = ikinciCihaz!.RefreshToken
+        })).Should().NotBeNull("başka cihazın ayrı oturumu açık kalmalı");
+    }
+
+    [Fact]
+    public async Task CikisSonrasi_EskiTokenTekrari_OturumuYenidenAcmaz()
+    {
+        var options = GetDbOptions("TokenLogoutReplay_Db");
+        using var context = new CevikDbContext(options);
+        var servis = new KimlikServisi(
+            context,
+            GetJwtOptions(),
+            new Mock<Cevik.Uygulama.Ortak.Arayuzler.IEpostaServisi>().Object);
+
+        await servis.KayitOlAsync(new KullaniciKayitDto
+        {
+            Ad = "Çıkış",
+            Soyad = "Testi",
+            Eposta = "cikis-tekrar@test.com",
+            Sifre = "Sifre123",
+            Telefon = "1"
+        });
+        var giris = await servis.GirisYapAsync(new KullaniciGirisDto
+        {
+            Eposta = "cikis-tekrar@test.com",
+            Sifre = "Sifre123"
+        });
+        var yenilenen = await servis.TokenYenileAsync(new TokenYenileDto
+        {
+            RefreshToken = giris!.RefreshToken
+        });
+
+        (await servis.CikisYapAsync(yenilenen!.RefreshToken)).Should().BeTrue();
+        (await servis.TokenYenileAsync(new TokenYenileDto
+        {
+            RefreshToken = giris.RefreshToken
+        })).Should().BeNull();
     }
 
     [Fact]

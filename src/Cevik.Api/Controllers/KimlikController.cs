@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Cevik.Uygulama.Kimlik.Arayuzler;
 using Cevik.Uygulama.Kimlik.Dto;
+using Cevik.Uygulama.Ortak;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -21,6 +22,8 @@ public class KimlikController : ControllerBase
 
     [EnableRateLimiting("Auth")]
     [HttpPost("giris")]
+    [ProducesResponseType(typeof(TokenDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Giris(KullaniciGirisDto dto)
     {
         var token = await _kimlikServisi.GirisYapAsync(dto);
@@ -32,6 +35,8 @@ public class KimlikController : ControllerBase
 
     [EnableRateLimiting("Auth")]
     [HttpPost("kayit")]
+    [ProducesResponseType(typeof(MesajDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Kayit(KullaniciKayitDto dto)
     {
         var sonuc = await _kimlikServisi.KayitOlAsync(dto);
@@ -43,6 +48,8 @@ public class KimlikController : ControllerBase
 
     [Authorize]
     [HttpPost("firma-basvurusu")]
+    [ProducesResponseType(typeof(MesajDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> FirmaBasvurusu(FirmaBasvuruDto dto)
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -58,6 +65,8 @@ public class KimlikController : ControllerBase
 
     [EnableRateLimiting("Auth")]
     [HttpPost("yenile")]
+    [ProducesResponseType(typeof(TokenDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Yenile(TokenYenileDto dto)
     {
         var token = await _kimlikServisi.TokenYenileAsync(dto);
@@ -68,6 +77,7 @@ public class KimlikController : ControllerBase
     }
 
     [HttpPost("cikis")]
+    [ProducesResponseType(typeof(MesajDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Cikis(TokenYenileDto dto)
     {
         var sonuc = await _kimlikServisi.CikisYapAsync(dto.RefreshToken);
@@ -79,6 +89,7 @@ public class KimlikController : ControllerBase
 
     [EnableRateLimiting("Auth")]
     [HttpPost("sifre-sifirlama-talebi")]
+    [ProducesResponseType(typeof(MesajDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> SifreSifirlamaTalebi(SifreSifirlamaTalebiDto dto)
     {
         await _kimlikServisi.SifreSifirlamaTalebiOlusturAsync(dto);
@@ -87,6 +98,7 @@ public class KimlikController : ControllerBase
 
     [EnableRateLimiting("Auth")]
     [HttpPost("sifre-sifirla")]
+    [ProducesResponseType(typeof(MesajDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> SifreSifirla(SifreSifirlaDto dto)
     {
         var sonuc = await _kimlikServisi.SifreSifirlaAsync(dto);
@@ -98,6 +110,7 @@ public class KimlikController : ControllerBase
 
     [Authorize]
     [HttpPost("eposta-dogrulama-talebi")]
+    [ProducesResponseType(typeof(MesajDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> EpostaDogrulamaTalebi()
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -107,12 +120,13 @@ public class KimlikController : ControllerBase
         var sonuc = await _kimlikServisi.EpostaDogrulamaTalebiOlusturAsync(userId);
         
         if (sonuc)
-            return Ok(new { Mesaj = "Do�rulama e-postas� g�nderildi." });
+            return Ok(new { Mesaj = "Doğrulama e-postası gönderildi." });
             
         return BadRequest(new { Mesaj = "Zaten doğrulanmış veya hata oluştu." });
     }
 
     [HttpPost("eposta-dogrula")]
+    [ProducesResponseType(typeof(MesajDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> EpostaDogrula(EpostaDogrulaDto dto)
     {
         var sonuc = await _kimlikServisi.EpostaDogrulaAsync(dto);

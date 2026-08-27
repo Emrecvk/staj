@@ -5,10 +5,15 @@ namespace Cevik.Uygulama.Katalog.Dto;
 public class UrunDetayDto
 {
     public long Id { get; set; }
+    public int UreticiId { get; set; }
     public required string UreticiUrunKodu { get; set; }
     public required string UreticiAd { get; set; }
+    public string? UreticiLogoUrl { get; set; }
+    public int KategoriId { get; set; }
+    public List<string> KategoriYolu { get; set; } = [];
     public required string KisaAciklama { get; set; }
     public string? DetayliAciklama { get; set; }
+    public string? AnaGorselUrl { get; set; }
     public List<string> GorselUrlleri { get; set; } = new();
     public bool GorselTemsiliMi { get; set; }
     
@@ -43,9 +48,11 @@ public class AmbalajFiyatDto
 {
     public long AmbalajId { get; set; }
     public required string Ad { get; set; } // Tape&Reel vb.
+    public short AmbalajTipi { get; set; }
     public int Mpq { get; set; }
     public int Moq { get; set; }
     public int KatlamaMiktari { get; set; }
+    public bool VarsayilanMi { get; set; }
     
     public int StokMiktari { get; set; }
     public int GelecekStokMiktari { get; set; }

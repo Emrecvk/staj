@@ -17,16 +17,9 @@ namespace Cevik.Altyapi.Veritabani.Seed;
 /// <summary>
 /// Katalog seed'i.
 ///
-/// Ürün verisi <see cref="ParcaKatalogu"/>'ndan gelir: gerçek üretici parça numaraları,
-/// ya üreticinin yayımladığı sipariş kodu şemasından türetilmiş (pasifler, lojik) ya da
-/// elle küratörlü (yarı iletkenler, modüller). Hiçbir MPN rastgele üretilmez ve her
-/// parametre değeri MPN'in kodladığı bilgiyle tutarlıdır.
-///
-/// Rastgelelik yalnızca TİCARİ alanlarda kalır — stok miktarı, liste fiyatı, teslim
-/// süresi, görüntülenme sayısı. Bunlar üreticinin değil distribütörün verisidir; sabit
-/// tohumla üretilir ki her kurulumda aynı katalog çıksın.
-///
-/// Kasıtlı olarak hiçbir siteden veri KAZINMAZ (PLANLAMA.md 3 - "Veri nereden gelecek").
+/// Ürün verisi, Özdisan ürün listelerinden açıkça oluşturulan sürümlenmiş yerel anlık
+/// görüntüden gelir. Canlı site uygulama çalışırken taranmaz; aynı 12.000 gerçek MPN,
+/// görsel, veri sayfası, stok ve fiyat bilgisi her kurulumda deterministik yüklenir.
 /// </summary>
 public class CevikDataSeeder
 {
@@ -35,12 +28,18 @@ public class CevikDataSeeder
     private readonly CevikDbContext _context;
     private readonly ILogger<CevikDataSeeder> _logger;
     private readonly IConfiguration _yapilandirma;
+    private readonly OzdisanKatalogEsitleyici _ozdisanKatalogEsitleyici;
 
-    public CevikDataSeeder(CevikDbContext context, ILogger<CevikDataSeeder> logger, IConfiguration yapilandirma)
+    public CevikDataSeeder(
+        CevikDbContext context,
+        ILogger<CevikDataSeeder> logger,
+        IConfiguration yapilandirma,
+        OzdisanKatalogEsitleyici ozdisanKatalogEsitleyici)
     {
         _context = context;
         _logger = logger;
         _yapilandirma = yapilandirma;
+        _ozdisanKatalogEsitleyici = ozdisanKatalogEsitleyici;
     }
 
     public async Task SeedAsync()
@@ -49,31 +48,25 @@ public class CevikDataSeeder
         await DovizKurlariniEkleAsync();
         await OrnekIcerikEkleAsync();
 
-        if (await _context.Kategoriler.AnyAsync())
+        if (!await _context.Kategoriler.AnyAsync())
         {
-            _logger.LogInformation("Katalog zaten dolu, ürün seed işlemi atlanıyor.");
-            return;
+            var ozellikler = await OzellikTanimlariniEkleAsync();
+            var kategoriler = await KategorileriEkleAsync(ozellikler);
+
+            // Şablon katalogu Özdisan anlık görüntüsünün YERİNE değil, YANINDA
+            // durur. Yalnızca bu yol UrunOzellikDegerleri (EAV) satırlarını ve
+            // aynı ürünün birden fazla ambalaj varyantını üretiyor; parametrik
+            // filtre paneli ile ambalaj karşılaştırması bu verilere dayanıyor.
+            //
+            // Bir ara bu iki çağrı devre dışı bırakılmış, metotlar kodda öksüz
+            // kalmıştı (derleyici uyarı vermez). Sonuç: urun_ozellik_degerleri
+            // tablosu boş kaldı, filtre paneli tüm katalogda sessizce çalışmaz
+            // hale geldi ve hiçbir ürünün ikinci ambalajı kalmadı.
+            var ureticiler = await UreticileriEkleAsync();
+            await UrunleriUretAsync(kategoriler, ureticiler, ozellikler);
         }
 
-        // Parça katalogunun kategori / üretici / parametre referansları tutarsızsa
-        // yarım dolu bir veritabanı bırakmaktansa hiç başlamamak daha iyidir.
-        var hatalar = ParcaKatalogu.Dogrula();
-        if (hatalar.Count > 0)
-        {
-            foreach (var hata in hatalar.Take(25))
-                _logger.LogError("Katalog tutarsızlığı: {Hata}", hata);
-
-            throw new InvalidOperationException(
-                $"Parça katalogunda {hatalar.Count} tutarsızlık var, seed durduruldu. İlki: {hatalar[0]}");
-        }
-
-        _logger.LogInformation("Katalog üretiliyor — {Sayi} parça...", ParcaKatalogu.Tumu.Count);
-
-        var ozellikler = await OzellikTanimlariniEkleAsync();
-        var kategoriler = await KategorileriEkleAsync(ozellikler);
-        var ureticiler = await UreticileriEkleAsync();
-
-        await UrunleriUretAsync(kategoriler, ureticiler, ozellikler);
+        await _ozdisanKatalogEsitleyici.EsitleAsync();
 
         _logger.LogInformation("Katalog seed işlemi tamamlandı.");
     }
@@ -606,7 +599,7 @@ public class CevikDataSeeder
             : null;
     }
 
-    private static string SlugUret(string metin)
+    internal static string SlugUret(string metin)
     {
         var kucuk = metin.ToLowerInvariant()
             .Replace("ç", "c").Replace("ğ", "g").Replace("ı", "i")

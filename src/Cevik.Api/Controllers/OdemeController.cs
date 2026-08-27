@@ -32,7 +32,8 @@ public class OdemeController : ControllerBase
     /// </summary>
     [EnableRateLimiting("Auth")]
     [HttpPost("{siparisId:long}")]
-    public async Task<IActionResult> Ode(long siparisId, OdemeIstekDto istek)
+    [ProducesResponseType(typeof(OdemeYanitDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<OdemeYanitDto>> Ode(long siparisId, OdemeIstekDto istek)
     {
         var yanit = await _odemeServisi.OdemeYapAsync(KullaniciId(), siparisId, istek);
 
@@ -42,6 +43,7 @@ public class OdemeController : ControllerBase
     }
 
     [HttpGet("{siparisId:long}/denemeler")]
-    public async Task<IActionResult> Denemeler(long siparisId)
+    [ProducesResponseType(typeof(IReadOnlyList<OdemeDenemesiDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<OdemeDenemesiDto>>> Denemeler(long siparisId)
         => Ok(await _odemeServisi.DenemeleriGetirAsync(KullaniciId(), siparisId));
 }

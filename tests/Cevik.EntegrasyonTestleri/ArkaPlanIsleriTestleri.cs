@@ -60,11 +60,13 @@ public class ArkaPlanIsleriTestleri : IClassFixture<CevikUygulamaFabrikasi>
         // 1. Yeni bir stok bildirim talebi oluştur (AmbalajId 1 varsayımı ile)
         var dto = new StokBildirimTalebiDto { Eposta = "test_stok@cevik.com", IstenenMiktar = 10 };
         var response = await client.PostAsJsonAsync("/api/katalog/urunler/ambalajlar/1/stok-bildirimi", dto);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        // Aynı e-postayla ikinci kayıt conflict dönmeli
-        var conflictResponse = await client.PostAsJsonAsync("/api/katalog/urunler/ambalajlar/1/stok-bildirimi", dto);
-        conflictResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        // Aynı e-postayla ikinci kayıt reddedilmeli.
+        // 409 değil 422: CLAUDE.md'deki eşleme 409'u DbUpdateConcurrencyException'a
+        // ayırıyor, "zaten bekleyen talebiniz var" ise bir iş kuralı ihlali.
+        var tekrarYaniti = await client.PostAsJsonAsync("/api/katalog/urunler/ambalajlar/1/stok-bildirimi", dto);
+        tekrarYaniti.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
 
         // 2. Ambalajın stoğunu güncelle (Talebi karşılayacak şekilde 20 adet)
         using var scope = _fabrika.Services.CreateScope();

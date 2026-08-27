@@ -19,4 +19,7 @@
     <PackageReference Include="Bogus" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Veritabani\Seed\Katalog\Kaynaklar\ozdisan-katalogu.json.gz" />
+  </ItemGroup>
 </Project>

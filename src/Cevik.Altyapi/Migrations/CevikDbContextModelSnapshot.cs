@@ -1262,6 +1262,25 @@ namespace Cevik.Altyapi.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("kategori_id");
 
+                    b.Property<string>("KaynakKatalogSurumu")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kaynak_katalog_surumu");
+
+                    b.Property<string>("KaynakKimligi")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("kaynak_kimligi");
+
+                    b.Property<string>("KaynakSistem")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kaynak_sistem");
+
+                    b.Property<string>("KaynakUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("kaynak_url");
+
                     b.Property<string>("KisaAciklama")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1331,6 +1350,10 @@ namespace Cevik.Altyapi.Migrations
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("OzelliklerJson"), "GIN");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("OzelliklerJson"), new[] { "jsonb_path_ops" });
+
+                    b.HasIndex("KaynakSistem", "KaynakKimligi")
+                        .IsUnique()
+                        .HasDatabaseName("ix_urunler_kaynak_sistem_kaynak_kimligi");
 
                     b.HasIndex("UreticiId", "UreticiUrunKodu")
                         .IsUnique()
@@ -2453,6 +2476,10 @@ namespace Cevik.Altyapi.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("teklif_talep_id");
 
+                    b.Property<long?>("UrunAmbalajId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("urun_ambalaj_id");
+
                     b.Property<long?>("UrunId")
                         .HasColumnType("bigint")
                         .HasColumnName("urun_id");
@@ -2462,6 +2489,9 @@ namespace Cevik.Altyapi.Migrations
 
                     b.HasIndex("TeklifTalebiId")
                         .HasDatabaseName("ix_teklif_kalemleri_teklif_talebi_id");
+
+                    b.HasIndex("UrunAmbalajId")
+                        .HasDatabaseName("ix_teklif_kalemleri_urun_ambalaj_id");
 
                     b.HasIndex("UrunId")
                         .HasDatabaseName("ix_teklif_kalemleri_urun_id");
@@ -3032,6 +3062,12 @@ namespace Cevik.Altyapi.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_teklif_kalemleri_teklif_talepleri_teklif_talebi_id");
 
+                    b.HasOne("Cevik.Alan.Fiyatlama.UrunAmbalaji", "UrunAmbalaji")
+                        .WithMany()
+                        .HasForeignKey("UrunAmbalajId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_teklif_kalemleri_urun_ambalajlari_urun_ambalaj_id");
+
                     b.HasOne("Cevik.Alan.Katalog.Urun", "Urun")
                         .WithMany()
                         .HasForeignKey("UrunId")
@@ -3040,6 +3076,8 @@ namespace Cevik.Altyapi.Migrations
                     b.Navigation("TeklifTalebi");
 
                     b.Navigation("Urun");
+
+                    b.Navigation("UrunAmbalaji");
                 });
 
             modelBuilder.Entity("Cevik.Alan.Teklif.TeklifTalebi", b =>

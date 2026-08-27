@@ -80,14 +80,24 @@ public class ProfilServisi : IProfilServisi
         return true;
     }
 
-    public async Task<List<FavoriDto>> FavorileriGetirAsync(long kullaniciId)
+    public async Task<SayfaliSonucDto<FavoriDto>> FavorileriGetirAsync(long kullaniciId, int sayfaNo, int sayfaBoyutu)
     {
-        return await _context.Favoriler
+        sayfaNo = Math.Max(1, sayfaNo);
+        sayfaBoyutu = Math.Clamp(sayfaBoyutu, 1, 100);
+        var sorgu = _context.Favoriler.Where(f => f.KullaniciId == kullaniciId);
+        return new SayfaliSonucDto<FavoriDto>
+        {
+            SayfaNo = sayfaNo,
+            SayfaBoyutu = sayfaBoyutu,
+            ToplamKayit = await sorgu.CountAsync(),
+            Kayitlar = await sorgu
             .Include(f => f.Urun)
             .ThenInclude(u => u.UrunAmbalajlari)
             .ThenInclude(a => a.FiyatKademeleri)
             .AsNoTracking()
-            .Where(f => f.KullaniciId == kullaniciId)
+            .OrderByDescending(f => f.OlusturmaTarihi)
+            .Skip((sayfaNo - 1) * sayfaBoyutu)
+            .Take(sayfaBoyutu)
             .Select(f => new FavoriDto
             {
                 UrunId = f.UrunId,
@@ -97,7 +107,8 @@ public class ProfilServisi : IProfilServisi
                         ? f.Urun.UrunAmbalajlari.FirstOrDefault()!.FiyatKademeleri.FirstOrDefault()!.BirimFiyat 
                         : null
             })
-            .ToListAsync();
+            .ToListAsync()
+        };
     }
 
     public async Task<bool> FavoriEkleAsync(long kullaniciId, FavoriEkleDto dto)
@@ -126,14 +137,28 @@ public class ProfilServisi : IProfilServisi
         await _context.SaveChangesAsync();
         return true;
     }
-    public async Task<List<MusteriUrunKoduDto>> MusteriUrunKodlariniGetirAsync(long kullaniciId)
+    public async Task<SayfaliSonucDto<MusteriUrunKoduDto>> MusteriUrunKodlariniGetirAsync(
+        long kullaniciId,
+        int sayfaNo,
+        int sayfaBoyutu)
     {
         var kullanici = await _context.Kullanicilar.AsNoTracking().FirstOrDefaultAsync(k => k.Id == kullaniciId);
-        if (kullanici == null || kullanici.FirmaId == null) return new List<MusteriUrunKoduDto>();
+        sayfaNo = Math.Max(1, sayfaNo);
+        sayfaBoyutu = Math.Clamp(sayfaBoyutu, 1, 100);
+        if (kullanici == null || kullanici.FirmaId == null)
+            return new SayfaliSonucDto<MusteriUrunKoduDto> { SayfaNo = sayfaNo, SayfaBoyutu = sayfaBoyutu };
 
-        return await _context.Set<MusteriUrunKodu>()
+        var sorgu = _context.Set<MusteriUrunKodu>().Where(m => m.FirmaId == kullanici.FirmaId);
+        return new SayfaliSonucDto<MusteriUrunKoduDto>
+        {
+            SayfaNo = sayfaNo,
+            SayfaBoyutu = sayfaBoyutu,
+            ToplamKayit = await sorgu.CountAsync(),
+            Kayitlar = await sorgu
             .Include(m => m.Urun)
-            .Where(m => m.FirmaId == kullanici.FirmaId)
+            .OrderBy(m => m.Id)
+            .Skip((sayfaNo - 1) * sayfaBoyutu)
+            .Take(sayfaBoyutu)
             .Select(m => new MusteriUrunKoduDto
             {
                 Id = m.Id,
@@ -142,7 +167,8 @@ public class ProfilServisi : IProfilServisi
                 MusteriKodu = m.MusteriKodu,
                 Aciklama = m.Aciklama
             })
-            .ToListAsync();
+            .ToListAsync()
+        };
     }
 
     public async Task<MusteriUrunKoduDto> MusteriUrunKoduEkleAsync(long kullaniciId, MusteriUrunKoduEkleDto dto)

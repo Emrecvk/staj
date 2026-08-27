@@ -1,4 +1,5 @@
 using Cevik.Altyapi.Icerik.Servisler;
+using Cevik.Altyapi.Bom.Servisler;
 using Cevik.Altyapi.Katalog.Servisler;
 using Cevik.Altyapi.Kimlik.Servisler;
 using Cevik.Altyapi.Siparis.Servisler;
@@ -7,6 +8,7 @@ using Cevik.Altyapi.Veritabani;
 using Cevik.Altyapi.Veritabani.Seed;
 using Cevik.Altyapi.Yonetim.Servisler;
 using Cevik.Uygulama.Icerik.Arayuzler;
+using Cevik.Uygulama.Bom.Arayuzler;
 using Cevik.Uygulama.Katalog.Arayuzler;
 using Cevik.Uygulama.Kimlik.Arayuzler;
 using Cevik.Uygulama.Ortak;
@@ -45,11 +47,11 @@ var builder = WebApplication.CreateBuilder(args);
 // uzerinden, yani nihai yapilandirmadan yapiliyor.
 // ---------------------------------------------------------------------------
 builder.Services.AddOptions<JwtAyarlari>()
-    .Bind(builder.Configuration.GetSection(JwtAyarlari.BolumAdi))
+    .BindConfiguration(JwtAyarlari.BolumAdi)
     .Validate(ayarlar => ayarlar.GecerliMi(out _), "Jwt yapilandirmasi gecersiz.")
     .ValidateOnStart();
 
-builder.Services.Configure<TicariAyarlar>(builder.Configuration.GetSection(TicariAyarlar.BolumAdi));
+builder.Services.AddOptions<TicariAyarlar>().BindConfiguration(TicariAyarlar.BolumAdi);
 
 // ---------------------------------------------------------------------------
 // Servisler
@@ -147,16 +149,17 @@ builder.Services.AddOptions<ForwardedHeadersOptions>()
         }
     });
 
-builder.Services.AddCors(options =>
+builder.Services.AddCors();
+builder.Services.AddOptions<Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions>()
+    .Configure<IConfiguration, IHostEnvironment>((options, yapilandirma, ortam) =>
 {
-    // Kokenler lambda icinde okunur; boylece nihai yapilandirmadan gelir.
-    var izinliKokenler = builder.Configuration.GetSection("Cors:IzinliKokenler").Get<string[]>() ?? [];
+    var izinliKokenler = yapilandirma.GetSection("Cors:IzinliKokenler").Get<string[]>() ?? [];
 
     // Uretimde localhost'a geri dusmek yok: yanlis yapilandirilmis bir dagitim
     // sessizce gelistirme kokenini kabul etmektense acikca durmalidir.
     if (izinliKokenler.Length == 0)
     {
-        if (!builder.Environment.IsDevelopment())
+        if (!ortam.IsDevelopment())
             throw new InvalidOperationException(
                 "Cors:IzinliKokenler uretim ortaminda tanimlanmalidir.");
 
@@ -223,19 +226,27 @@ builder.Services.AddDbContext<CevikDbContext>((sp, options) =>
     }
 });
 
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
-    options.InstanceName = "Cevik_";
-});
+builder.Services.AddStackExchangeRedisCache(_ => { });
+builder.Services.AddOptions<Microsoft.Extensions.Caching.StackExchangeRedis.RedisCacheOptions>()
+    .Configure<IConfiguration>((options, yapilandirma) =>
+    {
+        options.Configuration = yapilandirma.GetConnectionString("Redis") ?? "localhost:6379";
+        options.InstanceName = "Cevik_";
+    });
 
 builder.Services.AddScoped<CevikDataSeeder>();
+builder.Services.AddScoped<OzdisanKatalogEsitleyici>();
 builder.Services.AddScoped<IEpostaServisi, SahteEpostaServisi>();
 builder.Services.AddScoped<IKatalogServisi, KatalogServisi>();
+builder.Services.AddScoped<IStokBildirimServisi, StokBildirimServisi>();
+builder.Services.AddScoped<IMalzemeListesiServisi, MalzemeListesiServisi>();
 builder.Services.AddScoped<IPublicIcerikServisi, PublicIcerikServisi>();
 builder.Services.AddScoped<IKimlikServisi, KimlikServisi>();
 builder.Services.AddScoped<IProfilServisi, ProfilServisi>();
 builder.Services.AddScoped<ISepetServisi, SepetServisi>();
+// Sipariş kurma adımları (numara, MOQ doğrulama, stok düşümü, KDV, kargo,
+// adres snapshot) hem sepet hem teklif yolunda aynı örnekten geçsin.
+builder.Services.AddScoped<SiparisKurucu>();
 builder.Services.AddScoped<ISiparisServisi, SiparisServisi>();
 builder.Services.AddScoped<IDovizKuruServisi, Cevik.Altyapi.Fiyatlama.Servisler.DovizKuruServisi>();
 builder.Services.AddScoped<ITeklifServisi, TeklifServisi>();
@@ -248,6 +259,7 @@ builder.Services.AddScoped<Cevik.Uygulama.Odemeler.Arayuzler.IOdemeServisi,
     Cevik.Altyapi.Odemeler.Servisler.OdemeServisi>();
 builder.Services.AddScoped<ITeklifYonetimServisi, Cevik.Altyapi.Teklif.Servisler.TeklifYonetimServisi>();
 builder.Services.AddScoped<IYonetimServisi, YonetimServisi>();
+builder.Services.AddScoped<IKatalogYonetimServisi, KatalogYonetimServisi>();
 
 // E-Posta / Bildirim
 builder.Services.AddScoped<Cevik.Uygulama.Ortak.Arayuzler.IBildirimServisi, Cevik.Altyapi.Ortak.Servisler.EpostaBildirimServisi>();
@@ -285,7 +297,23 @@ builder.Services.AddRateLimiter(options =>
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 100,
+            // GEÇICI ÖNLEM — asıl sorun bu limit değil, kimin "bir IP" sayıldığı.
+            //
+            // Frontend, tüm sayfa render'ları için API'ye SUNUCU TARAFINDAN
+            // (Next.js SSR) istek atıyor; forwarded header güveni kurulmadığı
+            // için (bkz. CLAUDE.md — ileri header'lara körü körüne güvenilmez)
+            // context.Connection.RemoteIpAddress her zaman frontend
+            // container'ının TEK docker-network adresidir. Yani bu limit
+            // "ziyaretçi başına" değil, SİTE GENELİNDE ortak bir kovadır: bir
+            // kullanıcının birkaç sekmede gezinmesi bile (her sayfa birden
+            // fazla SSR çağrısı yapıyor) diğer TÜM ziyaretçileri 429'a düşürür.
+            //
+            // Kalıcı çözüm, frontend'i güvenilir bir proxy olarak tanımlayıp
+            // gerçek istemci IP'sini X-Forwarded-For ile taşımaktır; bu,
+            // güven sınırını genişleten ayrı bir karardır ve burada tek
+            // başına yapılmadı. Limit şimdilik yalnızca kaçak döngüye karşı
+            // bir güvenlik ağı olacak kadar yükseltildi.
+            PermitLimit = 1000,
             Window = TimeSpan.FromMinutes(1),
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0
@@ -344,12 +372,24 @@ app.UseExceptionHandler(hataHatti =>
             _ => (StatusCodes.Status500InternalServerError, "Beklenmeyen bir hata olustu")
         };
 
+        // Is kurali ihlalinin MESAJI kullanici icin yazilmistir ("Stokta
+        // yalnizca 340 adet var. Daha fazlasi icin fiyat ve stok talebi
+        // olusturabilirsiniz.") ve uretimde de gorunmelidir; yutulursa
+        // kullanici sepete neden ekleyemedigini asla ogrenemez. Yigin izini
+        // tasiyan tam dokum (ToString) yalnizca gelistirmede ve yalnizca
+        // beklenmeyen istisnalar icin verilir.
+        var detay = istisna switch
+        {
+            IsKuraliIhlaliException => istisna.Message,
+            _ => app.Environment.IsDevelopment() ? istisna?.ToString() : null
+        };
+
         context.Response.StatusCode = durumKodu;
         await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
         {
             Status = durumKodu,
             Title = baslik,
-            Detail = app.Environment.IsDevelopment() ? istisna?.ToString() : null
+            Detail = detay
         });
     });
 });

@@ -45,7 +45,7 @@ public class KimlikSenaryolariTestleri : IClassFixture<CevikUygulamaFabrikasi>
     }
 
     [Fact]
-    public async Task Senaryo2_Rotasyon_Ve_Eski_Token_Kullanimi_Engellenir()
+    public async Task Senaryo2_KisaSureli_Tekrar_Ayni_Ardil_Tokeni_Verir()
     {
         var (_, _, tokenDto) = await KullaniciOlusturVeGirisYapAsync();
 
@@ -56,18 +56,21 @@ public class KimlikSenaryolariTestleri : IClassFixture<CevikUygulamaFabrikasi>
         });
         ilkYenileYanit.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // 2. Eski Token ile Tekrar Yenileme (Başarısız olmalı)
+        var ilkToken = await ilkYenileYanit.Content.ReadFromJsonAsync<TokenDto>(JsonAyarlari);
+
+        // Çerezi henüz güncellenmemiş ikinci istek aynı başarılı sonucu alır.
         var ikinciYenileYanit = await _istemci.PostAsJsonAsync("/api/Kimlik/yenile", new TokenYenileDto
         {
             RefreshToken = tokenDto.RefreshToken
         });
-        
-        // 401 veya 400 olabilir, kimlik kontrolcüsünde "token == null" ise Unauthorized (401) dönüyor.
-        ikinciYenileYanit.StatusCode.Should().BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.BadRequest);
+
+        ikinciYenileYanit.StatusCode.Should().Be(HttpStatusCode.OK);
+        var ikinciToken = await ikinciYenileYanit.Content.ReadFromJsonAsync<TokenDto>(JsonAyarlari);
+        ikinciToken!.RefreshToken.Should().Be(ilkToken!.RefreshToken);
     }
 
     [Fact]
-    public async Task Senaryo3_EsZamanli_Yenileme_Isteklerinden_Biri_Basarisiz_Olur()
+    public async Task Senaryo3_EsZamanli_Yenileme_Istekleri_Ayni_Ardil_Tokeni_Alir()
     {
         var (_, _, tokenDto) = await KullaniciOlusturVeGirisYapAsync();
 
@@ -81,11 +84,13 @@ public class KimlikSenaryolariTestleri : IClassFixture<CevikUygulamaFabrikasi>
 
         var sonuclar = await Task.WhenAll(task1, task2);
 
-        var basariliSayisi = sonuclar.Count(x => x.IsSuccessStatusCode);
-        var basarisizSayisi = sonuclar.Count(x => !x.IsSuccessStatusCode);
+        sonuclar.Should().OnlyContain(x => x.StatusCode == HttpStatusCode.OK,
+            "eşzamanlı istekler oturumu yanlışlıkla geçersiz kılmamalı");
 
-        basariliSayisi.Should().Be(1, "Aynı anda gelen isteklerden sadece biri yeni token alabilmeli.");
-        basarisizSayisi.Should().Be(1, "Diğer istek zaten kullanılmış/geçersiz olduğu için reddedilmeli.");
+        var tokenlar = await Task.WhenAll(sonuclar.Select(x =>
+            x.Content.ReadFromJsonAsync<TokenDto>(JsonAyarlari)));
+        tokenlar.Should().OnlyContain(x => x != null);
+        tokenlar.Select(x => x!.RefreshToken).Distinct().Should().ContainSingle();
     }
 
     [Fact]
