@@ -1,12 +1,11 @@
 import Link from "next/link";
 import {
   CreditCard,
-  Code2,
-  Cpu,
   ArrowRight,
   Sparkles,
   Building,
   Headphones,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
 
@@ -22,34 +21,13 @@ interface CorporateSolution {
 
 const B2B_SOLUTIONS: CorporateSolution[] = [
   {
-    id: "credit",
-    title: "Kurumsal Cari & Vadeli Ödeme",
-    description:
-      "Firma büyüklüğünüze özel vade ve kredi limitleri ile esnek tedarik.",
-    cta: "Başvuru Yap",
-    href: "/kayit/kurumsal",
+    id: "fae-ar-ge",
+    title: "FAE ve Ar-Ge Desteği",
+    description: "Devre tasarımı, parça seçimi ve muadil analizinde uzman mühendis desteği.",
+    cta: "Çözümü incele",
+    href: "/cozumler/fae-ar-ge",
     icon: CreditCard,
     badge: "30-90 Gün Vade",
-  },
-  {
-    id: "edi",
-    title: "API & EDI Sistem Entegrasyonu",
-    description:
-      "Sipariş ve envanter akışınız için API/EDI entegrasyon desteği talep edin.",
-    cta: "Bilgi Al",
-    href: "mailto:destek@cevik.com.tr?subject=API%20ve%20EDI%20entegrasyonu",
-    icon: Code2,
-    badge: "Talep Üzerine",
-  },
-  {
-    id: "fae",
-    title: "Saha Uygulama Mühendisliği (FAE)",
-    description:
-      "Devre tasarımı, parça seçimi ve muadil analizinde uzman mühendis desteği.",
-    cta: "Mühendise Danış",
-    href: "/teklif-iste?konu=fae_destegi",
-    icon: Cpu,
-    badge: "Uzman Donanım Ekibi",
   },
 ];
 
@@ -82,11 +60,11 @@ export function B2BDegerOnerisi() {
             return (
               <div
                 key={solution.id}
-                className="group relative flex min-h-[220px] flex-col justify-between rounded-2xl border border-kenar bg-white p-5 transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:shadow-[var(--shadow-yukselti)]"
+                className="group relative flex min-h-[220px] flex-col justify-between rounded-2xl border border-kenar bg-white p-5 transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:shadow-token-yukselti"
               >
                 <div>
                   <div className="mb-4 flex items-center justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-girdi)] bg-vurgu-zemin text-vurgu-guclu transition-colors group-hover:bg-vurgu group-hover:text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-token-girdi bg-vurgu-zemin text-vurgu-guclu transition-colors group-hover:bg-vurgu group-hover:text-white">
                       <Icon size={24} strokeWidth={1.8} />
                     </div>
                     <span className="rounded-full bg-yuzey-gomulu px-2.5 py-1 font-mono text-[11px] font-semibold text-metin-marka">
@@ -116,8 +94,26 @@ export function B2BDegerOnerisi() {
           })}
         </div>
 
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-vurgu/30 bg-vurgu-zemin p-5 sm:flex-row sm:items-center sm:px-6">
+          <div className="flex items-start gap-3">
+            <FileSpreadsheet className="mt-0.5 shrink-0 text-vurgu-guclu" size={24} />
+            <div>
+              <h3 className="font-bold text-metin-marka">BOM listenizi saniyeler içinde eşleştirin</h3>
+              <p className="mt-1 text-sm text-metin-ikincil">
+                Excel veya CSV listenizi yükleyin; parçaları katalogda bulun ve tedarik sürecini hızlandırın.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/bom"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-marka px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-marka-hover"
+          >
+            BOM Yükle ve Eşleştir <ArrowRight size={16} />
+          </Link>
+        </div>
+
         {/* Bottom Fast B2B Account CTA */}
-        <div className="mt-6 rounded-2xl border border-[#183653] bg-[#0F2740] p-5 text-white sm:p-6">
+        <div className="mt-6 rounded-2xl border border-navy-700 bg-marka p-5 text-white sm:p-6">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div className="max-w-2xl">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-300">
@@ -134,13 +130,13 @@ export function B2BDegerOnerisi() {
             <div className="flex shrink-0 flex-wrap items-center gap-3">
               <Link
                 href="/kayit/kurumsal"
-                className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-sm font-bold text-[#0F2740] transition-all hover:bg-cyan-300 active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-3 text-sm font-bold text-navy-950 transition-all hover:bg-cyan-300 active:scale-[0.98]"
               >
                 Kurumsal Hesap Aç <ArrowRight size={16} />
               </Link>
               <Link
                 href="/teklif-iste"
-                className="inline-flex items-center gap-2 rounded-full border border-slate-500 bg-[#173552] px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-cyan-300 hover:text-cyan-200"
+                className="inline-flex items-center gap-2 rounded-full border border-navy-500 bg-navy-800 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-cyan-300 hover:text-cyan-200"
               >
                 <Headphones size={16} /> Teklif İste
               </Link>

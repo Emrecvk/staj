@@ -43,10 +43,9 @@ describe("Feature 7: Category Icon Grid with SKU Counts", () => {
 
   it("Test 7.4: Category card deep-link targets parametric catalog with selected category ID", () => {
     const categoryId = 1001;
-    const categorySlug = "mikrokontrolculer";
-    const targetUrl = `/urunler?kategoriId=${categoryId}&slug=${categorySlug}`;
+    const targetUrl = `/urunler?kategoriId=${categoryId}`;
 
-    assert.equal(targetUrl, "/urunler?kategoriId=1001&slug=mikrokontrolculer");
+    assert.equal(targetUrl, "/urunler?kategoriId=1001");
   });
 
   it("Test 7.5: Card hover styling uses Çevik surface and accent tokens", () => {

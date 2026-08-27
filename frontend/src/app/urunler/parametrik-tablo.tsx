@@ -16,6 +16,7 @@ import {
 import type { ProductSummary, PackagingOption } from "@/lib/api";
 import { useComparisonStore } from "@/lib/stores/comparison-store";
 import { addToCart } from "@/lib/cart-actions";
+import { notifyCartUpdated } from "@/lib/stores/header-state";
 import { miktariDogrulaAmbalaj, paraBicimle } from "@/lib/miktar-kurali";
 import { bildir } from "@/components/ui/bildirim";
 import { StokRozeti } from "@/components/ui/rozet";
@@ -32,7 +33,7 @@ export function ParametrikTablo({ urunler }: ParametrikTabloProps) {
   }
 
   return (
-    <div className="w-full overflow-x-auto rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart shadow-sm">
+    <div className="w-full overflow-x-auto rounded-token-kart border border-kenar bg-yuzey-kart shadow-sm">
       <table className="w-full min-w-[1020px] border-collapse text-left text-xs" role="table">
         <thead>
           <tr className="border-b border-kenar bg-yuzey-gomulu font-semibold text-metin">
@@ -110,12 +111,14 @@ function TabloSatiri({
         {
           ambalajId: urun.id * 10,
           ad: "Standart Paket",
+          ambalajTipi: 0,
           mpq: 1,
           moq: 1,
           katlamaMiktari: 1,
           stokMiktari: urun.toplamStok,
           gelecekStokMiktari: 0,
           gelecekStokTarihi: null,
+          varsayilanMi: true,
           fiyatlar: [
             {
               minMiktar: 1,
@@ -186,6 +189,7 @@ function TabloSatiri({
     gecisBaslat(async () => {
       const res = await addToCart(seciliAmbalaj.ambalajId, eklenecekMiktar);
       if (res.success) {
+        notifyCartUpdated();
         bildir.eylemli(
           `${urun.ureticiUrunKodu} sepete eklendi`,
           "Sepete Git",
@@ -223,7 +227,7 @@ function TabloSatiri({
       {/* 2. GÖRSEL & HOVER ZOOM */}
       <td className="relative px-2 py-3 text-center">
         <div
-          className="group/thumb relative mx-auto flex size-10 items-center justify-center rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-gomulu"
+          className="group/thumb relative mx-auto flex size-10 items-center justify-center rounded-token-girdi border border-kenar bg-yuzey-gomulu"
           onMouseEnter={() => setZoomGoster(true)}
           onMouseLeave={() => setZoomGoster(false)}
         >
@@ -242,7 +246,7 @@ function TabloSatiri({
 
           {/* Hover Zoom Popover */}
           {zoomGoster && (
-            <div className="pointer-events-none absolute left-12 top-1/2 z-50 -translate-y-1/2 rounded-[var(--radius-kart)] border border-kenar-guclu bg-yuzey-kart p-3 shadow-[var(--shadow-katman)] w-48 text-left">
+            <div className="pointer-events-none absolute left-12 top-1/2 z-50 -translate-y-1/2 rounded-token-kart border border-kenar-guclu bg-yuzey-kart p-3 shadow-token-katman w-48 text-left">
               <div className="mb-2 flex aspect-square items-center justify-center rounded border border-kenar bg-yuzey-gomulu p-2">
                 {urun.anaGorselUrl ? (
                   <img
@@ -329,7 +333,7 @@ function TabloSatiri({
             rel="noopener noreferrer"
             title={datasheet.baslik || "Teknik Doküman (PDF)"}
             aria-label={`${urun.ureticiUrunKodu} Datasheet PDF İndir`}
-            className="inline-flex size-7 items-center justify-center rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart text-vurgu transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
+            className="inline-flex size-7 items-center justify-center rounded-token-girdi border border-kenar bg-yuzey-kart text-vurgu transition-colors hover:border-vurgu hover:bg-vurgu-zemin hover:text-vurgu-guclu"
           >
             <FileText size={15} />
           </a>
@@ -339,32 +343,16 @@ function TabloSatiri({
             disabled
             title="Datasheet mevcut değil"
             aria-label="Datasheet mevcut değil"
-            className="inline-flex size-7 items-center justify-center rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-gomulu text-metin-ucuncul opacity-40"
+            className="inline-flex size-7 items-center justify-center rounded-token-girdi border border-kenar bg-yuzey-gomulu text-metin-ucuncul opacity-40"
           >
             <FileText size={15} />
           </button>
         )}
       </td>
 
-      {/* 7. STOK & DEPO DAĞILIMI */}
+      {/* 7. TOPLAM STOK */}
       <td className="px-3 py-3">
-        {urun.depoStoklari && urun.depoStoklari.length > 0 ? (
-          <div className="space-y-0.5">
-            <div className="font-mono text-xs font-bold tabular-nums text-metin">
-              {urun.toplamStok.toLocaleString("tr-TR")} Adet
-            </div>
-            <div className="flex flex-col gap-0.5 text-[10px] text-metin-ikincil">
-              {urun.depoStoklari.map((depo) => (
-                <div key={depo.depoKodu} className="flex items-center justify-between gap-1">
-                  <span className="truncate">{depo.depoAdi.split(" ")[0]}:</span>
-                  <span className="font-mono tabular-nums font-medium">{depo.stokMiktari.toLocaleString("tr-TR")}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <StokRozeti miktar={urun.toplamStok} />
-        )}
+        <StokRozeti miktar={urun.toplamStok} />
       </td>
 
       {/* 8. FİYAT KADEMELERİ */}
@@ -445,7 +433,7 @@ function TabloSatiri({
               onChange={(e) => handleMiktarChange(e.target.value)}
               onBlur={handleMiktarBlur}
               aria-label={`${urun.ureticiUrunKodu} sipariş adedi`}
-              className="w-16 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-1.5 py-1 text-center font-mono text-xs tabular-nums text-metin focus:border-vurgu focus:outline-none"
+              className="w-16 rounded-token-girdi border border-kenar bg-yuzey-kart px-1.5 py-1 text-center font-mono text-xs tabular-nums text-metin focus:border-vurgu focus:outline-none"
             />
 
             <button
@@ -454,7 +442,7 @@ function TabloSatiri({
               disabled={beklemede || !!miktarHatasi}
               aria-label={`${urun.ureticiUrunKodu} sepete ekle`}
               title="Sepete Ekle"
-              className="inline-flex h-7 items-center gap-1 rounded-[var(--radius-girdi)] bg-vurgu px-2 text-xs font-semibold text-white transition-[background-color,transform] duration-[var(--sure-basma)] hover:bg-vurgu-guclu active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-7 items-center gap-1 rounded-token-girdi bg-vurgu px-2 text-xs font-semibold text-white transition-[background-color,transform] duration-[var(--sure-basma)] hover:bg-vurgu-guclu active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
             >
               {beklemede ? (
                 <Loader2 size={13} className="animate-spin" />

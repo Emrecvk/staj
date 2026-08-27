@@ -1,48 +1,10 @@
 import Link from "next/link";
 import {
-  Cpu,
-  Zap,
-  CircuitBoard,
-  Layers,
-  Lightbulb,
-  ToggleRight,
-  Radar,
-  Wifi,
-  ShieldCheck,
-  PlugZap,
-  SquareTerminal,
-  Fan,
-  Cable,
-  Boxes,
   ArrowRight,
-  type LucideIcon,
 } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
+import { kategoriIkonunuGetir } from "@/components/kategori-ikonlari";
 import type { Category } from "@/lib/api";
-
-/**
- * Slug -> ikon eslemesi. Yalnizca gorsel; kategori verisi (ad, id, sayi)
- * API'den gelir. Eslesmeyen kategori icin genel `Boxes` ikonu kullanilir.
- *
- * Anahtarlar backend'deki kok kategori slug'larini birebir izler
- * (KatalogSablonlari.Agac). Orada bir slug degisirse burasi da guncellenmelidir;
- * aksi halde kategori genel `Boxes` ikonuyla cikar.
- */
-const IKON_ESLEME: Record<string, LucideIcon> = {
-  "yari-iletkenler": Cpu,
-  "guc-yonetimi": Zap,
-  "ayrik-yari-iletkenler": CircuitBoard,
-  "pasif-komponentler": Layers,
-  "optoelektronik": Lightbulb,
-  "elektromekanik": ToggleRight,
-  "sensorler": Radar,
-  "kablosuz-rf": Wifi,
-  "devre-koruma": ShieldCheck,
-  "guc-kaynaklari": PlugZap,
-  "gelistirme-kartlari": SquareTerminal,
-  "termal-mekanik": Fan,
-  "kablo-baglanti": Cable,
-};
 
 interface KategoriIzgarasiProps {
   categories?: Category[];
@@ -91,13 +53,13 @@ export function KategoriIzgarasi({
         {/* Responsive Category Grid */}
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:gap-4">
           {categories.map((cat) => {
-            const Icon = IKON_ESLEME[cat.slug] ?? Boxes;
+            const Icon = kategoriIkonunuGetir(cat.slug);
             const sayi = urunSayilari[cat.id];
             const altlar = (cat.altKategoriler ?? []).map((a) => a.ad).slice(0, 3);
             return (
               <Link
                 key={cat.id}
-                href={`/urunler?kategoriId=${cat.id}&slug=${encodeURIComponent(cat.slug)}`}
+                href={`/urunler?kategoriId=${cat.id}`}
                 className="group relative flex flex-col justify-between rounded-token-kart border border-kenar bg-yuzey-kart p-4 transition-all duration-[var(--sure-acilir)] ease-[var(--ease-cikis)] hover:border-vurgu hover:shadow-token-yukselti"
               >
                 <div>

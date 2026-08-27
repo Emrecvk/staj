@@ -55,8 +55,8 @@ export function FavoriButonu({ urunId, baslangicta = false, boyut = "kucuk" }: {
       aria-pressed={favori}
       aria-label={favori ? "Favorilerden çıkar" : "Favorilere ekle"}
       title={hata ?? (favori ? "Favorilerden çıkar" : "Favorilere ekle")}
-      className={`rounded-full transition-colors disabled:opacity-50 ${
-        boyut === "buyuk" ? "bg-yuzey-gomulu p-2 hover:bg-yuzey" : "bg-yuzey-kart p-1.5 shadow-sm"
+      className={`flex items-center justify-center rounded-full transition-colors disabled:opacity-50 ${
+        boyut === "buyuk" ? "h-11 w-11 bg-yuzey-gomulu hover:bg-yuzey" : "bg-yuzey-kart p-1.5 shadow-sm"
       } ${favori ? "text-vurgu" : "text-metin-ucuncul hover:text-vurgu"}`}
     >
       {beklemede
@@ -72,7 +72,7 @@ export function KarsilastirmaButonu({
   baslangicta = false,
 }: {
   urunId: number;
-  product?: Partial<ComparisonItem>;
+  product: Omit<ComparisonItem, "id">;
   baslangicta?: boolean;
 }) {
   const { isInComparison, addItem, removeItem } = useComparisonStore();
@@ -91,14 +91,14 @@ export function KarsilastirmaButonu({
       } else {
         const added = addItem({
           id: urunId,
-          ureticiUrunKodu: product?.ureticiUrunKodu ?? `URUN-${urunId}`,
-          ureticiAd: product?.ureticiAd ?? "Distribütör",
-          anaGorselUrl: product?.anaGorselUrl ?? null,
-          baslangicFiyati: product?.baslangicFiyati ?? 0,
-          paraBirimi: product?.paraBirimi ?? "USD",
-          toplamStok: product?.toplamStok ?? 100,
-          kategoriId: product?.kategoriId ?? 1,
-          ozellikler: product?.ozellikler,
+          ureticiUrunKodu: product.ureticiUrunKodu,
+          ureticiAd: product.ureticiAd,
+          anaGorselUrl: product.anaGorselUrl,
+          baslangicFiyati: product.baslangicFiyati,
+          paraBirimi: product.paraBirimi,
+          toplamStok: product.toplamStok,
+          kategoriId: product.kategoriId,
+          ozellikler: product.ozellikler,
         });
         if (!added) {
           setHata("En fazla 4 ürün karşılaştırabilirsiniz.");

@@ -29,7 +29,7 @@ export function Bildirimler() {
       toastOptions={{
         classNames: {
           toast:
-            "!rounded-[var(--radius-kart)] !border-kenar !bg-yuzey-kart !text-metin !shadow-[var(--shadow-katman)]",
+            "!rounded-token-kart !border-kenar !bg-yuzey-kart !text-metin !shadow-token-katman",
           description: "!text-metin-ikincil",
           actionButton: "!bg-marka !text-dolgu-uzeri",
           cancelButton: "!bg-yuzey-gomulu !text-metin-ikincil",

@@ -1,5 +1,6 @@
 import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { MOCK_CATEGORIES } from "../test-helpers.mjs";
 
 describe("Feature 2: Multi-Level Mega Menu", () => {
@@ -34,32 +35,30 @@ describe("Feature 2: Multi-Level Mega Menu", () => {
     assert.ok(level2Columns[0].leafItems.includes("Mikrokontrolcüler (ARM / RISC-V)"));
   });
 
-  it("Test 2.3: Level 3 leaf items generate deep-linkable URLs with catalog facets", () => {
+  it("Test 2.3: Level 3 leaf items generate category ID based catalog URLs", () => {
     const leafCategory = MOCK_CATEGORIES[0].altKategoriler[0].altKategoriler[0];
-    const leafLink = `/urunler?kategoriId=${leafCategory.id}&slug=${leafCategory.slug}`;
+    const leafLink = `/urunler?kategoriId=${leafCategory.id}`;
 
     assert.equal(leafCategory.id, 1001);
     assert.equal(leafCategory.yaprakMi, true);
-    assert.equal(leafLink, "/urunler?kategoriId=1001&slug=mikrokontrolculer");
+    assert.equal(leafLink, "/urunler?kategoriId=1001");
   });
 
-  it("Test 2.4: Featured brand spotlight panel loads authorized supplier cards per category", () => {
-    const categoryBrandMap = {
-      1: [
-        { brandId: 1, name: "STMicroelectronics", logoUrl: "/brands/st.svg", authorized: true },
-        { brandId: 2, name: "GigaDevice", logoUrl: "/brands/gigadevice.svg", authorized: true },
-        { brandId: 4, name: "Texas Instruments", logoUrl: "/brands/ti.svg", authorized: true },
-      ],
-      2: [
-        { brandId: 3, name: "Murata Electronics", logoUrl: "/brands/murata.svg", authorized: true },
-        { brandId: 5, name: "Yageo", logoUrl: "/brands/yageo.svg", authorized: true },
-      ],
-    };
+  it("Test 2.4: Mega menu remains focused on category navigation", () => {
+    const megaMenuSource = readFileSync(
+      new URL("../../src/components/mega-menu/mega-menu.tsx", import.meta.url),
+      "utf8",
+    );
+    const removedSupplementarySections = [
+      "Öne Çıkan Üreticiler",
+      "Hızlı BOM ve Teklif",
+      "Tüm Ürün Kataloğu",
+      "%100 Orijinal Üretici Garantisi",
+    ];
 
-    const brandsForSemis = categoryBrandMap[1];
-    assert.equal(brandsForSemis.length, 3);
-    assert.ok(brandsForSemis.every((b) => b.authorized));
-    assert.equal(brandsForSemis[0].name, "STMicroelectronics");
+    for (const section of removedSupplementarySections) {
+      assert.ok(!megaMenuSource.includes(section), `${section} should not be rendered`);
+    }
   });
 
   it("Test 2.5: Hover-intent buffering logic prevents menu flickering on diagonal mouse movements", () => {

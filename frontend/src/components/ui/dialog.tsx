@@ -80,8 +80,8 @@ export function Dialog({
             aria-labelledby="dialog-baslik"
             aria-describedby={aciklama ? "dialog-aciklama" : undefined}
             tabIndex={-1}
-            className={`relative my-8 w-full ${genislikler[genislik]} rounded-[var(--radius-panel)]
-                        border border-kenar bg-yuzey-kart shadow-[var(--shadow-katman)] outline-none`}
+            className={`relative my-8 w-full ${genislikler[genislik]} rounded-token-panel
+                        border border-kenar bg-yuzey-kart shadow-token-katman outline-none`}
             initial={azaltilmisHareket ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             // Çıkış girişten hızlı: süre variant'ın kendi üzerinde tanımlı.

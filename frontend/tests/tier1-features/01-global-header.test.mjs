@@ -1,6 +1,6 @@
 import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { BRAND_TOKENS, MOCK_CATEGORIES } from "../test-helpers.mjs";
+import { MOCK_CATEGORIES } from "../test-helpers.mjs";
 
 describe("Feature 1: 3-Tier Global Header", () => {
   it("Test 1.1: Top utility bar renders support line, exchange rate, BOM link and locale selector", () => {
@@ -81,7 +81,7 @@ describe("Feature 1: 3-Tier Global Header", () => {
     assert.equal(bottomNav.topCategories[0].href, "/urunler?kategoriId=1");
   });
 
-  it("Test 1.6: Header structure enforces Çevik Navy and Cyan color tokens without raw red", () => {
+  it("Test 1.6: Header structure uses semantic brand and signal tokens without raw colors", () => {
     const headerClasses = [
       "bg-yuzey-kart",
       "border-b",

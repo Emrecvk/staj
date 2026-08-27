@@ -29,7 +29,7 @@ export default async function AdminUrunlerPage({ searchParams }: {
   return (
     <UrunYonetimi
       urunler={urunler.data.kayitlar}
-      toplam={urunler.data.toplam}
+      toplam={urunler.data.toplamKayit}
       kategoriler={kategoriler.success ? kategoriler.data : []}
       ureticiler={ureticiler.success ? ureticiler.data : []}
       arama={arama}

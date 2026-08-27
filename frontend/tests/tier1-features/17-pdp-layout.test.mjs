@@ -1,8 +1,10 @@
 import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { MOCK_PRODUCTS } from "../test-helpers.mjs";
 
 describe("Feature 17: PDP Layout & Summary Header", () => {
+  const clientSource = readFileSync(new URL("../../src/app/urunler/[id]/client.tsx", import.meta.url), "utf8");
   it("Test 17.1: Breadcrumb hierarchy renders full ancestral category path down to active MPN", () => {
     const product = MOCK_PRODUCTS[0];
     const breadcrumbItems = [
@@ -52,5 +54,12 @@ describe("Feature 17: PDP Layout & Summary Header", () => {
     assert.ok(product.gorselUrlleri.length >= 2);
     assert.equal(product.anaGorselUrl, "/products/stm32f407vgt6.jpg");
     assert.equal(typeof product.gorselTemsiliMi, "boolean");
+  });
+
+  it("Test 17.6: Desktop PDP columns fit the 12-column grid without wrapping", () => {
+    assert.match(clientSource, /lg:col-span-5/);
+    assert.match(clientSource, /lg:col-span-3/);
+    assert.match(clientSource, /lg:col-span-4/);
+    assert.doesNotMatch(clientSource, /lg:col-span-6[\s\S]*lg:col-span-4[\s\S]*lg:col-span-4/);
   });
 });

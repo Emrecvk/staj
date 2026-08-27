@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getCategories, getFaqs } from "@/lib/api";
 
-export const metadata: Metadata = { title: "Sıkça Sorulan Sorular | Çevik Elektronik" };
+export const metadata: Metadata = { title: "Sıkça Sorulan Sorular" };
 
 export default async function SssPage() {
   const [categories, faqs] = await Promise.all([getCategories(), getFaqs()]);
@@ -18,7 +18,7 @@ export default async function SssPage() {
         {faqs.length > 0 ? (
           <div className="mt-8 space-y-3">
             {faqs.map((faq) => (
-              <details key={faq.id} className="group rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart px-5 py-4">
+              <details key={faq.id} className="group rounded-token-kart border border-kenar bg-yuzey-kart px-5 py-4">
                 <summary className="cursor-pointer list-none pr-8 text-sm font-semibold text-metin marker:content-none">
                   {faq.soru}
                 </summary>

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 function EmailVerificationContent() {
@@ -21,8 +22,7 @@ function EmailVerificationContent() {
 
     const verifyEmail = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api";
-        const res = await fetch(`${API_URL}/Kimlik/eposta-dogrula`, {
+        const res = await fetch("/api/Kimlik/eposta-dogrula", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token, eposta }),
@@ -33,7 +33,7 @@ function EmailVerificationContent() {
         } else {
           setStatus("error");
         }
-      } catch (e) {
+      } catch {
         setStatus("error");
       }
     };
@@ -42,14 +42,14 @@ function EmailVerificationContent() {
   }, [token, eposta]);
 
   return (
-    <div className="min-h-[70vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-yuzey">
+    <main id="icerik" className="min-h-[70vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-yuzey">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center mb-6">
-          <img src="/logo-cevik-yatay.svg" alt="Çevik" className="h-12 w-auto" />
+          <Image src="/logo-cevik-yatay.svg" alt="Çevik Elektronik" width={180} height={48} priority className="h-12 w-auto" />
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">
+        <h1 className="mt-6 text-center text-3xl font-extrabold text-metin-marka">
           E-posta Doğrulama
-        </h2>
+        </h1>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -84,7 +84,7 @@ function EmailVerificationContent() {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

@@ -1,5 +1,6 @@
 ﻿import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getProduct, getCategories, type Category } from "@/lib/api";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -16,11 +17,11 @@ export async function generateMetadata({
 
   const product = await getProduct(id);
   if (!product) {
-    return { title: "Ürün Bulunamadı | Çevik B2B" };
+    return { title: "Ürün Bulunamadı" };
   }
 
   return {
-    title: `${product.ureticiUrunKodu} - ${product.ureticiAd} | Çevik Elektronik B2B`,
+    title: `${product.ureticiUrunKodu} - ${product.ureticiAd}`,
     description: `${product.kisaAciklama || product.ureticiUrunKodu} - Çevik Elektronik B2B Komponent Tedarik ve Mühendislik Platformu.`,
     openGraph: {
       title: `${product.ureticiUrunKodu} | ${product.ureticiAd}`,
@@ -50,9 +51,11 @@ function findCategoryPath(
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const cookieStore = await cookies();
+  const seciliParaBirimi = cookieStore.get("site_para_birimi")?.value === "USD" ? "USD" : "TRY";
 
   const [product, categories] = await Promise.all([
-    getProduct(id),
+    getProduct(id, seciliParaBirimi),
     getCategories(),
   ]);
 
@@ -68,7 +71,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-yuzey">
-      <SiteHeader />
+      <SiteHeader categories={categories} initialCurrency={seciliParaBirimi} />
       <div className="flex-1">
         <PdpClient product={product} kategoriYolu={kategoriYolu} />
       </div>

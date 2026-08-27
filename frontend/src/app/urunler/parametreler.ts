@@ -23,6 +23,8 @@ export const GEZINME_ANAHTARLARI = new Set([
   "siralama",
   "aramaMetni",
   "kategoriId",
+  // Eski kategori bağlantılarında bulunabilir; filtre değildir ve API'ye gönderilmez.
+  "slug",
   "sadeceStoktakiler",
   "dil",
   "paraBirimi",
@@ -37,7 +39,7 @@ export function apiParametreleriniKur(
   const cikti: Record<string, string | string[]> = {};
 
   for (const [anahtar, deger] of Object.entries(urlParametreleri)) {
-    if (deger === undefined || anahtar === "gorunum") continue;
+    if (deger === undefined || anahtar === "gorunum" || anahtar === "slug") continue;
 
     // Marka filtresi: URL'de sade `ureticiId`, API'de `UreticiIdleri` (List<int>).
     // ASP.NET model binder tekrarlanan anahtarları listeye bağlar.

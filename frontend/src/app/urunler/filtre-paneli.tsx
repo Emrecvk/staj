@@ -92,7 +92,7 @@ function FacetGrubu({
                 onChange={(e) => setAramaMetni(e.target.value)}
                 placeholder={`${grup.ad} içinde ara...`}
                 aria-label={`${grup.ad} içinde ara`}
-                className="w-full rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-gomulu py-1 pl-8 pr-7 text-xs text-metin placeholder:text-metin-ucuncul focus:border-vurgu focus:bg-yuzey-kart focus:outline-none"
+                className="w-full rounded-token-girdi border border-kenar bg-yuzey-gomulu py-1 pl-8 pr-7 text-xs text-metin placeholder:text-metin-ucuncul focus:border-vurgu focus:bg-yuzey-kart focus:outline-none"
               />
               {aramaMetni && (
                 <button
@@ -200,7 +200,7 @@ export function FiltrePaneli({
     <div
       className={
         kutuIcinde
-          ? "overflow-hidden rounded-[var(--radius-kart)] border border-kenar bg-yuzey-kart shadow-sm"
+          ? "overflow-hidden rounded-token-kart border border-kenar bg-yuzey-kart shadow-sm"
           : ""
       }
     >

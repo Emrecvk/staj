@@ -40,7 +40,7 @@ const boyutlar: Record<Boyut, string> = {
 };
 
 const temel = [
-  "inline-flex items-center justify-center rounded-[var(--radius-girdi)] font-semibold",
+  "inline-flex items-center justify-center rounded-token-girdi font-semibold",
   "whitespace-nowrap select-none",
   "transition-[transform,background-color,border-color,color]",
   "duration-[var(--sure-basma)] ease-[var(--ease-cikis)]",

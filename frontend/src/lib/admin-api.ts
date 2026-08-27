@@ -1,28 +1,17 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
+import { yetkiliIstek } from "./oturum";
 import type {
   YonetimSonuc, AdminUrunSayfasi, AdminKategori, AdminUretici,
   AdminOzellik, AdminFirma, AdminSiparis, AdminTeklif, AdminBlogYazisi,
-  GostergeVerisi,
+  GostergeVerisi, AdminSayfa,
 } from "./admin-tipler";
-
-const API_URL = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // ---------------------------------------------------------------------------
 // İstek yardımcıları
 // ---------------------------------------------------------------------------
-
-async function yetkiBasliklari(): Promise<Record<string, string>> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
-
-  const basliklar: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) basliklar["Authorization"] = `Bearer ${token}`;
-  return basliklar;
-}
 
 /**
  * API hata gövdesini kullanıcıya gösterilebilir tek bir cümleye indirger.
@@ -55,10 +44,9 @@ async function yonetimIstek<T>(
   secenekler: RequestInit = {},
 ): Promise<YonetimSonuc<T>> {
   try {
-    const yanit = await fetch(`${API_URL}${yol}`, {
+    const yanit = await yetkiliIstek(yol, {
       ...secenekler,
-      headers: await yetkiBasliklari(),
-      cache: "no-store",
+      headers: { "Content-Type": "application/json", ...secenekler.headers },
     });
 
     if (!yanit.ok) return { success: false, message: await hataMesaji(yanit) };
@@ -87,11 +75,11 @@ async function yonetimIstek<T>(
  */
 export async function getGostergeVerisi(): Promise<GostergeVerisi> {
   const [urunler, firmalar, siparisler, teklifler, stokAdaylari] = await Promise.all([
-    yonetimIstek<AdminUrunSayfasi>("/yonetim/urun?sayfa=1&boyut=1"),
-    yonetimIstek<AdminFirma[]>("/yonetim/firmalar/bekleyen"),
-    yonetimIstek<AdminSiparis[]>("/yonetim/siparisler?boyut=200"),
-    yonetimIstek<AdminTeklif[]>("/yonetim/teklifler"),
-    yonetimIstek<AdminUrunSayfasi>("/yonetim/urun?sayfa=1&boyut=200"),
+    yonetimIstek<AdminUrunSayfasi>("/yonetim/urun?sayfaNo=1&sayfaBoyutu=1"),
+    yonetimIstek<AdminSayfa<AdminFirma>>("/yonetim/firmalar/bekleyen?sayfaNo=1&sayfaBoyutu=100"),
+    yonetimIstek<AdminSayfa<AdminSiparis>>("/yonetim/siparisler?sayfaNo=1&sayfaBoyutu=200"),
+    yonetimIstek<AdminSayfa<AdminTeklif>>("/yonetim/teklifler?sayfaNo=1&sayfaBoyutu=100"),
+    yonetimIstek<AdminUrunSayfasi>("/yonetim/urun?sayfaNo=1&sayfaBoyutu=200"),
   ]);
 
   const hatalar: string[] = [];
@@ -122,10 +110,10 @@ export async function getGostergeVerisi(): Promise<GostergeVerisi> {
     .map(u => ({ id: u.id, kod: u.ureticiUrunKodu, aciklama: u.kisaAciklama, stok: u.toplamStok }));
 
   return {
-    urunSayisi: urunler.success ? urunler.data.toplam : 0,
-    bekleyenFirmaSayisi: firmalar.success ? firmalar.data.length : 0,
-    siparisDurumDagilimi: siparisler.success ? dagilimHesapla(siparisler.data) : [],
-    teklifDurumDagilimi: teklifler.success ? dagilimHesapla(teklifler.data) : [],
+    urunSayisi: urunler.success ? urunler.data.toplamKayit : 0,
+    bekleyenFirmaSayisi: firmalar.success ? firmalar.data.toplamKayit : 0,
+    siparisDurumDagilimi: siparisler.success ? dagilimHesapla(siparisler.data.kayitlar) : [],
+    teklifDurumDagilimi: teklifler.success ? dagilimHesapla(teklifler.data.kayitlar) : [],
     stokUyarilari,
     hatalar,
   };
@@ -141,8 +129,8 @@ export async function getAdminUrunler(params: {
   const sorgu = new URLSearchParams();
   if (params.arama) sorgu.set("arama", params.arama);
   if (params.silinmisleriGoster) sorgu.set("silinmisleriGoster", "true");
-  sorgu.set("sayfa", String(params.sayfa ?? 1));
-  sorgu.set("boyut", String(params.boyut ?? 50));
+  sorgu.set("sayfaNo", String(params.sayfa ?? 1));
+  sorgu.set("sayfaBoyutu", String(params.boyut ?? 50));
 
   return yonetimIstek<AdminUrunSayfasi>(`/yonetim/urun?${sorgu}`);
 }
@@ -293,7 +281,9 @@ export async function ozellikGuncelle(id: number, dto: Record<string, unknown>) 
 // ---------------------------------------------------------------------------
 
 export async function getBekleyenFirmalar() {
-  return yonetimIstek<AdminFirma[]>("/yonetim/firmalar/bekleyen");
+  const sonuc = await yonetimIstek<AdminSayfa<AdminFirma>>(
+    "/yonetim/firmalar/bekleyen?sayfaNo=1&sayfaBoyutu=100");
+  return sonuc.success ? { success: true as const, data: sonuc.data.kayitlar } : sonuc;
 }
 
 export async function firmaOnayla(firmaId: number, durum: number) {
@@ -312,9 +302,12 @@ export async function firmaOnayla(firmaId: number, durum: number) {
 // ---------------------------------------------------------------------------
 
 export async function getAdminSiparisler(durum?: number) {
-  const sorgu = new URLSearchParams({ boyut: "100" });
+  const sorgu = new URLSearchParams({ sayfaNo: "1", sayfaBoyutu: "100" });
   if (durum) sorgu.set("durum", String(durum));
-  return yonetimIstek<AdminSiparis[]>(`/yonetim/siparisler?${sorgu}`);
+  const sonuc = await yonetimIstek<AdminSayfa<AdminSiparis>>(`/yonetim/siparisler?${sorgu}`);
+  return sonuc.success
+    ? { success: true as const, data: sonuc.data.kayitlar }
+    : sonuc;
 }
 
 export async function siparisDurumGuncelle(siparisId: number, yeniDurum: number) {
@@ -333,7 +326,9 @@ export async function siparisDurumGuncelle(siparisId: number, yeniDurum: number)
 // ---------------------------------------------------------------------------
 
 export async function getAdminTeklifler() {
-  return yonetimIstek<AdminTeklif[]>("/yonetim/teklifler");
+  const sonuc = await yonetimIstek<AdminSayfa<AdminTeklif>>(
+    "/yonetim/teklifler?sayfaNo=1&sayfaBoyutu=100");
+  return sonuc.success ? { success: true as const, data: sonuc.data.kayitlar } : sonuc;
 }
 
 export async function getAdminTeklifDetay(id: number) {
@@ -375,7 +370,9 @@ export async function teklifReddet(id: number) {
 // ---------------------------------------------------------------------------
 
 export async function getAdminBlogYazilari() {
-  return yonetimIstek<AdminBlogYazisi[]>("/yonetim/blog");
+  const sonuc = await yonetimIstek<AdminSayfa<AdminBlogYazisi>>(
+    "/yonetim/blog?sayfaNo=1&sayfaBoyutu=100");
+  return sonuc.success ? { success: true as const, data: sonuc.data.kayitlar } : sonuc;
 }
 
 export async function blogYazisiEkle(dto: {

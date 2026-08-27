@@ -53,7 +53,7 @@ export default async function RequestQuotePage() {
           </div>
           
           <div className="w-full lg:w-1/3">
-            <div className="bg-yuzey-kart rounded-[var(--radius-kart)] shadow-sm border border-kenar p-6 sticky top-24">
+            <div className="bg-yuzey-kart rounded-token-kart shadow-sm border border-kenar p-6 sticky top-24">
               <h3 className="text-lg font-bold text-metin-marka mb-4 border-b border-kenar pb-3 flex items-center justify-between">
                 <span>Teklif Edilecek Kalemler</span>
                 <span className="text-xs font-mono text-metin-ucuncul">({cart.kalemler.length})</span>
@@ -72,7 +72,7 @@ export default async function RequestQuotePage() {
                 ))}
               </div>
 
-              <div className="bg-vurgu-zemin/60 border border-vurgu/20 p-4 rounded-[var(--radius-girdi)] text-xs text-metin">
+              <div className="bg-vurgu-zemin/60 border border-vurgu/20 p-4 rounded-token-girdi text-xs text-metin">
                 <p className="font-bold text-metin-marka mb-1">Teklif Süreci Nasıl İşler?</p>
                 <ol className="list-decimal pl-4 space-y-1 mt-2 text-metin-ikincil">
                   <li>Talebiniz kurumsal satış temsilcimize iletilir.</li>

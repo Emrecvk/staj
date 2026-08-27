@@ -3,19 +3,19 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { BRAND_TOKENS } from "../test-helpers.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendSrcDir = path.resolve(__dirname, "../../src");
 
 describe("Feature 28: Comprehensive E2E Verification & Build", () => {
-  it("Test 28.1: Design system token definition in globals.css enforces Çevik Navy (#0F2740) and Cyan (#00B4D8 / #0389B0)", () => {
+  it("Test 28.1: Design system defines the ink, paper, and signal palette", () => {
     const globalsCssPath = path.join(frontendSrcDir, "app", "globals.css");
     const content = fs.readFileSync(globalsCssPath, "utf-8");
 
-    assert.ok(content.includes("#0f2740") || content.includes("#0F2740"), "Must define Navy #0F2740");
-    assert.ok(content.includes("#00b4d8") || content.includes("#00B4D8") || content.includes("#0389b0"), "Must define Cyan #00B4D8/#0389B0");
+    assert.ok(content.includes("#32202b"), "Must define ink #32202B");
+    assert.ok(content.includes("#f7763f"), "Must define signal orange #F7763F");
+    assert.ok(content.includes("#f6f1e9"), "Must define paper surface #F6F1E9");
   });
 
   it("Test 28.2: Brand audit verifies ZERO occurrence of Özdisan red (#cc0000) across globals.css", () => {
@@ -37,12 +37,13 @@ describe("Feature 28: Comprehensive E2E Verification & Build", () => {
     assert.ok(content.includes("--color-marka:"));
   });
 
-  it("Test 28.4: Typography rules enforce Geist Sans, Geist Mono, and tabular-nums (.sayisal)", () => {
+  it("Test 28.4: Typography rules enforce display, body, mono, and tabular-nums", () => {
     const globalsCssPath = path.join(frontendSrcDir, "app", "globals.css");
     const content = fs.readFileSync(globalsCssPath, "utf-8");
 
-    assert.ok(content.includes("--font-geist-sans") || content.includes("Geist Sans"));
-    assert.ok(content.includes("--font-geist-mono") || content.includes("Geist Mono"));
+    assert.ok(content.includes("--font-space-grotesk"));
+    assert.ok(content.includes("--font-instrument-sans"));
+    assert.ok(content.includes("--font-ibm-plex-mono"));
     assert.ok(content.includes("tabular-nums"));
   });
 

@@ -5,33 +5,33 @@
    ========================================================================= */
 
 :root {
-  /* ---------- Marka: Lacivert (ana) ---------- */
-  --cvk-lacivert-900: #071523;
-  --cvk-lacivert-800: #0B1B2B;   /* gövde metni */
-  --cvk-lacivert-700: #0F2740;   /* ANA MARKA RENGİ — header, footer */
-  --cvk-lacivert-600: #16385A;
-  --cvk-lacivert-500: #1E4A75;
+  /* ---------- Marka: Grafit-mürdüm (ana) ---------- */
+  --cvk-murdum-900: #21171F;
+  --cvk-murdum-800: #282024;     /* gövde metni */
+  --cvk-murdum-700: #32202B;     /* ANA MARKA RENGİ — header, footer */
+  --cvk-murdum-600: #452638;
+  --cvk-murdum-500: #5F3247;
 
-  /* ---------- Marka: Camgöbeği (vurgu) ---------- */
-  --cvk-camgobegi-700: #00728C;  /* beyaz zeminde METİN/LİNK için tek güvenli ton */
-  --cvk-camgobegi-600: #0090AE;  /* kenarlık, ikon, büyük metin */
-  --cvk-camgobegi-500: #00B4D8;  /* VURGU RENGİ — dolgu, buton zemini, koyu zeminde metin */
-  --cvk-camgobegi-400: #38C9E6;
-  --cvk-camgobegi-300: #7BDCF0;
-  --cvk-camgobegi-100: #D6F4FB;  /* seçili filtre chip'i zemini */
+  /* ---------- Marka: Sinyal turuncusu (vurgu) ---------- */
+  --cvk-sinyal-700: #963219;     /* açık zeminde METİN/LİNK */
+  --cvk-sinyal-600: #BD3F1C;     /* kenarlık, ikon, büyük metin */
+  --cvk-sinyal-500: #F7763F;     /* VURGU RENGİ — dolgu ve koyu zeminde metin */
+  --cvk-sinyal-400: #FF9B66;
+  --cvk-sinyal-300: #FFC49E;
+  --cvk-sinyal-100: #FFF4EB;     /* seçili filtre zemini */
 
-  /* ---------- Nötr ---------- */
-  --cvk-gri-50:  #F6F8FA;        /* sayfa zemini */
-  --cvk-gri-100: #EDF1F5;
-  --cvk-gri-200: #DDE4EB;        /* kenarlık */
-  --cvk-gri-300: #C4CEDA;
-  --cvk-gri-400: #93A3B5;        /* pasif metin */
-  --cvk-gri-500: #6B7C90;
-  --cvk-gri-600: #5A6B7D;        /* ikincil metin */
-  --cvk-gri-700: #3D4C5C;
-  --cvk-gri-800: #26313D;
-  --cvk-gri-900: #0B1B2B;
-  --cvk-beyaz:   #FFFFFF;
+  /* ---------- Sıcak nötr ---------- */
+  --cvk-gri-50:  #F6F1E9;        /* sayfa zemini */
+  --cvk-gri-100: #EEE7DD;
+  --cvk-gri-200: #DED4C8;        /* kenarlık */
+  --cvk-gri-300: #C8BAAB;
+  --cvk-gri-400: #AA9C8F;        /* pasif metin */
+  --cvk-gri-500: #81756E;
+  --cvk-gri-600: #625853;        /* ikincil metin */
+  --cvk-gri-700: #4B4240;
+  --cvk-gri-800: #352D30;
+  --cvk-gri-900: #282024;
+  --cvk-beyaz:   #FFFDF8;
 
   /* ---------- Semantik: durum ---------- */
   --cvk-basari-500: #16A34A;     /* Stokta var */
@@ -47,11 +47,11 @@
   --cvk-zemin:            var(--cvk-gri-50);
   --cvk-yuzey:            var(--cvk-beyaz);
   --cvk-kenarlik:         var(--cvk-gri-200);
-  --cvk-metin:            var(--cvk-lacivert-800);
+  --cvk-metin:            var(--cvk-murdum-800);
   --cvk-metin-ikincil:    var(--cvk-gri-600);
   --cvk-metin-pasif:      var(--cvk-gri-400);
-  --cvk-link:             var(--cvk-camgobegi-700);
-  --cvk-odak-halkasi:     var(--cvk-camgobegi-500);
+  --cvk-link:             var(--cvk-sinyal-700);
+  --cvk-odak-halkasi:     var(--cvk-sinyal-500);
 
   /* ---------- Ürün durumu (urun_durumu enum karşılığı) ---------- */
   --cvk-durum-aktif:      var(--cvk-basari-500);
@@ -60,8 +60,9 @@
   --cvk-durum-obsolete:   var(--cvk-gri-400);
 
   /* ---------- Tipografi ---------- */
-  --cvk-font-govde: Inter, "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-  --cvk-font-kod:   "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  --cvk-font-baslik: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --cvk-font-govde:  "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --cvk-font-kod:    "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
 
   --cvk-metin-xs:   0.75rem;   /* 12px — tablo dipnotu */
   --cvk-metin-sm:   0.875rem;  /* 14px — filtre etiketi, tablo */
@@ -85,19 +86,18 @@
   --cvk-yaricap-lg: 12px;
   --cvk-yaricap-tam: 999px;
 
-  --cvk-golge-sm: 0 1px 2px rgba(11, 27, 43, 0.06);
-  --cvk-golge-md: 0 2px 8px rgba(11, 27, 43, 0.08);
-  --cvk-golge-lg: 0 8px 24px rgba(11, 27, 43, 0.12);
+  --cvk-golge-sm: 0 1px 2px rgba(50, 32, 43, 0.07);
+  --cvk-golge-md: 0 2px 8px rgba(50, 32, 43, 0.10);
+  --cvk-golge-lg: 0 8px 24px rgba(50, 32, 43, 0.16);
 }
 
 /*  ⚠️ ERİŞİLEBİLİRLİK — ölçülmüş kontrast oranları (WCAG 2.1)
     ------------------------------------------------------------------
-    #0F2740 lacivert  / beyaz  = 15.2:1   ✅ AAA  — her boyutta metin
-    #00728C camgöbeği / beyaz  =  5.6:1   ✅ AA   — normal metin, LİNK
-    #0090AE camgöbeği / beyaz  =  3.8:1   ⚠️ sadece büyük metin + kenarlık/ikon
-    #00B4D8 camgöbeği / beyaz  =  2.5:1   ❌ METİN OLARAK KULLANMA
-    #00B4D8 camgöbeği / #0F2740 = 6.2:1   ✅ AA   — koyu zeminde metin serbest
+    #32202B mürdüm / kâğıt      = 15.0:1   ✅ AAA  — her boyutta metin
+    #963219 sinyal / kâğıt      =  7.5:1   ✅ AAA  — normal metin, LİNK
+    #F7763F sinyal / kâğıt      =  2.7:1   ❌ METİN OLARAK KULLANMA
+    #F7763F sinyal / #32202B    =  5.5:1   ✅ AA   — koyu zeminde metin serbest
 
-    Kural: --cvk-camgobegi-500 bir DOLGU rengidir (buton zemini, rozet, çizgi).
+    Kural: --cvk-sinyal-500 bir DOLGU rengidir (buton zemini, rozet, çizgi).
     Beyaz üstünde yazı gerektiğinde daima --cvk-link (700) kullan.
 */

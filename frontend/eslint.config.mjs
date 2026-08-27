@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Yerel tek seferlik bakım betikleri uygulama kaynak kodu değildir.
+    "fix_card*.js",
   ]),
 ]);
 

@@ -3,21 +3,15 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Loader2, Minus, Plus } from "lucide-react";
+import { ShoppingCart, Loader2, Minus, Plus, Bell } from "lucide-react";
 import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
 import { UrunGorseli } from "@/components/urun-gorseli";
 import { addToCart } from "@/lib/cart-actions";
 import { notifyCartUpdated } from "@/lib/stores/header-state";
 import { bildir } from "@/components/ui/bildirim";
 import type { ProductSummary, PackagingOption } from "@/lib/api";
-
-function fiyatBicimle(deger: number, paraBirimi: string) {
-  return new Intl.NumberFormat("tr-TR", {
-    style: "currency",
-    currency: paraBirimi,
-    maximumFractionDigits: 4,
-  }).format(deger);
-}
+import { StokBildirimModal } from "@/components/stok-bildirim-modal";
+import { paraBicimle } from "@/lib/miktar-kurali";
 
 /**
  * Özdisan tarzı katalog ürün kartı: belirgin stok durumu, adet seçici ve
@@ -32,6 +26,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
   const [adet, setAdet] = useState(1);
   const [ekleniyor, setEkleniyor] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [bildirimAcik, setBildirimAcik] = useState(false);
 
   const stokVar = product.toplamStok > 0;
   const azStok = stokVar && product.toplamStok < 100;
@@ -73,7 +68,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
       className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-kenar
                  bg-yuzey-kart shadow-sm transition-[border-color,box-shadow]
                  duration-[var(--sure-acilir)] ease-[var(--ease-cikis)]
-                 hover:border-kenar-guclu hover:shadow-[var(--shadow-yukselti)]"
+                 hover:border-kenar-guclu hover:shadow-token-yukselti"
     >
       {/* Görsel + rozetler + hover aksiyonları */}
       <div className="relative shrink-0 border-b border-kenar bg-yuzey-gomulu">
@@ -95,7 +90,6 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           <KarsilastirmaButonu
             urunId={product.id}
             product={{
-              id: product.id,
               ureticiUrunKodu: product.ureticiUrunKodu,
               ureticiAd: product.ureticiAd,
               anaGorselUrl: product.anaGorselUrl,
@@ -140,10 +134,9 @@ export function ProductCard({ product }: { product: ProductSummary }) {
               {azStok ? " adet (sınırlı)" : " adet stokta"}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-hata-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-hata-500" />
-              Stokta yok — fiyat sorgula
-            </span>
+            <button type="button" onClick={() => setBildirimAcik(true)} className="inline-flex items-center gap-1.5 text-xs font-bold text-vurgu-guclu hover:underline">
+              <Bell size={13} /> Gelince haber ver
+            </button>
           )}
         </div>
 
@@ -151,13 +144,13 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         <div className="mb-3 border-t border-kenar pt-3">
           <div className="text-[10px] text-metin-ucuncul">Başlangıç fiyatı</div>
           <div className="font-mono text-lg font-bold tabular-nums text-metin">
-            {fiyatBicimle(product.baslangicFiyati, product.paraBirimi)}
+            {paraBicimle(product.baslangicFiyati, product.paraBirimi)}
           </div>
         </div>
 
         {/* Adet seçici + sepete ekle */}
         <div className="mt-auto flex items-center gap-2">
-          <div className="flex h-9 shrink-0 items-center rounded-[var(--radius-girdi)] border border-kenar">
+          <div className="flex h-9 shrink-0 items-center rounded-token-girdi border border-kenar">
             <button
               type="button"
               onClick={() => setAdet((a) => Math.max(1, a - 1))}
@@ -182,7 +175,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             type="button"
             onClick={sepeteEkle}
             disabled={mesgul}
-            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-girdi)]
+            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-token-girdi
                        bg-vurgu px-3 text-xs font-bold text-white transition-[background-color,transform]
                        duration-[var(--sure-basma)] ease-[var(--ease-cikis)]
                        hover:bg-vurgu-guclu active:scale-[0.97] disabled:opacity-60"
@@ -197,6 +190,12 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           </button>
         </div>
       </div>
+      <StokBildirimModal
+        isOpen={bildirimAcik}
+        onClose={() => setBildirimAcik(false)}
+        mpn={product.ureticiUrunKodu}
+        ambalajId={varsayilanAmbalaj?.ambalajId ?? null}
+      />
     </article>
   );
 }

@@ -17,6 +17,14 @@ export type Favori = {
   fiyat: number | null;
 };
 
+export type MusteriUrunKodu = {
+  id: number;
+  urunId: number;
+  ureticiUrunKodu: string;
+  musteriKodu: string;
+  aciklama: string | null;
+};
+
 export type FirmaBilgisi = {
   id: number;
   unvan: string;

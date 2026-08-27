@@ -1,7 +1,9 @@
 import test, { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 describe("Feature 27: Dual-Path Checkout & RFQ Conversion", () => {
+  const quoteSource = readFileSync(new URL("../../src/app/teklif-iste/quote-form.tsx", import.meta.url), "utf8");
   it("Test 27.1: Cart offers distinct paths: Direct Checkout (/odeme) and Official Quote (RFQ)", () => {
     const actions = [
       { id: "checkout", label: "Siparişi Tamamla / Satın Al", target: "/odeme", variant: "primary" },
@@ -54,11 +56,9 @@ describe("Feature 27: Dual-Path Checkout & RFQ Conversion", () => {
     assert.equal(canProceed, true);
   });
 
-  it("Test 27.5: RFQ submission generates formal quote tracking number (e.g. TEK-2026-XXXX)", () => {
-    const generateTalepNo = (id) => `TEK-2026-${String(id).padStart(5, "0")}`;
-    const talepNo = generateTalepNo(42);
-
-    assert.equal(talepNo, "TEK-2026-00042");
-    assert.match(talepNo, /^TEK-2026-\d{5}$/);
+  it("Test 27.5: RFQ UI only displays the tracking number returned by the API", () => {
+    assert.match(quoteSource, /setTalepNo\(res\.talepNo \|\| null\)/);
+    assert.doesNotMatch(quoteSource, /Math\.random/);
+    assert.doesNotMatch(quoteSource, /TEK-2026-\$\{/);
   });
 });

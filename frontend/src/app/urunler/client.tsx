@@ -212,7 +212,7 @@ export function ProductListingClient({
       <div className="w-full flex-grow min-w-0">
         {/* Üst Kontrol Barı: Ürün Sayısı, Sıralama, Sayfa Boyutu ve 3-Modlu Görünüm Switcher */}
         <div
-          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-kart)]
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-token-kart
                      border border-kenar bg-yuzey-kart px-4 py-3 shadow-sm"
         >
           <div className="flex items-center gap-2">
@@ -250,7 +250,7 @@ export function ProductListingClient({
               <select
                 value={sorguParametreleri.get("siralama") ?? ""}
                 onChange={(olay) => siralamaDegistir(olay.target.value)}
-                className="rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-2 py-1.5 text-xs text-metin focus:border-vurgu focus:outline-none"
+                className="rounded-token-girdi border border-kenar bg-yuzey-kart px-2 py-1.5 text-xs text-metin focus:border-vurgu focus:outline-none"
               >
                 {SIRALAMA_SECENEKLERI.map((s) => (
                   <option key={s.deger} value={s.deger}>
@@ -266,7 +266,7 @@ export function ProductListingClient({
               <select
                 value={sayfaBoyutu}
                 onChange={(e) => sayfaBoyutuDegistir(parseInt(e.target.value, 10))}
-                className="rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-2 py-1.5 text-xs font-mono tabular-nums text-metin focus:border-vurgu focus:outline-none"
+                className="rounded-token-girdi border border-kenar bg-yuzey-kart px-2 py-1.5 text-xs font-mono tabular-nums text-metin focus:border-vurgu focus:outline-none"
               >
                 {SAYFA_BOYUTLARI.map((boyut) => (
                   <option key={boyut} value={boyut}>
@@ -278,7 +278,7 @@ export function ProductListingClient({
 
             {/* 3-Modlu Görünüm Seçici: Izgara (⊞), Liste (☰), Yoğun Tablo (☷) */}
             <div
-              className="flex items-center gap-0.5 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey p-0.5"
+              className="flex items-center gap-0.5 rounded-token-girdi border border-kenar bg-yuzey p-0.5"
               role="group"
               aria-label="Görünüm Seçici"
             >
@@ -288,7 +288,7 @@ export function ProductListingClient({
                 aria-label="izgara görünümüne geç"
                 aria-pressed={gorunum === "izgara"}
                 title="Izgara Görünümü (⊞)"
-                className={`rounded-[4px] p-1.5 transition-colors duration-[var(--sure-ipucu)] ${
+                className={`flex h-11 w-11 items-center justify-center rounded-[4px] transition-colors duration-[var(--sure-ipucu)] ${
                   gorunum === "izgara"
                     ? "bg-yuzey-kart text-vurgu shadow-xs font-medium"
                     : "text-metin-ucuncul hover:text-metin"
@@ -303,7 +303,7 @@ export function ProductListingClient({
                 aria-label="liste görünümüne geç"
                 aria-pressed={gorunum === "liste"}
                 title="Liste Görünümü (☰)"
-                className={`rounded-[4px] p-1.5 transition-colors duration-[var(--sure-ipucu)] ${
+                className={`flex h-11 w-11 items-center justify-center rounded-[4px] transition-colors duration-[var(--sure-ipucu)] ${
                   gorunum === "liste"
                     ? "bg-yuzey-kart text-vurgu shadow-xs font-medium"
                     : "text-metin-ucuncul hover:text-metin"
@@ -318,7 +318,7 @@ export function ProductListingClient({
                 aria-label="tablo görünümüne geç"
                 aria-pressed={gorunum === "tablo"}
                 title="Yoğun Mühendislik Tablosu (☷)"
-                className={`rounded-[4px] p-1.5 transition-colors duration-[var(--sure-ipucu)] ${
+                className={`flex h-11 w-11 items-center justify-center rounded-[4px] transition-colors duration-[var(--sure-ipucu)] ${
                   gorunum === "tablo"
                     ? "bg-yuzey-kart text-vurgu shadow-xs font-medium"
                     : "text-metin-ucuncul hover:text-metin"
@@ -332,7 +332,7 @@ export function ProductListingClient({
 
         {/* Aktif Filtre Çipleri Barı (Applied Filter Chips) */}
         {(aktifCipler.length > 0 || sadeceStoktakiler) && (
-          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[var(--radius-kart)] border border-kenar/60 bg-yuzey-gomulu/50 p-2.5">
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-token-kart border border-kenar/60 bg-yuzey-gomulu/50 p-2.5">
             <span className="text-xs font-medium text-metin-ikincil">Aktif Filtreler:</span>
             {sadeceStoktakiler && (
               <FiltreCipi
@@ -471,7 +471,7 @@ export function B2BSayfalama({
   };
 
   const butonSinifi =
-    "inline-flex size-8 sm:size-9 items-center justify-center rounded-[var(--radius-girdi)] border border-kenar " +
+    "inline-flex size-8 sm:size-9 items-center justify-center rounded-token-girdi border border-kenar " +
     "text-metin-ikincil transition-[background-color,color] duration-[var(--sure-ipucu)] " +
     "hover:bg-yuzey-gomulu hover:text-metin disabled:pointer-events-none disabled:opacity-40";
 
@@ -515,7 +515,7 @@ export function B2BSayfalama({
             type="button"
             onClick={() => onSayfaDegisim(n)}
             aria-current={n === sayfaNo ? "page" : undefined}
-            className={`inline-flex size-8 sm:size-9 items-center justify-center rounded-[var(--radius-girdi)]
+            className={`inline-flex size-8 sm:size-9 items-center justify-center rounded-token-girdi
                         font-mono text-xs sm:text-sm tabular-nums transition-[background-color,color]
                         duration-[var(--sure-ipucu)] ${
                           n === sayfaNo
@@ -566,12 +566,12 @@ export function B2BSayfalama({
             value={hedefSayfa}
             onChange={(e) => setHedefSayfa(e.target.value)}
             placeholder={String(sayfaNo)}
-            className="w-14 rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-2 py-1 text-center font-mono text-xs tabular-nums text-metin focus:border-vurgu focus:outline-none"
+            className="w-14 rounded-token-girdi border border-kenar bg-yuzey-kart px-2 py-1 text-center font-mono text-xs tabular-nums text-metin focus:border-vurgu focus:outline-none"
           />
           <button
             type="submit"
             disabled={!hedefSayfa.trim()}
-            className="rounded-[var(--radius-girdi)] border border-kenar-guclu bg-yuzey-gomulu px-2 py-1 font-semibold text-metin transition-colors hover:bg-vurgu hover:text-white disabled:pointer-events-none disabled:opacity-40"
+            className="rounded-token-girdi border border-kenar-guclu bg-yuzey-gomulu px-2 py-1 font-semibold text-metin transition-colors hover:bg-vurgu hover:text-white disabled:pointer-events-none disabled:opacity-40"
           >
             Git
           </button>
@@ -582,7 +582,7 @@ export function B2BSayfalama({
           <select
             value={sayfaBoyutu}
             onChange={(e) => onSayfaBoyutuDegisim(parseInt(e.target.value, 10))}
-            className="rounded-[var(--radius-girdi)] border border-kenar bg-yuzey-kart px-2 py-1 text-xs font-mono tabular-nums text-metin focus:border-vurgu focus:outline-none"
+            className="rounded-token-girdi border border-kenar bg-yuzey-kart px-2 py-1 text-xs font-mono tabular-nums text-metin focus:border-vurgu focus:outline-none"
           >
             {SAYFA_BOYUTLARI.map((boyut) => (
               <option key={boyut} value={boyut}>

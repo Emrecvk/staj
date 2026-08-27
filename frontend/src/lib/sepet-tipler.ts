@@ -5,6 +5,7 @@ export type SepetKalemi = {
   urunId: number;
   urunKodu: string;
   kisaAciklama: string;
+  anaGorselUrl: string | null;
   urunAmbalajId: number;
   /** MOQ/katlama kuralında kullanılan satış katsayısı. */
   satistakiKatsayi: number;

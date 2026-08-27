@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { User, MapPin, Heart, Building2, Package, FileText, LogOut } from "lucide-react";
+import { User, MapPin, Heart, Building2, Package, FileText, LogOut, Tags } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { getCategories } from "@/lib/api";
@@ -23,6 +23,7 @@ export default async function ProfileLayout({ children }: { children: ReactNode 
     { href: "/profil/siparisler", icon: Package, label: "Siparişlerim" },
     { href: "/profil/teklifler", icon: FileText, label: "Tekliflerim" },
     { href: "/profil/favoriler", icon: Heart, label: "Favorilerim" },
+    { href: "/profil/urun-kodlarim", icon: Tags, label: "Ürün Kodlarım" },
     { href: "/profil/adresler", icon: MapPin, label: "Adreslerim" },
   ];
 

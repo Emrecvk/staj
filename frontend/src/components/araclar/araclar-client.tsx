@@ -28,10 +28,10 @@ function siBicim(deger: number, birim: string): string {
 }
 
 const alanStil =
-  "w-full rounded-[var(--radius-girdi)] border border-kenar bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-vurgu focus:ring-2 focus:ring-vurgu/20";
+  "w-full rounded-token-girdi border border-kenar bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-vurgu focus:ring-2 focus:ring-vurgu/20";
 const etiketStil = "mb-1 block text-xs font-semibold text-metin-ikincil";
 const sonucStil =
-  "rounded-[var(--radius-kart)] border border-vurgu/30 bg-vurgu-zemin/40 p-4 text-center";
+  "rounded-token-kart border border-vurgu/30 bg-vurgu-zemin/40 p-4 text-center";
 
 /* ------------------------------------------------------------------ */
 /*  1) Direnç renk kodu                                                */
@@ -112,7 +112,7 @@ function DirencRenkKodu() {
                 key={n}
                 type="button"
                 onClick={() => setBant(n)}
-                className={`flex-1 rounded-[var(--radius-girdi)] border px-3 py-2 text-sm font-semibold transition-colors ${
+                className={`flex-1 rounded-token-girdi border px-3 py-2 text-sm font-semibold transition-colors ${
                   bant === n
                     ? "border-vurgu bg-vurgu text-white"
                     : "border-kenar bg-yuzey text-metin-ikincil hover:border-vurgu"
@@ -227,7 +227,7 @@ function OhmYasasi() {
             </div>
           </div>
         ) : (
-          <div className="rounded-[var(--radius-kart)] border border-dashed border-kenar p-6 text-center text-sm text-metin-ucuncul">
+          <div className="rounded-token-kart border border-dashed border-kenar p-6 text-center text-sm text-metin-ucuncul">
             En az iki değer girin.
           </div>
         )}
@@ -288,7 +288,7 @@ function KondansatorKodu() {
             </div>
           </div>
         ) : (
-          <div className="rounded-[var(--radius-kart)] border border-dashed border-kenar p-6 text-center text-sm text-metin-ucuncul">
+          <div className="rounded-token-kart border border-dashed border-kenar p-6 text-center text-sm text-metin-ucuncul">
             Geçerli bir kod girin (1–3 rakam).
           </div>
         )}
@@ -340,13 +340,13 @@ function LedDirenci() {
               </div>
               <div className="mt-1 text-3xl font-bold text-vurgu-guclu">{siBicim(sonuc.R!, "Ω")}</div>
             </div>
-            <div className="rounded-[var(--radius-kart)] border border-kenar bg-yuzey p-3 text-center text-xs text-metin-ucuncul">
+            <div className="rounded-token-kart border border-kenar bg-yuzey p-3 text-center text-xs text-metin-ucuncul">
               Direnç üzerindeki güç kaybı: <strong className="text-metin">{siBicim(sonuc.P!, "W")}</strong>
               {" — "}en az {siBicim(sonuc.P! * 2, "W")} dereceli direnç seçin.
             </div>
           </div>
         ) : (
-          <div className="rounded-[var(--radius-kart)] border border-dashed border-uyari/50 p-6 text-center text-sm text-uyari-600">
+          <div className="rounded-token-kart border border-dashed border-uyari/50 p-6 text-center text-sm text-uyari-600">
             {sonuc?.hata ?? "Değerleri girin."}
           </div>
         )}
@@ -373,7 +373,7 @@ export function AraclarClient() {
   return (
     <div>
       <div className="mb-8 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-girdi)] bg-vurgu text-white">
+        <div className="flex h-11 w-11 items-center justify-center rounded-token-girdi bg-vurgu text-white">
           <Calculator size={22} />
         </div>
         <div>
@@ -407,7 +407,7 @@ export function AraclarClient() {
       </div>
 
       {/* Aktif araç */}
-      <div className="rounded-[var(--radius-panel)] border border-kenar bg-yuzey-kart p-5 md:p-6">
+      <div className="rounded-token-panel border border-kenar bg-yuzey-kart p-5 md:p-6">
         {aktifArac.bilesen}
       </div>
     </div>

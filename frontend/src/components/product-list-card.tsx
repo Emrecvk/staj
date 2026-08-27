@@ -1,31 +1,31 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Bell } from "lucide-react";
 import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
 import { StokRozeti } from "@/components/ui/rozet";
 import type { ProductSummary } from "@/lib/api";
-
-function fiyatBicimle(deger: number, paraBirimi: string) {
-  return new Intl.NumberFormat("tr-TR", {
-    style: "currency",
-    currency: paraBirimi,
-    maximumFractionDigits: 4,
-  }).format(deger);
-}
+import { StokBildirimModal } from "@/components/stok-bildirim-modal";
+import { paraBicimle } from "@/lib/miktar-kurali";
 
 /**
  * Liste görünümü kartı.
  */
 export function ProductListCard({ product }: { product: ProductSummary }) {
+  const [bildirimAcik, setBildirimAcik] = useState(false);
+  const varsayilanAmbalaj = product.ambalajlarVeFiyatlar?.[0];
+
   return (
     <article
-      className="group flex items-center gap-4 rounded-[var(--radius-kart)] border border-kenar
+      className="group flex items-center gap-4 rounded-token-kart border border-kenar
                  bg-yuzey-kart p-3 transition-[border-color,box-shadow]
                  duration-[var(--sure-acilir)] ease-[var(--ease-cikis)]
-                 hover:border-kenar-guclu hover:shadow-[var(--shadow-yukselti)]"
+                 hover:border-kenar-guclu hover:shadow-token-yukselti"
     >
       <Link
         href={`/urunler/${product.id}`}
-        className="flex size-20 shrink-0 items-center justify-center rounded-[var(--radius-girdi)]
+        className="flex size-20 shrink-0 items-center justify-center rounded-token-girdi
                    border border-kenar bg-yuzey-gomulu p-2"
         aria-label={`${product.ureticiUrunKodu} ürün detayı`}
       >
@@ -58,13 +58,19 @@ export function ProductListCard({ product }: { product: ProductSummary }) {
 
       {/* Sabit genişlikli sütunlar */}
       <div className="hidden w-32 shrink-0 sm:block">
-        <StokRozeti miktar={product.toplamStok} />
+        {product.toplamStok > 0 ? (
+          <StokRozeti miktar={product.toplamStok} />
+        ) : (
+          <button type="button" onClick={() => setBildirimAcik(true)} className="inline-flex items-center gap-1 text-xs font-bold text-vurgu-guclu hover:underline">
+            <Bell size={13} /> Gelince haber ver
+          </button>
+        )}
       </div>
 
       <div className="w-28 shrink-0 text-right">
         <div className="text-[10px] text-metin-ucuncul">Başlangıç</div>
         <div className="font-mono text-sm font-bold tabular-nums text-metin">
-          {fiyatBicimle(product.baslangicFiyati, product.paraBirimi)}
+          {paraBicimle(product.baslangicFiyati, product.paraBirimi)}
         </div>
       </div>
 
@@ -72,7 +78,6 @@ export function ProductListCard({ product }: { product: ProductSummary }) {
         <KarsilastirmaButonu
           urunId={product.id}
           product={{
-            id: product.id,
             ureticiUrunKodu: product.ureticiUrunKodu,
             ureticiAd: product.ureticiAd,
             anaGorselUrl: product.anaGorselUrl,
@@ -86,7 +91,7 @@ export function ProductListCard({ product }: { product: ProductSummary }) {
         <FavoriButonu urunId={product.id} />
         <Link
           href={`/urunler/${product.id}`}
-          className="inline-flex items-center gap-1 rounded-[var(--radius-girdi)] border
+          className="inline-flex items-center gap-1 rounded-token-girdi border
                      border-kenar-guclu px-2.5 py-1.5 text-xs font-semibold text-metin
                      transition-[background-color,border-color,color,transform]
                      duration-[var(--sure-basma)] ease-[var(--ease-cikis)]
@@ -95,6 +100,12 @@ export function ProductListCard({ product }: { product: ProductSummary }) {
           İncele <ArrowRight size={13} />
         </Link>
       </div>
+      <StokBildirimModal
+        isOpen={bildirimAcik}
+        onClose={() => setBildirimAcik(false)}
+        mpn={product.ureticiUrunKodu}
+        ambalajId={varsayilanAmbalaj?.ambalajId ?? null}
+      />
     </article>
   );
 }

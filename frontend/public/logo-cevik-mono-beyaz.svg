@@ -1,15 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 120" width="350" height="120" role="img" aria-label="ÇEVİK Elektronik">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="360" height="120" role="img" aria-label="ÇEVİK Elektronik">
   <title>ÇEVİK Elektronik</title>
-  <rect x="12" y="12" width="96" height="96" rx="22" fill="none" stroke="#FFFFFF" stroke-width="5"/>
-  <g fill="#FFFFFF">
-    <rect x="2" y="34" width="11" height="8" rx="3"/><rect x="2" y="54" width="11" height="8" rx="3"/><rect x="2" y="74" width="11" height="8" rx="3"/>
-    <rect x="107" y="34" width="11" height="8" rx="3"/><rect x="107" y="54" width="11" height="8" rx="3"/><rect x="107" y="74" width="11" height="8" rx="3"/>
+  <g aria-hidden="true">
+    <path d="M24 8h64l24 24v62l-18 18H24L8 96V24Z" fill="#F7763F"/>
+    <path d="M88 8l24 24H88Z" fill="#FFFDF8" fill-opacity=".72"/>
+    <path d="M82 37H55c-15 0-25 9-25 23s10 23 25 23h27" fill="none" stroke="#32202B" stroke-width="10" stroke-linecap="round"/>
+    <path d="M62 50l13 10-13 10" fill="none" stroke="#FFFDF8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58 83v11l-8 8" fill="none" stroke="#32202B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="84" cy="37" r="5" fill="#FFFDF8"/>
+    <circle cx="84" cy="83" r="5" fill="#FFFDF8"/>
+    <circle cx="48" cy="104" r="4" fill="#FFFDF8"/>
   </g>
-  <path d="M 76.71 38.08 A 26 26 0 1 0 76.71 77.92" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
-  <path d="M 62 83 C 62 92 63 97 55 99" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
-  <path d="M 57 48 L 68 58 L 57 68" fill="none" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <g font-family="Arial, sans-serif" fill="#FFFFFF">
-    <text x="140" y="60" font-size="42" font-weight="800" letter-spacing="1.5">ÇEVİK</text>
-    <text x="142" y="87" font-size="15" font-weight="500" letter-spacing="6.2" opacity="0.75">ELEKTRONİK</text>
+  <g font-family="'Space Grotesk', 'Segoe UI', system-ui, Arial, sans-serif">
+    <text x="138" y="62" font-size="46" font-weight="700" letter-spacing="-1.2" fill="#FFFDF8">ÇEVİK</text>
+    <text x="140" y="88" font-size="14" font-weight="600" letter-spacing="6" fill="#FF9B66">ELEKTRONİK</text>
   </g>
 </svg>
