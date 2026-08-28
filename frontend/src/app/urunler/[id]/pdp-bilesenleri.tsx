@@ -242,8 +242,15 @@ export function PdpSummaryHeader({
     });
   };
 
+  const rohsDurumu = product.rohsDurumu?.trim();
+  const rohsBelgeli = rohsDurumu === "Belgeli";
+  const rohsBelgesiz = rohsDurumu === "Belgesiz";
+  const reachOzelligi = Object.entries(product.ozellikler ?? {}).find(([anahtar]) =>
+    anahtar.toLocaleLowerCase("tr-TR").includes("reach"),
+  );
+
   return (
-    <header className="mb-6 flex flex-col gap-4 border-b border-kenar pb-6 lg:flex-row lg:items-start lg:justify-between">
+    <header className="mb-6 flex flex-col gap-4 border-b border-kenar pb-6">
       <div className="min-w-0 flex-1">
         {/* Üretici & Marka Bağlantısı */}
         <div className="flex items-center gap-2">
@@ -260,7 +267,7 @@ export function PdpSummaryHeader({
 
         {/* MPN Başlık & Kopyalama Butonu */}
         <div className="mt-1.5 flex flex-wrap items-center gap-3">
-          <h1 className="break-all font-mono text-2xl font-bold tracking-tight text-metin sm:text-3xl">
+          <h1 className="break-words font-mono text-2xl font-bold tracking-tight text-metin sm:text-3xl">
             {product.ureticiUrunKodu}
           </h1>
 
@@ -296,18 +303,28 @@ export function PdpSummaryHeader({
           <YasamDongusuRozeti durum={product.urunDurumu} />
 
           {/* RoHS Uyumluluk */}
-          {product.rohsDurumu && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-basari-50 px-2.5 py-0.5 text-xs font-medium text-basari-600 border border-basari-200/60">
+          {rohsDurumu && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                rohsBelgeli
+                  ? "border-basari-200/60 bg-basari-50 text-basari-600"
+                  : rohsBelgesiz
+                    ? "border-red-200 bg-red-50 text-red-700"
+                    : "border-kenar bg-yuzey-gomulu text-metin-ikincil"
+              }`}
+            >
               <ShieldCheck size={12} className="shrink-0" />
-              RoHS: {product.rohsDurumu}
+              RoHS: {rohsDurumu}
             </span>
           )}
 
-          {/* REACH Uyumluluk */}
-          <span className="inline-flex items-center gap-1 rounded-full bg-basari-50 px-2.5 py-0.5 text-xs font-medium text-basari-600 border border-basari-200/60">
-            <CheckCircle2 size={12} className="shrink-0" />
-            REACH Uyumlu
-          </span>
+          {/* REACH yalnızca katalogda buna ait açık bir özellik varsa gösterilir. */}
+          {reachOzelligi && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-kenar bg-yuzey-gomulu px-2.5 py-0.5 text-xs font-medium text-metin-ikincil">
+              <CheckCircle2 size={12} className="shrink-0" />
+              REACH: {reachOzelligi[1]}
+            </span>
+          )}
 
           {/* Montaj Tipi */}
           {product.montajTipi && product.montajTipi !== "Yok" && (
@@ -328,7 +345,7 @@ export function PdpSummaryHeader({
       </div>
 
       {/* Sağ Hızlı Eylemler */}
-      <div className="flex shrink-0 items-center gap-2 self-start pt-1">
+      <div className="flex flex-wrap items-center gap-2 self-start">
         <button
           type="button"
           onClick={handleToggleCompare}
@@ -404,7 +421,9 @@ export function PdpGallery({
   const cadDoc = kullanilabilirDokumanlar?.find(
     (d) => d.tip === 2 || d.url.endsWith(".step") || d.baslik.includes("CAD")
   );
-  const rohsDoc = kullanilabilirDokumanlar?.find((d) => d.tip === 3 || d.baslik.includes("RoHS"));
+  const rohsDoc = kullanilabilirDokumanlar?.find(
+    (d) => d.tip === 3 || d.baslik.toLocaleLowerCase("tr-TR").includes("rohs"),
+  );
 
   return (
     <div className="space-y-4">
@@ -441,6 +460,10 @@ export function PdpGallery({
               <span className="mt-1 text-xs text-metin-ucuncul">Ürün görseli mevcut değil</span>
             </div>
           ) : (
+            // Görsel alan adı yönetim panelinden girildiği için sabit değil;
+            // next/image yapılandırılmamış host'ta 400 döndürür. Bu yüzden düz
+            // <img> + onError kullanılır (bkz. components/urun-gorseli.tsx).
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={currentImage}
               alt={mpn}
@@ -467,6 +490,7 @@ export function PdpGallery({
                   : "border-kenar hover:border-kenar-guclu"
               }`}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={img} alt="" className="max-h-full max-w-full object-contain" />
             </button>
           ))}
@@ -530,15 +554,15 @@ export function PdpGallery({
           >
             <ShieldCheck size={15} className="shrink-0 text-basari-600" />
             <div className="min-w-0 flex-1 truncate">
-              <span className="block truncate">RoHS / REACH</span>
-              <span className="text-[10px] text-metin-ucuncul font-mono">Sertifika</span>
+              <span className="block truncate">{rohsDoc.baslik || "Uyumluluk sertifikası"}</span>
+              <span className="text-[10px] text-metin-ucuncul font-mono">Uyumluluk belgesi</span>
             </div>
             <Download size={13} className="shrink-0 opacity-60" />
           </a>
         ) : (
           <div className="flex items-center gap-2 rounded-token-girdi border border-kenar bg-yuzey-gomulu/50 p-2.5 text-xs text-metin-ucuncul">
             <ShieldCheck size={15} className="shrink-0 opacity-40" />
-            <span className="truncate">Sertifika: Standart</span>
+            <span className="truncate">Uyumluluk belgesi: Yok</span>
           </div>
         )}
       </div>
@@ -677,13 +701,13 @@ export function PdpFiyatMatrisi({
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-token-girdi border border-kenar">
-        <table className="w-full min-w-[34rem] text-xs">
+      <div className="overflow-hidden rounded-token-girdi border border-kenar">
+        <table className="w-full table-fixed text-[11px] sm:text-xs">
           <thead className="bg-yuzey-gomulu text-left text-metin-ucuncul">
             <tr>
-              <th className="px-3 py-2 font-semibold">Miktar Aralığı</th>
-              <th className="px-3 py-2 text-right font-semibold">Birim Fiyat</th>
-              <th className="px-3 py-2 text-right font-semibold">Tutar (Örnek)</th>
+              <th className="w-[42%] px-2 py-2 font-semibold">Miktar Aralığı</th>
+              <th className="w-[29%] px-2 py-2 text-right font-semibold">Birim Fiyat</th>
+              <th className="w-[29%] px-2 py-2 text-right font-semibold">Tutar (Örnek)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-kenar">
@@ -708,7 +732,7 @@ export function PdpFiyatMatrisi({
                       : "opacity-40 bg-yuzey-gomulu/20 text-metin-ucuncul"
                   }`}
                 >
-                  <td className="px-3 py-2 font-mono tabular-nums">
+                  <td className="px-2 py-2 font-mono tabular-nums">
                     {kademe.minMiktar.toLocaleString("tr-TR")}
                     {kademe.maxMiktar ? ` - ${kademe.maxMiktar.toLocaleString("tr-TR")}` : "+"}
                     {isActive && (
@@ -722,10 +746,10 @@ export function PdpFiyatMatrisi({
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                  <td className="px-2 py-2 text-right font-mono tabular-nums">
                     {paraBicimle(kademe.birimFiyat, kademe.paraBirimi, 4)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-metin-ikincil">
+                  <td className="px-2 py-2 text-right font-mono tabular-nums text-metin-ikincil">
                     {paraBicimle(ornekTutar, kademe.paraBirimi, 2)}
                   </td>
                 </tr>
@@ -734,9 +758,9 @@ export function PdpFiyatMatrisi({
 
             {/* 5.000+ Özel Teklif Satırı */}
             <tr className="bg-navy-50/60 text-navy-900 border-t border-kenar">
-              <td className="px-3 py-2 font-mono font-bold">5.000+ Adet</td>
-              <td className="px-3 py-2 text-right font-semibold text-vurgu">Özel Fiyat</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-2 py-2 font-mono font-bold">5.000+ Adet</td>
+              <td className="px-2 py-2 text-right font-semibold text-vurgu">Özel Fiyat</td>
+              <td className="px-2 py-2 text-right">
                 <button
                   type="button"
                   onClick={onSelectSpecialQuote}
@@ -793,6 +817,12 @@ export function PdpAmbalajVeSatinAlma({
   const calculation = hesaplaB2BFiyat(quantity, selectedPkg);
   const effectiveQty = dogrulama.gecerliMi ? quantity : dogrulama.onerilenMiktar;
   const totalAmount = calculation.toplamTutar;
+
+  // Özdisan katalogdaki ürünlerin 7.442'si için fiyat yayımlamıyor. Bu ürünler
+  // "Hesaplanan Tutar $0,00" ve aktif bir "Sepete Ekle" gösteriyordu; backend
+  // sepete eklemeyi reddettiği için tıklayan kullanıcı hata alıyordu. Fiyatı
+  // olmayan ürünün tek yolu RFQ.
+  const fiyatVar = (calculation.aktifKademe?.birimFiyat ?? 0) > 0;
 
   const handleStepIncrement = () => {
     const next = quantity + (selectedPkg.katlamaMiktari > 0 ? selectedPkg.katlamaMiktari : 1);
@@ -957,9 +987,13 @@ export function PdpAmbalajVeSatinAlma({
 
           {/* Hesaplanan Satır Tutarı */}
           <div className="min-w-0 rounded-token-girdi bg-yuzey-gomulu/80 px-3 py-2 text-right">
-            <div className="text-[10px] text-metin-ucuncul">Hesaplanan Tutar (+KDV)</div>
+            <div className="text-[10px] text-metin-ucuncul">
+              {fiyatVar ? "Hesaplanan Tutar (+KDV)" : "Fiyat"}
+            </div>
             <div className="break-words font-mono text-base font-bold tabular-nums text-metin">
-              {paraBicimle(totalAmount, calculation.aktifKademe?.paraBirimi || "USD", 2)}
+              {fiyatVar
+                ? paraBicimle(totalAmount, calculation.aktifKademe?.paraBirimi || "USD", 2)
+                : "Teklife tabi"}
             </div>
           </div>
         </div>
@@ -982,17 +1016,19 @@ export function PdpAmbalajVeSatinAlma({
         )}
 
         {/* Çift Buton Eylemleri: Sepete Ekle & RFQ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          <Buton
-            gorunum="vurgu"
-            boyut="orta"
-            onClick={handleAddToCart}
-            yukleniyor={cartPending}
-            ikon={<ShoppingCart size={16} />}
-            className="w-full font-bold shadow-sm"
-          >
-            Sepete Ekle
-          </Buton>
+        <div className={`grid grid-cols-1 gap-2 pt-1 ${fiyatVar ? "sm:grid-cols-2" : ""}`}>
+          {fiyatVar && (
+            <Buton
+              gorunum="vurgu"
+              boyut="orta"
+              onClick={handleAddToCart}
+              yukleniyor={cartPending}
+              ikon={<ShoppingCart size={16} />}
+              className="w-full font-bold shadow-sm"
+            >
+              Sepete Ekle
+            </Buton>
+          )}
 
           <button
             type="button"
@@ -1375,7 +1411,7 @@ export function PdpTeknikSekmeler({
                   </div>
 
                   <div className="mt-4 flex items-center justify-between border-t border-kenar pt-3">
-                    <span className="text-xs text-basari-600 font-semibold">Stokta Var</span>
+                    <span className="text-xs font-semibold text-metin-ucuncul">İlgili ürün</span>
                     <Link
                       href={`/urunler/${item.id}`}
                       className="rounded-token-girdi bg-marka px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700"
@@ -1419,6 +1455,9 @@ export function PdpMobilSatinAlmaBari({
 
   const calculation = hesaplaB2BFiyat(quantity, defaultPkg);
   const unitPrice = calculation.gecerliBirimFiyat;
+  // Masaüstü satın alma kutusuyla aynı kural: fiyatı olmayan ürün sepete değil
+  // teklif akışına gider. Aksi hâlde aynı ürün telefonda satılık görünüyordu.
+  const fiyatVar = (calculation.aktifKademe?.birimFiyat ?? 0) > 0;
 
   const handleStepIncrement = () => {
     const step = defaultPkg.katlamaMiktari > 0 ? defaultPkg.katlamaMiktari : 1;
@@ -1462,7 +1501,9 @@ export function PdpMobilSatinAlmaBari({
         </div>
         <div className="flex items-center gap-1.5 text-[11px]">
           <span className="font-mono font-semibold tabular-nums text-vurgu-guclu">
-            {paraBicimle(unitPrice, calculation.aktifKademe?.paraBirimi || "USD")}
+            {fiyatVar
+              ? paraBicimle(unitPrice, calculation.aktifKademe?.paraBirimi || "USD")
+              : "Teklife tabi"}
           </span>
           <span className="truncate font-sans text-metin-ucuncul">{defaultPkg.ad}</span>
         </div>
@@ -1504,16 +1545,27 @@ export function PdpMobilSatinAlmaBari({
         </button>
       </div>
 
-      {/* Sepete Ekle Butonu */}
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={pending}
-        className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-token-girdi bg-vurgu px-3 text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50"
-      >
-        <ShoppingCart size={14} />
-        <span>Sepete Ekle</span>
-      </button>
+      {/* Sepete Ekle Butonu — fiyatı olmayan üründe teklif akışına döner */}
+      {fiyatVar ? (
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={pending}
+          className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-token-girdi bg-vurgu px-3 text-xs font-bold text-white shadow-xs transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50"
+        >
+          <ShoppingCart size={14} />
+          <span>Sepete Ekle</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleRequestQuote}
+          className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-token-girdi border border-vurgu px-3 text-xs font-bold text-vurgu transition-colors hover:bg-vurgu hover:text-white"
+        >
+          <FileSpreadsheet size={14} />
+          <span>Teklif İste</span>
+        </button>
+      )}
 
       </div>
     </div>

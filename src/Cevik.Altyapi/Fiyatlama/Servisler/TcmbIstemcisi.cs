@@ -36,6 +36,11 @@ public class TcmbIstemcisi : ITcmbIstemcisi
 
                 var alisStr = kur.Element("ForexBuying")?.Value;
                 var satisStr = kur.Element("ForexSelling")?.Value;
+                var birimStr = kur.Element("Unit")?.Value;
+                var birim = int.TryParse(birimStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var okunanBirim)
+                            && okunanBirim > 0
+                    ? okunanBirim
+                    : 1;
 
                 // TCMB XML değerleri her zaman noktalı ondalık ayırıcı kullanır.
                 // Sunucunun kültürüne göre parse etmek, örneğin 48.1234 değerini
@@ -44,7 +49,7 @@ public class TcmbIstemcisi : ITcmbIstemcisi
                     decimal.TryParse(satisStr, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal satis) &&
                     alis > 0m && satis > 0m)
                 {
-                    sonuc[kod] = (alis, satis);
+                    sonuc[kod] = (alis / birim, satis / birim);
                 }
             }
         }

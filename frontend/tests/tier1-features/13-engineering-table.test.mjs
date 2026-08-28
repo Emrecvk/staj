@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { MOCK_PRODUCTS, hesaplaB2BFiyat, paraBicimle } from "../test-helpers.mjs";
 

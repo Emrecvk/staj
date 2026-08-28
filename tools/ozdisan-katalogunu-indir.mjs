@@ -1,12 +1,13 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
 
-const KAYNAK = "https://www.ozdisan.com";
+export const KAYNAK = "https://www.ozdisan.com";
 const HEDEF_URUN = 12_000;
 const HEDEF_URETICI = 50;
-const SAYFA_BOYUTU = 500;
+export const SAYFA_BOYUTU = 500;
 const CIKTI = resolve(
   "src/Cevik.Altyapi/Veritabani/Seed/Katalog/Kaynaklar/ozdisan-katalogu.json.gz",
 );
@@ -15,7 +16,7 @@ const RAPOR = resolve("docs/OZDISAN_KATALOG_AKTARIM_RAPORU.md");
 // /ureticiler sayfasında Özdisan'ın kendi logosuyla yayımladığı markalar.
 // Ürün seçimi bu listeyle sınırlandırılır; böylece marka vitrini hiçbir zaman
 // baş harf veya uydurma görsel göstermek zorunda kalmaz.
-const OZDISAN_URETICI_LOGOLARI = new Map([
+export const OZDISAN_URETICI_LOGOLARI = new Map([
   ["3PEAK", "3peak"],
   ["AI THINKER", "ai-thinker"],
   ["ALCON", "alcon"],
@@ -134,7 +135,7 @@ const OZDISAN_URETICI_LOGOLARI = new Map([
 
 // Özdisan'ın yaprak kategori slug'larını mevcut Çevik kategori ağacına bağlar.
 // İlk eşleşme kazanır; daha özel kurallar üstte tutulmalıdır.
-const KATEGORI_ESLESMELERI = [
+export const KATEGORI_ESLESMELERI = [
   [/schottky|dogrultucu|hizli-diyot|genel-amacli-diyot|modul-diyot|kopru-diyot/, "diyotlar"],
   [/zener/, "zener-diyotlar"],
   [/mosfet/, "mosfetler"],
@@ -211,7 +212,7 @@ const KATEGORI_ESLESMELERI = [
   [/kablo-bagi|kablo-kanali|kablo-yonet/, "kablo-yonetimi"],
 ];
 
-function turkceKucult(deger) {
+export function turkceKucult(deger) {
   return String(deger ?? "")
     .toLocaleLowerCase("tr-TR")
     .normalize("NFD")
@@ -224,12 +225,12 @@ function turkceKucult(deger) {
     .replaceAll("ç", "c");
 }
 
-function kategoriEsle(yol) {
+export function kategoriEsle(yol) {
   const slug = turkceKucult(yol);
   return KATEGORI_ESLESMELERI.find(([desen]) => desen.test(slug))?.[1] ?? null;
 }
 
-function jsonNesnesiniAyikla(metin, anahtar) {
+export function jsonNesnesiniAyikla(metin, anahtar) {
   const baslangicAnahtari = `"${anahtar}":`;
   const anahtarKonumu = metin.indexOf(baslangicAnahtari);
   if (anahtarKonumu < 0) throw new Error(`${anahtar} alanı sayfada bulunamadı.`);
@@ -259,7 +260,7 @@ function jsonNesnesiniAyikla(metin, anahtar) {
   throw new Error(`${anahtar} JSON nesnesi tamamlanmamış.`);
 }
 
-async function metniIndir(url, deneme = 1) {
+export async function metniIndir(url, deneme = 1) {
   const yanit = await fetch(url, {
     headers: {
       accept: "text/html,application/xhtml+xml",
@@ -285,7 +286,7 @@ function mutlakUrl(yol) {
   return new URL(yol, KAYNAK).href;
 }
 
-function sayi(deger, varsayilan = 0) {
+export function sayi(deger, varsayilan = 0) {
   const sonuc = Number(String(deger ?? "").replace(",", "."));
   return Number.isFinite(sonuc) ? sonuc : varsayilan;
 }
@@ -294,14 +295,29 @@ function ilkDolu(...degerler) {
   return degerler.find((deger) => deger !== null && deger !== undefined && deger !== "") ?? null;
 }
 
+// Kaynakta özelliğin değeri olmayan hâlleri. Bunları katalogda saklamak
+// filtre panelinde "None" seçeneği üretir.
+const BOS_OZELLIK_DEGERLERI = new Set(["none", "n/a", "na", "-", "0", "yok", "belirtilmemis"]);
+
 function ozellikleriDonustur(ozellikler) {
   return Object.fromEntries(
     (Array.isArray(ozellikler) ? ozellikler : [])
       .map((ozellik) => [
         String(ilkDolu(ozellik.key, ozellik.name, ozellik.propertyName, "")).trim(),
-        String(ilkDolu(ozellik.convertedValue, ozellik.value, ozellik.propertyValue, "")).trim(),
+        // `value` ETİKETTİR, `convertedValue` sayısal normalizasyon.
+        // Önceki sürüm convertedValue'yu önceliyordu; kaynak
+        // {"key":"Package / Case","value":"TSSOP20","convertedValue":20}
+        // döndürdüğü için kılıf adı "20" olarak saklanıyordu — katalogdaki
+        // 10.641 kılıf değerinin 10.557'si anlamsız sayıydı, renk ve montaj
+        // şekli tamamen sayıya dönmüştü. Frekans da 48 MHz yerine 48000000
+        // olarak yazılıp "48000000 MHz" diye gösteriliyordu.
+        // Etiket boşsa sayısal karşılığa düşülür.
+        String(ilkDolu(ozellik.value, ozellik.propertyValue, ozellik.convertedValue, "")).trim(),
       ])
-      .filter(([anahtar, deger]) => anahtar && deger),
+      .filter(
+        ([anahtar, deger]) =>
+          anahtar && deger && !BOS_OZELLIK_DEGERLERI.has(turkceKucult(deger)),
+      ),
   );
 }
 
@@ -341,7 +357,7 @@ function fiyatlariDonustur(fiyatlar) {
   }));
 }
 
-function urunuDonustur(ham, kategoriSlug, kaynakKategori) {
+export function urunuDonustur(ham, kategoriSlug, kaynakKategori) {
   const uretici = ilkDolu(ham.manufacturer?.name, ham.manufacturerName);
   const mpn = ilkDolu(ham.sku, ham.mpn, ham.productCode);
   if (!uretici || !mpn) return null;
@@ -552,7 +568,12 @@ async function calistir() {
   console.log(JSON.stringify(ozet, null, 2));
 }
 
-calistir().catch((hata) => {
-  console.error(hata);
-  process.exitCode = 1;
-});
+// Bu dosya baska bir arac tarafindan import edildiginde (bkz.
+// tools/bos-kategorileri-doldur.mjs) tam tarama BASLAMAMALI; yalnizca
+// dogrudan calistirildiginda calisir.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  calistir().catch((hata) => {
+    console.error(hata);
+    process.exitCode = 1;
+  });
+}

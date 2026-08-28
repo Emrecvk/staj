@@ -13,8 +13,8 @@ using System.Collections.Generic;
 
 namespace Cevik.EntegrasyonTestleri;
 
-[Collection("SiralamaGerektirmeyenler")]
-public class KatalogIliskilerTestleri : IClassFixture<CevikUygulamaFabrikasi>
+[Collection("Api")]
+public class KatalogIliskilerTestleri
 {
     private readonly CevikUygulamaFabrikasi _fabrika;
 

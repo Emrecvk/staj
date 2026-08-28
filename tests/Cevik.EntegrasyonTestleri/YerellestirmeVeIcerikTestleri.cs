@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cevik.EntegrasyonTestleri;
 
-[Collection("SiralamaGerektirmeyenler")]
-public class YerellestirmeVeIcerikTestleri : IClassFixture<CevikUygulamaFabrikasi>
+[Collection("Api")]
+public class YerellestirmeVeIcerikTestleri
 {
     private readonly CevikUygulamaFabrikasi _fabrika;
     private readonly System.Net.Http.HttpClient _istemci;
@@ -136,5 +136,54 @@ public class YerellestirmeVeIcerikTestleri : IClassFixture<CevikUygulamaFabrikas
         var yanitEn = await _istemci.GetFromJsonAsync<PublicSayfaDto>("/api/icerik/sayfalar/hakkimizda?dil=en");
         yanitEn.Should().NotBeNull();
         yanitEn!.Baslik.Should().Be("About Us");
+    }
+
+    [Fact]
+    public async Task PublicIcerik_Sss_SeedSonrasi_BosDegildirVeSiralanir()
+    {
+        var yanit = await _istemci.GetAsync("/api/icerik/sss");
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.OK);
+        var sorular = await yanit.Content.ReadFromJsonAsync<List<PublicSssDto>>();
+        sorular.Should().NotBeNullOrEmpty();
+        sorular!.Select(s => s.Sira).Should().BeInAscendingOrder();
+        sorular.Should().Contain(s => s.Soru == "Minimum sipariş miktarı (MOQ) nedir?");
+    }
+
+    [Fact]
+    public async Task PublicIcerik_EBulten_AboneyiKaydederVeTekrarlamaz()
+    {
+        var eposta = $"BULTEN-{System.Guid.NewGuid():N}@EXAMPLE.COM";
+
+        var ilkYanit = await _istemci.PostAsJsonAsync(
+            "/api/icerik/e-bulten",
+            new EBultenAbonelikIstekDto { Eposta = eposta });
+        var ikinciYanit = await _istemci.PostAsJsonAsync(
+            "/api/icerik/e-bulten",
+            new EBultenAbonelikIstekDto { Eposta = eposta });
+
+        ilkYanit.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        ikinciYanit.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        using var scope = _fabrika.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Cevik.Altyapi.Veritabani.CevikDbContext>();
+        var normalizeEposta = eposta.ToLowerInvariant();
+        var aboneler = await db.EBultenAboneleri
+            .Where(a => a.Eposta == normalizeEposta)
+            .ToListAsync();
+
+        aboneler.Should().ContainSingle();
+        aboneler[0].OnaylandiMi.Should().BeTrue();
+        aboneler[0].IptalTarihi.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task PublicIcerik_EBulten_GecersizEpostayiReddeder()
+    {
+        var yanit = await _istemci.PostAsJsonAsync(
+            "/api/icerik/e-bulten",
+            new EBultenAbonelikIstekDto { Eposta = "gecersiz-adres" });
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

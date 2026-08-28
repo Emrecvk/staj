@@ -16,8 +16,8 @@ using Xunit;
 
 namespace Cevik.EntegrasyonTestleri;
 
-[Collection("SiralamaGerektirmeyenler")]
-public class TeklifYonetimVeAkisTestleri : IClassFixture<CevikUygulamaFabrikasi>
+[Collection("Api")]
+public class TeklifYonetimVeAkisTestleri
 {
     private readonly CevikUygulamaFabrikasi _fabrika;
 
@@ -85,6 +85,18 @@ public class TeklifYonetimVeAkisTestleri : IClassFixture<CevikUygulamaFabrikasi>
         var tokenDto = await girisYanit.Content.ReadFromJsonAsync<TokenDto>();
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", tokenDto!.AccessToken);
+
+        // Koleksiyon fixture'ı artık tüm entegrasyon sınıflarınca paylaşılıyor.
+        // JWT rol talebini aldıktan sonra geçici Admin kaydını müşteri rolüne
+        // döndürerek sonraki güvenlik testlerine kalıcı durum bırakma.
+        if (rol == KullaniciRolu.Admin)
+        {
+            using var scope = _fabrika.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<Cevik.Altyapi.Veritabani.CevikDbContext>();
+            var user = await db.Kullanicilar.FirstAsync(u => u.Eposta == eposta);
+            user.Rol = KullaniciRolu.Musteri;
+            await db.SaveChangesAsync();
+        }
 
         return (client, userId);
     }

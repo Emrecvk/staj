@@ -1,6 +1,6 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { MOCK_PRODUCTS, hesaplaB2BFiyat, kademeSec, paraBicimle } from "../test-helpers.mjs";
+import { MOCK_PRODUCTS, hesaplaB2BFiyat } from "../test-helpers.mjs";
 
 describe("Tier 4: Real-World B2B Workload - High-Volume Tiered Pricing & Multi-Warehouse Routing", () => {
   it("Workload 4.3: Stress tests 500 tiered price matrix calculations with 100% numerical precision", () => {
@@ -34,7 +34,6 @@ describe("Tier 4: Real-World B2B Workload - High-Volume Tiered Pricing & Multi-W
   });
 
   it("Workload 4.4: Multi-warehouse allocation algorithm correctly routes split quantities and calculates lead times", () => {
-    const product = MOCK_PRODUCTS[0];
     const warehouseInventory = [
       { depoKodu: "MERKEZ-IST", stok: 4850, leadTimeDays: 0 },
       { depoKodu: "SERBEST-BOLGE", stok: 2000, leadTimeDays: 2 },

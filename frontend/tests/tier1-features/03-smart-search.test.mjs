@@ -1,5 +1,6 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "../test-helpers.mjs";
 
 describe("Feature 3: Smart Search Combobox", () => {
@@ -80,19 +81,17 @@ describe("Feature 3: Smart Search Combobox", () => {
   });
 
   it("Test 3.6: Keyboard navigation (ArrowDown, ArrowUp, Enter, Escape) navigates autocomplete list", () => {
-    let activeIndex = -1;
-    const itemsCount = 4;
+    const searchSource = readFileSync(
+      new URL("../../src/components/mega-menu/smart-search.tsx", import.meta.url),
+      "utf8",
+    );
 
-    // Simulate keydown ArrowDown
-    activeIndex = (activeIndex + 1) % itemsCount;
-    assert.equal(activeIndex, 0);
-
-    // Simulate keydown ArrowDown again
-    activeIndex = (activeIndex + 1) % itemsCount;
-    assert.equal(activeIndex, 1);
-
-    // Simulate Escape
-    activeIndex = -1;
-    assert.equal(activeIndex, -1);
+    assert.ok(searchSource.includes('e.key === "ArrowDown"'));
+    assert.ok(searchSource.includes('e.key === "ArrowUp"'));
+    assert.ok(searchSource.includes('e.key === "Enter" && aktifOneriIndeksi >= 0'));
+    assert.ok(searchSource.includes('e.key === "Escape"'));
+    assert.ok(searchSource.includes("aria-activedescendant"));
+    assert.ok(searchSource.includes('role="option"'));
+    assert.ok(searchSource.includes("router.push(hedef.url)"));
   });
 });

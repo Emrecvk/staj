@@ -160,6 +160,39 @@ public class SepetVeSiparisTestleri
     }
 
     [Fact]
+    public async Task FiyatiOlmayanUrun_SepeteEklenemez()
+    {
+        // Katalogda fiyat kademesi olmayan ama STOKTA olan ürünler var
+        // (Özdisan bu SKU'lar için fiyat yayımlamıyor). Kontrol yalnızca
+        // SiparisKurucu'da olduğu için bu ürünler sepete 0,00 fiyatla girip
+        // hatayı ancak ödeme adımında veriyordu.
+        var ambalajId = await _fabrika.Veritabaniyla(async db =>
+        {
+            var ambalaj = new Cevik.Alan.Fiyatlama.UrunAmbalaji
+            {
+                UrunId = await db.Urunler.Where(u => u.Aktif).Select(u => u.Id).FirstAsync(),
+                AmbalajTipi = Cevik.Alan.Ortak.AmbalajTipi.Bulk,
+                Ad = "Fiyatsiz Test Ambalaji",
+                Moq = 1,
+                KatlamaMiktari = 1,
+                StokMiktari = 500
+            };
+            db.UrunAmbalajlari.Add(ambalaj);
+            await db.SaveChangesAsync();
+            return ambalaj.Id;
+        });
+
+        var yanit = await _istemci.SendAsync(
+            SepetIstegi(Guid.NewGuid().ToString("N"), ambalajId, 1));
+
+        yanit.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity,
+            "fiyatı olmayan ürün sepete değil teklif akışına gitmeli");
+
+        var govde = await yanit.Content.ReadAsStringAsync();
+        govde.Should().Contain("teklif", "kullanıcı teklif akışına yönlendirilmeli");
+    }
+
+    [Fact]
     public async Task KademeliFiyat_MiktarArttikcaDuser()
     {
         var ambalaj = await KolayAmbalajBulAsync(enAzStok: 1200);
@@ -238,7 +271,9 @@ public class SepetVeSiparisTestleri
         siparis.Kalemler.Should().ContainSingle();
 
         // KDV oranı yapılandırmadan (%20) gelmeli.
-        siparis.KdvTutari.Should().BeApproximately(siparis.AraToplam * 0.20m, 0.01m);
+        siparis.KdvTutari.Should().BeApproximately(
+            (siparis.AraToplam - siparis.IndirimTutari + siparis.KargoUcreti) * 0.20m,
+            0.01m);
         siparis.GenelToplam.Should().BeApproximately(
             siparis.AraToplam + siparis.KdvTutari + siparis.KargoUcreti, 0.01m);
 

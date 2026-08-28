@@ -41,7 +41,7 @@ export function SiteHeader({ categories = [], initialCurrency = "TRY" }: SiteHea
     toplamTutar: cartTotal,
     paraBirimi,
     kalemler: cartItems,
-  } = useHeaderCart();
+  } = useHeaderCart(initialCurrency);
   const { user, isLoggedIn } = useHeaderUser();
 
   // Dropdown states
@@ -552,15 +552,15 @@ export function SiteHeader({ categories = [], initialCurrency = "TRY" }: SiteHea
               </button>
               {kurumsalMenuOpen && <div className="absolute left-1/2 top-full z-50 w-[310px] -translate-x-1/2 rounded-token-panel border border-kenar bg-yuzey-kart p-1.5 shadow-token-katman">
                 <Link href="/hakkimizda" onClick={() => setKurumsalMenuOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-metin transition-colors hover:bg-vurgu-zemin hover:text-vurgu">Hakkımızda</Link>
-                <Link href="/sozlesmeler/ozdisan-elektronik-kvkk-politikasi" onClick={() => setKurumsalMenuOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-metin transition-colors hover:bg-vurgu-zemin hover:text-vurgu">KVKK Politikası</Link>
+                <Link href="/sozlesmeler/cevik-elektronik-kvkk-politikasi" onClick={() => setKurumsalMenuOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-metin transition-colors hover:bg-vurgu-zemin hover:text-vurgu">KVKK Politikası</Link>
               </div>}
             </div>
-            <a
-              href="mailto:destek@cevik.com.tr"
+            <Link
+              href="/iletisim"
               className="px-6 py-3 text-sm font-semibold text-metin transition-colors hover:text-vurgu"
             >
               İletişim
-            </a>
+            </Link>
           </nav>
 
           <div className="relative justify-self-end">

@@ -369,6 +369,7 @@ app.UseExceptionHandler(hataHatti =>
             KeyNotFoundException => (StatusCodes.Status404NotFound, "Kayit bulunamadi"),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Yetkisiz islem"),
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict, "Kayit baska bir islem tarafindan degistirildi"),
+            DbUpdateException => (StatusCodes.Status409Conflict, "Veritabani kisiti nedeniyle islem tamamlanamadi"),
             _ => (StatusCodes.Status500InternalServerError, "Beklenmeyen bir hata olustu")
         };
 
@@ -404,10 +405,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else
+else if (app.Configuration.GetValue("HttpsRedirection:Etkin", true))
 {
-    // Container icinde yalnizca HTTP dinleniyor; yonlendirme gelistirmede
-    // Swagger'i kirdigi icin uretim disinda kapali.
+    // TLS uygulamada sonlandırılıyorsa açık kalır. Yalnız HTTP dinleyen
+    // container dağıtımında compose bu seçeneği kapatır.
     app.UseHttpsRedirection();
 }
 

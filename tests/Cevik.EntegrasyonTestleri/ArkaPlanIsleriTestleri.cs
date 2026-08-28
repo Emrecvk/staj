@@ -19,8 +19,8 @@ using Microsoft.Extensions.Hosting;
 
 namespace Cevik.EntegrasyonTestleri;
 
-[Collection("SiralamaGerektirmeyenler")]
-public class ArkaPlanIsleriTestleri : IClassFixture<CevikUygulamaFabrikasi>
+[Collection("Api")]
+public class ArkaPlanIsleriTestleri
 {
     private readonly CevikUygulamaFabrikasi _fabrika;
 

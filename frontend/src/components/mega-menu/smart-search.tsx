@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Search,
@@ -19,6 +18,7 @@ import {
   type Category,
   type UreticiOzet,
 } from "@/lib/api";
+import { UrunGorseli } from "@/components/urun-gorseli";
 
 interface SmartSearchProps {
   categories?: Category[];
@@ -77,6 +77,35 @@ export function SmartSearchCombobox({
     [],
   );
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [aktifOneriIndeksi, setAktifOneriIndeksi] = useState(-1);
+
+  const hasSuggestions =
+    productSuggestions.length > 0 ||
+    categorySuggestions.length > 0 ||
+    brandSuggestions.length > 0;
+  const tumSonuclarUrl = `/urunler?aramaMetni=${encodeURIComponent(query)}${
+    selectedCategory !== "tum" ? `&kategoriId=${selectedCategory}` : ""
+  }`;
+  const oneriler = useMemo(
+    () => [
+      ...productSuggestions.map((urun) => ({
+        anahtar: `urun-${urun.id}`,
+        url: `/urunler/${urun.id}`,
+      })),
+      ...categorySuggestions.map((kategori) => ({
+        anahtar: `kategori-${kategori.id}`,
+        url: kategori.url,
+      })),
+      ...brandSuggestions.map((uretici) => ({
+        anahtar: `uretici-${uretici.id}`,
+        url: `/urunler?ureticiId=${uretici.id}`,
+      })),
+      ...(hasSuggestions
+        ? [{ anahtar: "tum-sonuclar", url: tumSonuclarUrl }]
+        : []),
+    ],
+    [brandSuggestions, categorySuggestions, hasSuggestions, productSuggestions, tumSonuclarUrl],
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -118,16 +147,27 @@ export function SmartSearchCombobox({
         !containerRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
+        setAktifOneriIndeksi(-1);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const aktifOneri = oneriler[aktifOneriIndeksi];
+    if (!aktifOneri) return;
+
+    document
+      .getElementById(`arama-onerisi-${aktifOneri.anahtar}`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [aktifOneriIndeksi, oneriler]);
+
   // Perform multi-group search
   const performSearch = async (searchTerm: string, catId: string) => {
     const aramaMetni = searchTerm.trim();
     const normalized = aramaMetni.toLocaleLowerCase("tr-TR");
+    setAktifOneriIndeksi(-1);
     if (normalized.length < 2) {
       setProductSuggestions([]);
       setCategorySuggestions([]);
@@ -201,6 +241,7 @@ export function SmartSearchCombobox({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
+    setAktifOneriIndeksi(-1);
 
     if (value.trim().length >= 2) {
       setIsOpen(true);
@@ -220,6 +261,7 @@ export function SmartSearchCombobox({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsOpen(false);
+    setAktifOneriIndeksi(-1);
     const params = new URLSearchParams();
     if (query.trim()) params.set("aramaMetni", query.trim());
     if (selectedCategory !== "tum") params.set("kategoriId", selectedCategory);
@@ -227,16 +269,41 @@ export function SmartSearchCombobox({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) return;
-
     if (e.key === "Escape") {
       setIsOpen(false);
+      setAktifOneriIndeksi(-1);
+      return;
+    }
+
+    if (!isOpen || oneriler.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setAktifOneriIndeksi((mevcut) => (mevcut + 1) % oneriler.length);
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setAktifOneriIndeksi((mevcut) =>
+        mevcut <= 0 ? oneriler.length - 1 : mevcut - 1,
+      );
+      return;
+    }
+
+    if (e.key === "Enter" && aktifOneriIndeksi >= 0) {
+      e.preventDefault();
+      const hedef = oneriler[aktifOneriIndeksi];
+      setIsOpen(false);
+      setAktifOneriIndeksi(-1);
+      router.push(hedef.url);
     }
   };
 
   const selectPopularTerm = (term: string) => {
     setQuery(term);
     setIsOpen(true);
+    setAktifOneriIndeksi(-1);
     performSearch(term, selectedCategory);
     inputRef.current?.focus();
   };
@@ -245,16 +312,12 @@ export function SmartSearchCombobox({
     searchRequestRef.current += 1;
     setQuery("");
     setIsOpen(false);
+    setAktifOneriIndeksi(-1);
     setProductSuggestions([]);
     setCategorySuggestions([]);
     setBrandSuggestions([]);
     inputRef.current?.focus();
   };
-
-  const hasSuggestions =
-    productSuggestions.length > 0 ||
-    categorySuggestions.length > 0 ||
-    brandSuggestions.length > 0;
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -280,6 +343,11 @@ export function SmartSearchCombobox({
             aria-autocomplete="list"
             aria-expanded={isOpen}
             aria-controls="search-suggestions-list"
+            aria-activedescendant={
+              aktifOneriIndeksi >= 0 && oneriler[aktifOneriIndeksi]
+                ? `arama-onerisi-${oneriler[aktifOneriIndeksi].anahtar}`
+                : undefined
+            }
             className="w-full h-14 px-4 text-sm font-sans text-metin placeholder:text-metin-ucuncul outline-none bg-transparent"
           />
 
@@ -315,7 +383,8 @@ export function SmartSearchCombobox({
         <div
           id="search-suggestions-list"
           className="absolute left-0 right-0 top-full mt-1.5 bg-yuzey-kart border border-kenar rounded-token-kart shadow-token-katman z-50 overflow-hidden text-metin animate-in fade-in slide-in-from-top-2 duration-150"
-          role="listbox"
+          role={hasSuggestions ? "listbox" : "region"}
+          aria-label={hasSuggestions ? "Arama önerileri" : "Arama durumu"}
         >
           {isLoading && !hasSuggestions ? (
             <div className="p-8 flex flex-col items-center justify-center text-metin-ikincil gap-2">
@@ -337,29 +406,38 @@ export function SmartSearchCombobox({
                     </span>
                   </div>
                   <div className="space-y-1">
-                    {productSuggestions.map((prod) => (
+                    {productSuggestions.map((prod, index) => {
+                      const secili = aktifOneriIndeksi === index;
+                      return (
                       <Link
                         key={prod.id}
+                        id={`arama-onerisi-urun-${prod.id}`}
                         href={`/urunler/${prod.id}`}
-                        onClick={() => setIsOpen(false)}
-                        className="flex items-center justify-between p-2 rounded-token-girdi hover:bg-vurgu-zemin hover:border-vurgu border border-transparent transition-all group"
+                        role="option"
+                        aria-selected={secili}
+                        onMouseEnter={() => setAktifOneriIndeksi(index)}
+                        onClick={() => {
+                          setIsOpen(false);
+                          setAktifOneriIndeksi(-1);
+                        }}
+                        className={`flex items-center justify-between rounded-token-girdi border p-2 transition-colors group ${
+                          secili
+                            ? "border-vurgu bg-vurgu-zemin"
+                            : "border-transparent hover:border-vurgu hover:bg-vurgu-zemin"
+                        }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-10 h-10 rounded border border-kenar bg-yuzey-gomulu flex items-center justify-center shrink-0 overflow-hidden p-1">
-                            {prod.anaGorselUrl ? (
-                              <Image
-                                src={prod.anaGorselUrl}
-                                alt={prod.ureticiUrunKodu}
-                                width={36}
-                                height={36}
-                                className="object-contain w-full h-full"
-                              />
-                            ) : (
-                              <Cpu
-                                size={20}
-                                className="text-metin-ucuncul group-hover:text-vurgu"
-                              />
-                            )}
+                            {/* Görsel alan adı yönetim panelinden girildiği için
+                                next/image kullanılamaz: yapılandırılmamış host
+                                optimizer'dan 400 döner ve öneri listesindeki her
+                                küçük görsel boş kutu olarak kalır. Katalogdaki
+                                diğer tüm ürün görselleriyle aynı bileşen. */}
+                            <UrunGorseli
+                              src={prod.anaGorselUrl}
+                              urunKodu={prod.ureticiUrunKodu}
+                              className="p-0.5 [&>span]:hidden [&>svg]:h-5 [&>svg]:w-5"
+                            />
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
@@ -379,15 +457,28 @@ export function SmartSearchCombobox({
 
                         <div className="flex flex-col items-end shrink-0 ml-4">
                           <span className="font-mono font-bold text-sm text-metin tabular-nums">
-                            {prod.baslangicFiyati.toFixed(2)} {prod.paraBirimi}
+                            {prod.baslangicFiyati > 0
+                              ? `${prod.baslangicFiyati.toFixed(2)} ${prod.paraBirimi}`
+                              : "Teklife tabi"}
                           </span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-basari-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-basari-500" />
-                            {prod.toplamStok.toLocaleString("tr-TR")} Stokta
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+                              prod.toplamStok > 0 ? "text-basari-600" : "text-metin-ucuncul"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                prod.toplamStok > 0 ? "bg-basari-500" : "bg-kenar-guclu"
+                              }`}
+                            />
+                            {prod.toplamStok > 0
+                              ? `${prod.toplamStok.toLocaleString("tr-TR")} stokta`
+                              : "Stok yok"}
                           </span>
                         </div>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -402,12 +493,26 @@ export function SmartSearchCombobox({
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {categorySuggestions.map((cat) => (
+                    {categorySuggestions.map((cat, index) => {
+                      const onerininIndeksi = productSuggestions.length + index;
+                      const secili = aktifOneriIndeksi === onerininIndeksi;
+                      return (
                       <Link
                         key={cat.id}
+                        id={`arama-onerisi-kategori-${cat.id}`}
                         href={cat.url}
-                        onClick={() => setIsOpen(false)}
-                        className="flex items-center justify-between px-3 py-2 rounded-token-girdi bg-yuzey-kart border border-kenar hover:border-vurgu hover:text-vurgu text-xs font-medium transition-all group"
+                        role="option"
+                        aria-selected={secili}
+                        onMouseEnter={() => setAktifOneriIndeksi(onerininIndeksi)}
+                        onClick={() => {
+                          setIsOpen(false);
+                          setAktifOneriIndeksi(-1);
+                        }}
+                        className={`flex items-center justify-between rounded-token-girdi border px-3 py-2 text-xs font-medium transition-colors group ${
+                          secili
+                            ? "border-vurgu bg-vurgu-zemin text-vurgu"
+                            : "border-kenar bg-yuzey-kart hover:border-vurgu hover:text-vurgu"
+                        }`}
                       >
                         <span className="truncate">{cat.path}</span>
                         <span className="ml-2 flex shrink-0 items-center gap-2">
@@ -422,7 +527,8 @@ export function SmartSearchCombobox({
                           />
                         </span>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -437,12 +543,27 @@ export function SmartSearchCombobox({
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 px-2">
-                    {brandSuggestions.map((brand) => (
+                    {brandSuggestions.map((brand, index) => {
+                      const onerininIndeksi =
+                        productSuggestions.length + categorySuggestions.length + index;
+                      const secili = aktifOneriIndeksi === onerininIndeksi;
+                      return (
                       <Link
                         key={brand.id}
+                        id={`arama-onerisi-uretici-${brand.id}`}
                         href={`/urunler?ureticiId=${brand.id}`}
-                        onClick={() => setIsOpen(false)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-kenar bg-yuzey-kart hover:border-vurgu hover:bg-vurgu-zemin text-xs font-semibold text-metin-marka transition-all"
+                        role="option"
+                        aria-selected={secili}
+                        onMouseEnter={() => setAktifOneriIndeksi(onerininIndeksi)}
+                        onClick={() => {
+                          setIsOpen(false);
+                          setAktifOneriIndeksi(-1);
+                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-metin-marka transition-colors ${
+                          secili
+                            ? "border-vurgu bg-vurgu-zemin"
+                            : "border-kenar bg-yuzey-kart hover:border-vurgu hover:bg-vurgu-zemin"
+                        }`}
                       >
                         <span>{brand.ad}</span>
                         {brand.yetkiliDistributorMu && (
@@ -451,7 +572,8 @@ export function SmartSearchCombobox({
                           </span>
                         )}
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -463,13 +585,18 @@ export function SmartSearchCombobox({
                   ok tuşlarını kullanabilirsiniz.
                 </span>
                 <Link
-                  href={`/urunler?aramaMetni=${encodeURIComponent(query)}${
-                    selectedCategory !== "tum"
-                      ? `&kategoriId=${selectedCategory}`
-                      : ""
+                  id="arama-onerisi-tum-sonuclar"
+                  href={tumSonuclarUrl}
+                  role="option"
+                  aria-selected={aktifOneriIndeksi === oneriler.length - 1}
+                  onMouseEnter={() => setAktifOneriIndeksi(oneriler.length - 1)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setAktifOneriIndeksi(-1);
+                  }}
+                  className={`flex shrink-0 items-center gap-1 rounded-token-girdi px-2 py-1 font-bold text-vurgu transition-colors hover:text-vurgu-guclu ${
+                    aktifOneriIndeksi === oneriler.length - 1 ? "bg-vurgu-zemin" : ""
                   }`}
-                  onClick={() => setIsOpen(false)}
-                  className="font-bold text-vurgu hover:text-vurgu-guclu flex items-center gap-1 shrink-0"
                 >
                   Tüm Sonuçları Gör <ArrowRight size={13} />
                 </Link>

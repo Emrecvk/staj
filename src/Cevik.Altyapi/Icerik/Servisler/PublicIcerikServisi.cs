@@ -1,4 +1,5 @@
 using Cevik.Alan.Kurallar;
+using Cevik.Alan.Icerik;
 using Cevik.Altyapi.Veritabani;
 using Cevik.Uygulama.Icerik.Arayuzler;
 using Cevik.Uygulama.Icerik.Dto;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cevik.Altyapi.Icerik.Servisler;
 
 /// <summary>
-/// Herkese açık, salt-okunur CMS içeriği.
+/// Herkese açık CMS içeriği ve e-bülten aboneliği.
 /// Yönetim uçları <c>/api/yonetim/...</c> altındadır; burası yayınlanmış içeriği gösterir.
 /// </summary>
 public class PublicIcerikServisi : IPublicIcerikServisi
@@ -136,5 +137,36 @@ public class PublicIcerikServisi : IPublicIcerikServisi
                 Sira = s.Sira
             })
             .ToListAsync();
+    }
+
+    public async Task EBulteneAboneOlAsync(string eposta)
+    {
+        var normalizeEposta = eposta.Trim().ToLowerInvariant();
+        var simdi = DateTimeOffset.UtcNow;
+
+        // Silinmiş kayıt da aranır: aynı adres yeniden abone olduğunda yeni ve
+        // mükerrer bir satır açmak yerine eski kayıt güvenle etkinleştirilir.
+        var mevcutAbone = await _context.EBultenAboneleri
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(a => a.Eposta == normalizeEposta);
+
+        if (mevcutAbone is null)
+        {
+            _context.EBultenAboneleri.Add(new EBultenAbonesi
+            {
+                Eposta = normalizeEposta,
+                OnaylandiMi = true,
+                AbonelikTarihi = simdi
+            });
+        }
+        else if (mevcutAbone.SilindiMi || mevcutAbone.IptalTarihi.HasValue || !mevcutAbone.OnaylandiMi)
+        {
+            mevcutAbone.SilindiMi = false;
+            mevcutAbone.OnaylandiMi = true;
+            mevcutAbone.IptalTarihi = null;
+            mevcutAbone.AbonelikTarihi = simdi;
+        }
+
+        await _context.SaveChangesAsync();
     }
 }

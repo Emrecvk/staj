@@ -5,37 +5,35 @@ import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 import {
   ArrowRight,
-  Boxes,
+  CircuitBoard,
   Cpu,
-  Layers,
+  Drill,
   Lightbulb,
-  ToggleRight,
+  PanelsTopLeft,
   type LucideIcon,
 } from "lucide-react";
 import { Kapsayici } from "@/components/ui/yuzey";
 import { SAYFALAMA_SURESI_MS, SayfalamaNoktasi } from "@/components/ui/sayfalama-noktasi";
-import { kategoriBaglantisiniKur } from "@/lib/kategori-baglantisi";
+import { vitrinKategoriAgaciniKur } from "@/components/home/vitrin-kategori-agaci";
 import type { Category } from "@/lib/api";
-import {
-  VITRIN_KATEGORI_AGACI,
-  type VitrinKategoriDali,
-} from "@/components/home/vitrin-kategori-verisi";
 
 const VITRIN_KATEGORI_IKONLARI: LucideIcon[] = [
   Cpu,
   Lightbulb,
-  Layers,
-  ToggleRight,
-  Boxes,
+  CircuitBoard,
+  Drill,
+  PanelsTopLeft,
 ];
 
 const SLAYTLAR = [
   {
-    etiket: "Duyuru",
-    baslik: "Component by Çevik 26. sayısı yayında!",
-    aciklama: "Elektronik sektörünün güncel gelişmeleri, yeni ürünler ve teknoloji trendleri sizi bekliyor.",
+    etiket: "Katalog",
+    baslik: "Doğrulanmış komponent kataloğu",
+    aciklama: "Ürün kodu, teknik özellik ve ambalaj seçenekleriyle doğru komponenti hızla bulun.",
     gorsel: "/hero-duyuru-dergi.png",
-    gorselAlt: "Elektronik komponentlerle çevrelenmiş açık teknik dergi",
+    gorselAlt: "Elektronik komponent kataloğu ve teknik dokümanlar",
+    href: "/urunler",
+    eylem: "Kataloğu incele",
   },
   {
     etiket: "Workshop",
@@ -43,6 +41,8 @@ const SLAYTLAR = [
     aciklama: "MCU, HMI ve gömülü sistemler için teknik içerikleri ve uygulama örneklerini keşfedin.",
     gorsel: "/hero-duyuru-workshop.png",
     gorselAlt: "Mikrodenetleyici kartı üzerinde ölçüm yapılan elektronik atölyesi",
+    href: "/cozumler/fae-ve-arge-destegi",
+    eylem: "Teknik desteği incele",
   },
   {
     etiket: "Yeni",
@@ -50,6 +50,8 @@ const SLAYTLAR = [
     aciklama: "Global iş ortaklarımız ve genişleyen ürün portföyümüzle yanınızdayız.",
     gorsel: "/hero-duyuru-line-card.png",
     gorselAlt: "Farklı elektronik komponent ailelerinden oluşan ürün portföyü",
+    href: "/markalar",
+    eylem: "Üreticileri incele",
   },
 ] as const;
 
@@ -61,26 +63,24 @@ interface HeroProps {
 
 export function HeroB2B({ categories = [], stoktakiUrun }: HeroProps) {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
-  const [hoveredSubCategory, setHoveredSubCategory] = useState<VitrinKategoriDali | null>(null);
-  const [hoveredThirdCategory, setHoveredThirdCategory] = useState<VitrinKategoriDali | null>(null);
+  const [aktifAnaDal, setAktifAnaDal] = useState<number | null>(null);
+  const [aktifIkinciDal, setAktifIkinciDal] = useState<number | null>(null);
+  const [aktifUcuncuDal, setAktifUcuncuDal] = useState<number | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleCategoryHover = (id: number) => {
+  const anaDaliAc = (index: number) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredCategory(id);
-      setHoveredSubCategory(null);
-      setHoveredThirdCategory(null);
-    }, 150);
+      setAktifAnaDal(index);
+      setAktifIkinciDal(null);
+      setAktifUcuncuDal(null);
+    }, 120);
   };
 
   const handleNavLeave = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredCategory(null);
-      setHoveredSubCategory(null);
-      setHoveredThirdCategory(null);
+      setAktifAnaDal(null);
     }, 200);
   };
   useEffect(() => {
@@ -99,81 +99,175 @@ export function HeroB2B({ categories = [], stoktakiUrun }: HeroProps) {
 
   const slide = SLAYTLAR[activeSlide];
 
-  const kategoriBaglantisi = (ad: string) => kategoriBaglantisiniKur(categories, ad);
+  const vitrinKategorileri = vitrinKategoriAgaciniKur(categories);
+  const seciliAnaDal = aktifAnaDal === null ? undefined : vitrinKategorileri[aktifAnaDal];
+  const seciliIkinciDal =
+    aktifIkinciDal === null ? undefined : seciliAnaDal?.altlar[aktifIkinciDal];
+  const seciliUcuncuDal =
+    aktifUcuncuDal === null ? undefined : seciliIkinciDal?.altlar[aktifUcuncuDal];
 
   return (
     <section className="bg-yuzey" aria-label="Ana giriş">
       <Kapsayici className="py-6 md:py-8">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <nav
-              aria-label="Ana kategoriler"
-              className="relative z-20 hidden h-full rounded-token-panel border border-kenar bg-yuzey-kart px-3 py-3 lg:col-span-3 lg:block"
-              onMouseLeave={handleNavLeave}
-            >
-              <h2 className="sr-only">Kategoriler</h2>
-              <ul className="mx-auto flex h-full w-full max-w-[300px] translate-x-3 flex-col justify-center gap-4">
-                {VITRIN_KATEGORI_AGACI.map((kategori, index) => {
-                  const Icon = VITRIN_KATEGORI_IKONLARI[index] ?? Boxes;
-                  return (
-                    <li key={kategori.ad} onMouseEnter={() => handleCategoryHover(index)}>
-                      <Link href={kategoriBaglantisi(kategori.ad)} className="group flex items-center gap-3 rounded-token-girdi px-1.5 py-2 transition-colors hover:bg-vurgu-zemin">
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-vurgu-zemin">
-                          <Icon size={19} className="text-vurgu" aria-hidden="true" />
-                        </span>
-                        <span className="min-w-0 text-sm font-medium leading-snug text-metin">{kategori.ad}</span>
-                        <ArrowRight size={14} className="shrink-0 text-metin-ucuncul opacity-40" aria-hidden="true" />
-                      </Link>
-                      {hoveredCategory === index && kategori.altlar.length > 0 && (
-                        <div className="absolute left-[calc(100%+1rem)] top-0 z-30 min-h-full">
-                          <div className={`flex min-h-[620px] items-stretch overflow-visible rounded-token-panel border border-kenar bg-yuzey-kart shadow-token-katman transition-[width] duration-200 ${hoveredThirdCategory?.altlar.length ? "w-[990px]" : hoveredSubCategory?.altlar.length ? "w-[660px]" : "w-[330px]"}`}>
-                            <div className="w-[330px] shrink-0 p-6">
-                              <h3 className="flex h-14 items-start text-2xl font-extrabold leading-tight text-metin-marka">{kategori.ad}</h3>
-                              <ul className="mt-5">
-                                {kategori.altlar.map((alt) => (
-                                  <li key={alt.ad} onMouseEnter={() => { setHoveredSubCategory(alt); setHoveredThirdCategory(null); }}>
-                                    <Link href={kategoriBaglantisi(alt.ad)} className={`flex min-h-10 items-center justify-between gap-3 px-3 py-2 text-[15px] transition-colors ${hoveredSubCategory?.ad === alt.ad ? "bg-yuzey-gomulu font-semibold text-metin-marka" : "text-metin hover:bg-yuzey-gomulu"}`}>
-                                      <span>{alt.ad}</span>
-                                      {alt.altlar.length > 0 && <ArrowRight size={15} className={hoveredSubCategory?.ad === alt.ad ? "text-vurgu" : "text-kenar-guclu"} />}
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            {hoveredSubCategory && hoveredSubCategory.altlar.length > 0 && (
-                              <div className="w-[330px] shrink-0 border-l border-kenar px-6 pb-6 pt-[100px]">
-                                <ul>
-                                  {hoveredSubCategory.altlar.map((alt) => (
-                                    <li key={alt.ad} onMouseEnter={() => setHoveredThirdCategory(alt)}>
-                                      <Link href={kategoriBaglantisi(alt.ad)} className={`flex min-h-10 items-center justify-between gap-3 px-3 py-2 text-[15px] transition-colors ${hoveredThirdCategory?.ad === alt.ad ? "bg-yuzey-gomulu font-semibold text-metin-marka" : "text-metin hover:bg-yuzey-gomulu"}`}>
-                                        <span>{alt.ad}</span>
-                                        {alt.altlar.length > 0 && <ArrowRight size={15} className={hoveredThirdCategory?.ad === alt.ad ? "text-vurgu" : "text-kenar-guclu"} />}
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
+            aria-label="Ana kategoriler"
+            className="relative z-20 hidden h-full rounded-token-panel border border-kenar bg-yuzey-kart px-4 py-4 lg:col-span-4 lg:block"
+            onMouseLeave={handleNavLeave}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                setAktifAnaDal(null);
+              }
+            }}
+          >
+            <h2 className="sr-only">Kategoriler</h2>
+            <ul className="mx-auto flex h-full w-full max-w-[360px] flex-col justify-center gap-4">
+              {vitrinKategorileri.map((kategori, index) => {
+                const Icon = VITRIN_KATEGORI_IKONLARI[index] ?? PanelsTopLeft;
+                const secili = aktifAnaDal === index;
+
+                return (
+                  <li key={kategori.anahtar} onMouseEnter={() => anaDaliAc(index)}>
+                    <Link
+                      href={kategori.href}
+                      aria-expanded={secili}
+                      aria-controls={secili ? "kademeli-kategori-paneli" : undefined}
+                      onFocus={() => {
+                        setAktifAnaDal(index);
+                        setAktifIkinciDal(null);
+                        setAktifUcuncuDal(null);
+                      }}
+                      className={`group flex items-center gap-4 rounded-token-girdi px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vurgu focus-visible:ring-offset-2 ${
+                        secili ? "bg-vurgu-zemin" : "hover:bg-vurgu-zemin"
+                      }`}
+                    >
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-vurgu-zemin">
+                        <Icon size={21} className="text-vurgu" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1 text-base font-medium leading-snug text-metin">
+                        {kategori.ad}
+                      </span>
+                      <ArrowRight
+                        size={16}
+                        className="shrink-0 text-metin-ucuncul opacity-40 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {seciliAnaDal && seciliAnaDal.altlar.length > 0 && (
+              <div
+                id="kademeli-kategori-paneli"
+                data-testid="kademeli-kategori-paneli"
+                role="region"
+                aria-label={`${seciliAnaDal.ad} alt kategorileri`}
+                onMouseEnter={() => {
+                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                }}
+                className="absolute left-[calc(100%+1rem)] top-0 z-30 flex w-max"
+              >
+                <div className="h-[46rem] w-[clamp(13rem,18vw,20rem)] shrink-0 rounded-token-panel border border-kenar bg-yuzey-kart px-5 py-6 shadow-token-katman">
+                  <h3 className="mb-6 max-w-[16ch] text-2xl font-black leading-[1.08] text-metin-marka xl:text-3xl">
+                    {seciliAnaDal.ad}
+                  </h3>
+                  <h4 className="sr-only">Ürün grupları</h4>
+                  <ul className="space-y-0.5">
+                    {seciliAnaDal.altlar.map((dal, index) => {
+                      const secili = aktifIkinciDal === index;
+                      return (
+                        <li key={dal.anahtar}>
+                          <Link
+                            href={dal.href}
+                            aria-expanded={secili && dal.altlar.length > 0}
+                            onMouseEnter={() => {
+                              setAktifIkinciDal(index);
+                              setAktifUcuncuDal(null);
+                            }}
+                            onFocus={() => {
+                              setAktifIkinciDal(index);
+                              setAktifUcuncuDal(null);
+                            }}
+                            className={`group flex items-center justify-between gap-3 rounded-sm px-3 py-1.5 text-sm font-medium leading-5 transition-colors ${
+                              secili
+                                ? "bg-yuzey-gomulu text-metin-marka"
+                                : "text-metin hover:bg-yuzey-gomulu hover:text-vurgu"
+                            } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vurgu focus-visible:ring-inset`}
+                          >
+                            <span>{dal.ad}</span>
+                            {dal.altlar.length > 0 && (
+                              <ArrowRight
+                                size={16}
+                                className={`shrink-0 ${secili ? "text-vurgu" : "text-metin-ucuncul opacity-45"}`}
+                                aria-hidden="true"
+                              />
                             )}
-                            {hoveredThirdCategory && hoveredThirdCategory.altlar.length > 0 && (
-                              <div className="w-[330px] shrink-0 border-l border-kenar px-6 pb-6 pt-[100px]">
-                                <ul>
-                                  {hoveredThirdCategory.altlar.map((alt) => (
-                                    <li key={alt.ad}>
-                                      <Link href={kategoriBaglantisi(alt.ad)} className="block min-h-10 px-3 py-2 text-[15px] text-metin transition-colors hover:bg-yuzey-gomulu hover:text-vurgu">{alt.ad}</Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+
+                {seciliIkinciDal && seciliIkinciDal.altlar.length > 0 && (
+                  <div className="h-[46rem] w-[clamp(13rem,18vw,20rem)] shrink-0 rounded-token-panel border border-kenar bg-yuzey-kart px-5 pb-6 pt-[7.75rem] shadow-token-katman">
+                    <h4 className="sr-only">Alt kategoriler</h4>
+                    <ul className="space-y-0.5">
+                      {seciliIkinciDal.altlar.map((dal, index) => {
+                        const secili = aktifUcuncuDal === index;
+                        return (
+                          <li key={dal.anahtar}>
+                            <Link
+                              href={dal.href}
+                              aria-expanded={secili && dal.altlar.length > 0}
+                              onMouseEnter={() => setAktifUcuncuDal(index)}
+                              onFocus={() => setAktifUcuncuDal(index)}
+                              className={`group flex items-center justify-between gap-3 rounded-sm px-3 py-1.5 text-sm font-medium leading-5 transition-colors ${
+                                secili
+                                  ? "bg-yuzey-gomulu text-metin-marka"
+                                  : "text-metin hover:bg-yuzey-gomulu hover:text-vurgu"
+                              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vurgu focus-visible:ring-inset`}
+                            >
+                              <span>{dal.ad}</span>
+                              {dal.altlar.length > 0 && (
+                                <ArrowRight
+                                  size={16}
+                                  className={`shrink-0 ${secili ? "text-vurgu" : "text-metin-ucuncul opacity-45"}`}
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+
+                {seciliUcuncuDal && seciliUcuncuDal.altlar.length > 0 && (
+                  <div className="h-[46rem] w-[clamp(13rem,18vw,20rem)] shrink-0 rounded-token-panel border border-kenar bg-yuzey-kart px-5 pb-6 pt-[7.75rem] shadow-token-katman">
+                    <h4 className="sr-only">En alt kategoriler</h4>
+                    <ul className="space-y-0.5">
+                      {seciliUcuncuDal.altlar.map((dal) => (
+                        <li key={dal.anahtar}>
+                          <Link
+                            href={dal.href}
+                            className="flex items-center rounded-sm px-3 py-1.5 text-sm font-medium leading-5 text-metin transition-colors hover:bg-yuzey-gomulu hover:text-vurgu focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-vurgu focus-visible:ring-inset"
+                          >
+                            {dal.ad}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
-          <div className="relative min-h-[460px] overflow-hidden rounded-token-panel border border-kenar bg-yuzey-kart p-7 md:p-8 lg:col-span-9">
+          <div className="relative min-h-[460px] overflow-hidden rounded-token-panel border border-kenar bg-yuzey-kart p-7 md:p-8 lg:col-span-8">
             <div
               className="pointer-events-none absolute inset-0 opacity-[0.06]"
               style={{
@@ -190,14 +284,22 @@ export function HeroB2B({ categories = [], stoktakiUrun }: HeroProps) {
                 {slide.aciklama}
               </p>
               <div className="mt-auto flex flex-wrap items-center gap-3 pt-10">
+                <Link
+                  href={slide.href}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-marka px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-navy-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vurgu"
+                >
+                  {slide.eylem}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Link>
                 <div className="flex items-center gap-2">
                   {typeof stoktakiUrun === "number" && stoktakiUrun > 0 && (
                     <Link
                       href="/urunler?sadeceStoktakiler=true"
-                      className="inline-flex w-44 shrink-0 items-center justify-center gap-2 rounded-full border border-kenar bg-yuzey-kart px-5 py-4 text-sm font-semibold text-metin-ikincil transition-colors hover:border-vurgu hover:text-vurgu"
+                      title="En az bir adet stoğu bulunan farklı ürün kodu sayısı"
+                      className="inline-flex min-w-44 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-kenar bg-yuzey-kart px-5 py-4 text-sm font-semibold text-metin-ikincil transition-colors hover:border-vurgu hover:text-vurgu"
                     >
                       <span className="tabular-nums font-bold text-[#12ae8c]">{stoktakiUrun.toLocaleString("tr-TR")}</span>
-                      ürün stokta
+                      stoklu ürün çeşidi
                     </Link>
                   )}
                 </div>

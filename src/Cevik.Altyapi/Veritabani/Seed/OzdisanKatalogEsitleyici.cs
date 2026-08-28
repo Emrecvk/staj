@@ -1,10 +1,14 @@
 using System.Text.Json;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Cevik.Alan.Fiyatlama;
 using Cevik.Alan.Katalog;
 using Cevik.Alan.Kurallar;
 using Cevik.Alan.Ortak;
 using Cevik.Altyapi.Veritabani.Seed.Katalog;
+using Cevik.Uygulama.Ortak;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
 namespace Cevik.Altyapi.Veritabani.Seed;
@@ -18,14 +22,41 @@ public sealed class OzdisanKatalogEsitleyici
 {
     private const string KaynakSistem = "Ozdisan";
 
+    // Kaynak etiketi mevcut İngilizce adla birebir uyuşmuyorsa yalnızca anlamı
+    // açık ve birimsiz biçimde aynı olan etiketler burada tutulur.
+    private static readonly IReadOnlyDictionary<string, string> OzellikEtiketTakmaAdlari =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Package / Case"] = "kilif",
+            ["Color"] = "renk",
+            ["Power Dissipation"] = "guc_derecesi",
+            ["Number of Circuits"] = "kanal_sayisi",
+            ["Reverse Recovery Time (Trr)"] = "toparlanma_suresi",
+            ["Rds On"] = "rds_on",
+            ["Fet Type"] = "kanal_tipi",
+            ["Voltage (Collector-Emitter)"] = "vce_max",
+            ["Current (Ic)"] = "ic_max",
+            ["Current (Ic) (25°C)"] = "ic_max",
+            ["Current - DC Forward (If) (Max)"] = "ileri_akim",
+            ["Forward Current (If)"] = "ileri_akim",
+            ["Peak Repetitive Reverse Voltage (VRRM)"] = "ters_voltaj",
+            ["Voltage (VRRM)"] = "ters_voltaj",
+            // RF antenlerde bant "Frequency Range" adıyla geliyor; tanım
+            // "Frequency Band". Takma ad olmadan anten kategorisi filtresiz kalıyor.
+            ["Frequency Range"] = "frekans_bandi"
+        };
+
     private readonly CevikDbContext _context;
+    private readonly IDistributedCache _cache;
     private readonly ILogger<OzdisanKatalogEsitleyici> _logger;
 
     public OzdisanKatalogEsitleyici(
         CevikDbContext context,
+        IDistributedCache cache,
         ILogger<OzdisanKatalogEsitleyici> logger)
     {
         _context = context;
+        _cache = cache;
         _logger = logger;
     }
 
@@ -45,13 +76,28 @@ public sealed class OzdisanKatalogEsitleyici
             u => u.KaynakSistem == KaynakSistem && u.KaynakKatalogSurumu == katalog.Surum,
             cancellationToken);
 
-        if (guncelUrunSayisi == katalog.UrunSayisi)
+        var ozellikTanimlari = await _context.OzellikTanimlari
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        var eslesebilenTanimIdleri = EslesebilenTanimIdleriniGetir(katalog, ozellikTanimlari);
+        var eavBeklenenUrunSayisi = katalog.Urunler.Count(u =>
+            u.Ozellikler.Keys.Any(etiket => OzellikTaniminiCoz(etiket, ozellikTanimlari) is not null));
+
+        var eavYazilmisUrunSayisi = await _context.Urunler.CountAsync(
+            u => u.KaynakSistem == KaynakSistem
+                 && u.KaynakKatalogSurumu == katalog.Surum
+                 && u.OzellikDegerleri.Any(d => eslesebilenTanimIdleri.Contains(d.OzellikTanimId)),
+            cancellationToken);
+
+        if (guncelUrunSayisi == katalog.UrunSayisi
+            && eavYazilmisUrunSayisi >= eavBeklenenUrunSayisi)
         {
             _logger.LogInformation(
-                "Özdisan katalogu zaten güncel: sürüm {Surum}, {Urun} ürün, {Uretici} üretici.",
+                "Özdisan katalogu zaten güncel: sürüm {Surum}, {Urun} ürün, {Uretici} üretici, {EavUrun} EAV ürün.",
                 katalog.Surum,
                 katalog.UrunSayisi,
-                katalog.UreticiSayisi);
+                katalog.UreticiSayisi,
+                eavYazilmisUrunSayisi);
             return;
         }
 
@@ -71,9 +117,19 @@ public sealed class OzdisanKatalogEsitleyici
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
         var ureticiler = await UreticileriEsitleAsync(katalog, cancellationToken);
-        await UrunleriEsitleAsync(katalog, kategoriler, ureticiler, cancellationToken);
+        await UrunleriEsitleAsync(
+            katalog, kategoriler, ureticiler, ozellikTanimlari, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+
+        // Herkese açık kategori ağacı YALNIZCA ürünü olan dalları içeriyor ve
+        // 24 saat önbellekleniyor. Eşitleme hangi dalın dolu olduğunu
+        // değiştirir; önbellek temizlenmezse menü bir gün boyunca eşitleme
+        // ÖNCESİNİN ağacını gösterir. Boş kategorileri doldurduktan sonra menü
+        // hâlâ eski 12 kategoriyi listeliyordu — geçersizleştirme yalnızca
+        // yönetim panelindeki düzenlemelerde vardı.
+        foreach (var anahtar in OnbellekAnahtarlari.KategoriAgaciAnahtarlari)
+            await _cache.RemoveAsync(anahtar, cancellationToken);
 
         _logger.LogInformation(
             "Özdisan katalog eşitlemesi tamamlandı: sürüm {Surum}, {Urun} ürün, {Uretici} üretici.",
@@ -149,6 +205,7 @@ public sealed class OzdisanKatalogEsitleyici
         OzdisanKatalogVerisi katalog,
         IReadOnlyDictionary<string, Kategori> kategoriler,
         IReadOnlyDictionary<string, Uretici> ureticiler,
+        IReadOnlyCollection<OzellikTanimi> ozellikTanimlari,
         CancellationToken cancellationToken)
     {
         // YALNIZCA bu kaynağın ürünleri yüklenir ve yalnızca onlar pasife
@@ -160,6 +217,7 @@ public sealed class OzdisanKatalogEsitleyici
             .Include(u => u.UrunAmbalajlari)
                 .ThenInclude(a => a.FiyatKademeleri)
             .Include(u => u.Dokumanlar)
+            .Include(u => u.OzellikDegerleri)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
@@ -209,6 +267,7 @@ public sealed class OzdisanKatalogEsitleyici
                     .IgnoreQueryFilters()
                     .Include(u => u.UrunAmbalajlari).ThenInclude(a => a.FiyatKademeleri)
                     .Include(u => u.Dokumanlar)
+                    .Include(u => u.OzellikDegerleri)
                     .FirstAsync(u => u.Id == devralinacakId, cancellationToken);
 
                 mevcutUrunler.Add(urun);
@@ -234,6 +293,7 @@ public sealed class OzdisanKatalogEsitleyici
             }
 
             UrunuGuncelle(urun, kaynak, katalog.Surum, uretici, kategoriler[kaynak.KategoriSlug]);
+            OzellikleriGuncelle(urun, kaynak.Ozellikler, ozellikTanimlari);
             AmbalajiGuncelle(urun, kaynak.Ambalaj);
             DokumaniGuncelle(urun, kaynak);
 
@@ -259,6 +319,104 @@ public sealed class OzdisanKatalogEsitleyici
             eklenen,
             guncellenen,
             pasifeAlinan);
+    }
+
+    private static void OzellikleriGuncelle(
+        Urun urun,
+        IReadOnlyDictionary<string, string> kaynakOzellikleri,
+        IReadOnlyCollection<OzellikTanimi> tanimlar)
+    {
+        // Birebir İngilizce ad eşleşmeleri alias'lardan önce gelir. Aynı tanıma
+        // birden fazla kaynak etiketi düşerse ilk kesin eşleşme korunur.
+        var eslesenler = new Dictionary<int, (OzellikTanimi Tanim, string Deger)>();
+        foreach (var (etiket, deger) in kaynakOzellikleri)
+        {
+            if (string.IsNullOrWhiteSpace(deger))
+                continue;
+
+            var tanim = OzellikTaniminiCoz(etiket, tanimlar);
+
+            if (tanim is not null && !eslesenler.ContainsKey(tanim.Id))
+                eslesenler[tanim.Id] = (tanim, deger.Trim());
+        }
+
+        foreach (var (tanimId, eslesme) in eslesenler)
+        {
+            var satir = urun.OzellikDegerleri.FirstOrDefault(d => d.OzellikTanimId == tanimId);
+            if (satir is null)
+            {
+                satir = new UrunOzellikDegeri
+                {
+                    Urun = urun,
+                    OzellikTanimId = tanimId,
+                    HamDeger = eslesme.Deger
+                };
+                urun.OzellikDegerleri.Add(satir);
+            }
+
+            satir.HamDeger = eslesme.Deger;
+            satir.DegerMetin = eslesme.Deger;
+            satir.DegerSayi = eslesme.Tanim.VeriTipi == OzellikVeriTipi.Sayi
+                ? IlkSayiyiCoz(eslesme.Deger)
+                : null;
+            satir.DegerMin = null;
+            satir.DegerMax = null;
+        }
+
+        // Kaynaktan DÜŞEN özelliklerin satırları silinmeli. Önceki sürüm yalnızca
+        // upsert yapıyordu: bir ürünün özellik kümesi daraldığında eski satır
+        // kalıcı oluyor ve filtre panelinde artık karşılığı olmayan bir değer
+        // gösteriliyordu. Bu tabloya yalnızca bu eşitleyici yazar (yönetim
+        // panelinde ürün özelliği düzenleme ucu yok), dolayısıyla eşleşmeyen
+        // satırın sahibi de bu eşitleyicidir.
+        var artikSatirlar = urun.OzellikDegerleri
+            .Where(d => !eslesenler.ContainsKey(d.OzellikTanimId))
+            .ToList();
+
+        foreach (var artik in artikSatirlar)
+            urun.OzellikDegerleri.Remove(artik);
+    }
+
+    private static List<int> EslesebilenTanimIdleriniGetir(
+        OzdisanKatalogVerisi katalog,
+        IReadOnlyCollection<OzellikTanimi> tanimlar) =>
+        katalog.Urunler
+            .SelectMany(u => u.Ozellikler.Keys)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(etiket => OzellikTaniminiCoz(etiket, tanimlar))
+            .Where(t => t is not null)
+            .Select(t => t!.Id)
+            .Distinct()
+            .ToList();
+
+    private static OzellikTanimi? OzellikTaniminiCoz(
+        string etiket,
+        IReadOnlyCollection<OzellikTanimi> tanimlar)
+    {
+        var temizEtiket = etiket.Trim();
+        var birebir = tanimlar.FirstOrDefault(t =>
+            string.Equals(t.AdEn.Trim(), temizEtiket, StringComparison.OrdinalIgnoreCase));
+        if (birebir is not null)
+            return birebir;
+
+        return OzellikEtiketTakmaAdlari.TryGetValue(temizEtiket, out var kod)
+            ? tanimlar.FirstOrDefault(t => string.Equals(t.Kod, kod, StringComparison.OrdinalIgnoreCase))
+            : null;
+    }
+
+    private static decimal? IlkSayiyiCoz(string deger)
+    {
+        var eslesme = Regex.Match(deger, @"[-+]?\d+(?:[.,]\d+)?", RegexOptions.CultureInvariant);
+        if (!eslesme.Success)
+            return null;
+
+        return decimal.TryParse(
+            eslesme.Value.Replace(',', '.'),
+            NumberStyles.Number | NumberStyles.AllowLeadingSign,
+            CultureInfo.InvariantCulture,
+            out var sayi)
+            ? sayi
+            : null;
     }
 
     private static void UrunuGuncelle(

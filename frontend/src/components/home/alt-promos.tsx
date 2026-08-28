@@ -9,8 +9,8 @@ import { UrunGorseli } from "@/components/urun-gorseli";
 
 const GOSTERILECEK_KALEM_SAYISI = 5;
 
-export function AltPromos({ siteParaBirimi }: { siteParaBirimi?: string }) {
-  const { itemCount, toplamTutar, paraBirimi, kalemler } = useHeaderCart();
+export function AltPromos({ siteParaBirimi = "TRY" }: { siteParaBirimi?: "TRY" | "USD" }) {
+  const { itemCount, toplamTutar, paraBirimi, kalemler } = useHeaderCart(siteParaBirimi);
   const fazlaKalemSayisi = Math.max(0, kalemler.length - GOSTERILECEK_KALEM_SAYISI);
   const gosterilenKalemler = kalemler.slice(
     0,
@@ -85,7 +85,7 @@ export function AltPromos({ siteParaBirimi }: { siteParaBirimi?: string }) {
             <div className="mt-3 grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-base text-metin-ikincil">
               <span className="whitespace-nowrap">Ara Toplam:</span>
               <Link href="/sepet" className="inline-flex min-w-0 items-center justify-end gap-2 font-bold text-vurgu-guclu hover:text-marka">
-                <span className="min-w-0 break-all text-right text-lg sm:text-2xl">{paraBicimle(toplamTutar, paraBirimi || siteParaBirimi || "TRY", 2)}</span>
+                <span className="min-w-0 break-all text-right text-lg sm:text-2xl">{paraBicimle(toplamTutar, paraBirimi, 2)}</span>
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-vurgu text-white"><ArrowRight size={22} /></span>
               </Link>
             </div>

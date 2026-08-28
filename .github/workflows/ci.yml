@@ -76,6 +76,12 @@ jobs:
       working-directory: frontend
       run: npm run lint
 
+    # frontend/tests altındaki 36 paket / 209 test yerelde geçiyordu ama CI'da
+    # hiç koşmuyordu; kırıldıklarında kimse görmeyecekti.
+    - name: Test
+      working-directory: frontend
+      run: npm test
+
     - name: Build
       working-directory: frontend
       run: npm run build

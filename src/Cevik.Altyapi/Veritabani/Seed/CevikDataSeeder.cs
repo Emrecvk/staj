@@ -138,99 +138,150 @@ public class CevikDataSeeder
     /// </summary>
     private async Task OrnekIcerikEkleAsync()
     {
-        if (await _context.BlogYazilari.AnyAsync()) return;
-
         var simdi = DateTimeOffset.UtcNow;
 
-        _context.BlogYazilari.AddRange(
-            new BlogYazisi
-            {
-                Baslik = "RoHS uyumluluğu rehberi",
-                Slug = "rohs-uyumlulugu-rehberi",
-                Ozet = "Elektronik komponentlerde RoHS belgesinin anlamı.",
-                IcerikHtml = "<p>RoHS, belirli zararlı maddelerin kullanımını kısıtlar.</p>",
-                Kategori = "Rehber",
-                YayinTarihi = simdi.AddDays(-3)
-            },
-            new BlogYazisi
-            {
-                Baslik = "Taslak yazı",
-                Slug = "taslak-yazi",
-                Ozet = "Henüz yayınlanmamış içerik.",
-                IcerikHtml = "<p>Bu yazı public uçta görünmemeli.</p>",
-                Kategori = "Taslak",
-                YayinTarihi = null
-            });
+        // Her içerik kümesini bağımsız ekle. Blog tablosunun dolu olması SSS,
+        // sayfa veya banner tablolarının da dolu olduğu anlamına gelmez. Önceki
+        // toplu erken çıkış bu tablolardan biri eksikken seed'i tamamen atlıyor,
+        // /api/icerik/sss ucunun kalıcı olarak boş dönmesine neden oluyordu.
+        if (!await _context.BlogYazilari.AnyAsync())
+        {
+            _context.BlogYazilari.AddRange(
+                new BlogYazisi
+                {
+                    Baslik = "RoHS uyumluluğu rehberi",
+                    Slug = "rohs-uyumlulugu-rehberi",
+                    Ozet = "Elektronik komponentlerde RoHS belgesinin anlamı.",
+                    IcerikHtml = "<p>RoHS, belirli zararlı maddelerin kullanımını kısıtlar.</p>",
+                    Kategori = "Rehber",
+                    YayinTarihi = simdi.AddDays(-3)
+                },
+                new BlogYazisi
+                {
+                    Baslik = "Taslak yazı",
+                    Slug = "taslak-yazi",
+                    Ozet = "Henüz yayınlanmamış içerik.",
+                    IcerikHtml = "<p>Bu yazı public uçta görünmemeli.</p>",
+                    Kategori = "Taslak",
+                    YayinTarihi = null
+                });
+        }
 
-        _context.Duyurular.AddRange(
-            new Duyuru
-            {
-                Baslik = "Çevik Elektronik kampanyası",
-                Icerik = "Güncel kampanyalarımızı keşfedin.",
-                Sira = 1,
-                BaslangicTarihi = simdi.AddDays(-1),
-                BitisTarihi = simdi.AddDays(30)
-            },
-            new Duyuru
-            {
-                Baslik = "Süresi dolmuş duyuru",
-                Icerik = "Bu duyuru public listede olmamalı.",
-                Sira = 99,
-                BaslangicTarihi = simdi.AddDays(-30),
-                BitisTarihi = simdi.AddDays(-1)
-            });
+        if (!await _context.Duyurular.AnyAsync())
+        {
+            _context.Duyurular.AddRange(
+                new Duyuru
+                {
+                    Baslik = "Çevik Elektronik kampanyası",
+                    Icerik = "Güncel kampanyalarımızı keşfedin.",
+                    Sira = 1,
+                    BaslangicTarihi = simdi.AddDays(-1),
+                    BitisTarihi = simdi.AddDays(30)
+                },
+                new Duyuru
+                {
+                    Baslik = "Süresi dolmuş duyuru",
+                    Icerik = "Bu duyuru public listede olmamalı.",
+                    Sira = 99,
+                    BaslangicTarihi = simdi.AddDays(-30),
+                    BitisTarihi = simdi.AddDays(-1)
+                });
+        }
 
-        _context.Bannerlar.AddRange(
-            new Banner
-            {
-                Konum = "anasayfa-ust",
-                GorselUrl = "/gorseller/banner/anasayfa.svg",
-                LinkUrl = "/kampanyalar",
-                Sira = 1,
-                Aktif = true
-            },
-            new Banner
-            {
-                Konum = "anasayfa-ust",
-                GorselUrl = "/gorseller/banner/pasif.svg",
-                Sira = 2,
-                Aktif = false
-            });
+        // Banner seed'i kaldırıldı: ürettiği iki kayıt da kırıktı — GorselUrl
+        // olmayan bir dosyayı (public/gorseller/ dizini hiç yok), LinkUrl ise
+        // olmayan bir /kampanyalar rotasını gösteriyordu. Vitrinde de banner
+        // basan bir bileşen yok. Gerçek banner ihtiyacı doğduğunda görsel ve
+        // hedef sayfa hazırken eklenmeli.
 
-        _context.Sayfalar.AddRange(
-            new Sayfa
-            {
-                Slug = "hakkimizda",
-                BaslikTr = "Hakkımızda",
-                BaslikEn = "About Us",
-                IcerikHtmlTr = "<p>ÇEVİK Elektronik komponent tedarikçisidir.</p>",
-                IcerikHtmlEn = "<p>CEVIK Electronics is a component distributor.</p>",
-                SeoBaslik = "Hakkımızda | ÇEVİK",
-                YayindaMi = true
-            },
-            new Sayfa
-            {
-                Slug = "taslak-sayfa",
-                BaslikTr = "Taslak",
-                BaslikEn = "Draft",
-                IcerikHtmlTr = "<p>Yayında değil.</p>",
-                IcerikHtmlEn = "<p>Not published.</p>",
-                YayindaMi = false
-            });
+        if (!await _context.Sayfalar.AnyAsync())
+        {
+            _context.Sayfalar.AddRange(
+                new Sayfa
+                {
+                    Slug = "hakkimizda",
+                    BaslikTr = "Hakkımızda",
+                    BaslikEn = "About Us",
+                    IcerikHtmlTr = "<p>ÇEVİK Elektronik komponent tedarikçisidir.</p>",
+                    IcerikHtmlEn = "<p>CEVIK Electronics is a component distributor.</p>",
+                    SeoBaslik = "Hakkımızda | ÇEVİK",
+                    YayindaMi = true
+                },
+                new Sayfa
+                {
+                    Slug = "taslak-sayfa",
+                    BaslikTr = "Taslak",
+                    BaslikEn = "Draft",
+                    IcerikHtmlTr = "<p>Yayında değil.</p>",
+                    IcerikHtmlEn = "<p>Not published.</p>",
+                    YayindaMi = false
+                });
+        }
 
-        _context.SikSorulanSorular.AddRange(
-            new SikSorulanSoru
-            {
-                Soru = "Kargo ücreti nasıl hesaplanır?",
-                Cevap = "Belirlenen eşiğin altındaki siparişlere sabit kargo ücreti eklenir.",
-                Sira = 1
-            },
-            new SikSorulanSoru
-            {
-                Soru = "Fiyatlar hangi para birimindedir?",
-                Cevap = "Katalog fiyatları USD'dir; TRY ve EUR dönüşümü güncel kura göredir.",
-                Sira = 2
-            });
+        if (!await _context.SikSorulanSorular.AnyAsync(s => s.KategoriId == null))
+        {
+            _context.SikSorulanSorular.AddRange(
+                new SikSorulanSoru
+                {
+                    Soru = "Fiyat ve stok bilgisi nasıl talep edilir?",
+                    Cevap = "Ürün sayfasından ilgili ambalajın güncel stok ve fiyat bilgilerini inceleyebilir, toplu alımlar için Teklif İste sayfasından resmi teklif oluşturabilirsiniz.",
+                    Sira = 1
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Minimum sipariş miktarı (MOQ) nedir?",
+                    Cevap = "MOQ, seçtiğiniz ambalaj için verilebilecek en düşük sipariş miktarıdır. Ürün ve ambalaja göre değişir; sepet miktarı MPQ ve katlama kuralına uygun olmalıdır.",
+                    Sira = 2
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "BOM listesini nasıl gönderebilirim?",
+                    Cevap = "BOM aracına parça numarası ve miktar içeren listenizi yapıştırabilir veya dosya olarak yükleyebilirsiniz. Eşleşen ürünleri kontrol ettikten sonra teklif sürecine aktarabilirsiniz.",
+                    Sira = 3
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Toplu alım ve proje fiyatı alabilir miyim?",
+                    Cevap = "Evet. Teklif İste sayfasında ürünleri, miktarları ve varsa proje notunuzu paylaşarak satış ekibinden kurumsal teklif talep edebilirsiniz.",
+                    Sira = 4
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Siparişimi nereden takip edebilirim?",
+                    Cevap = "Hesabınıza giriş yaptıktan sonra Profil > Siparişlerim bölümünden sipariş durumunu ve sipariş satırlarını görüntüleyebilirsiniz.",
+                    Sira = 5
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Kurumsal hesap nasıl açılır?",
+                    Cevap = "Kurumsal kayıt formunda firma ve yetkili bilgilerinizi iletebilirsiniz. Başvurunuz onaylandıktan sonra kurumsal satın alma özellikleri hesabınıza açılır.",
+                    Sira = 6
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Ürün belgelerine ve teknik verilere nasıl ulaşırım?",
+                    Cevap = "Ürün detay sayfasındaki teknik dokümanlar bölümünden mevcut veri sayfası ve diğer ürün belgelerine ulaşabilirsiniz.",
+                    Sira = 7
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Muadil ürün seçimi için destek veriyor musunuz?",
+                    Cevap = "Evet. Ürün sayfasındaki muadil ve parametrik ürünleri inceleyebilir, kritik teknik gereksinimleriniz için iletişim sayfasından FAE desteğine ulaşabilirsiniz.",
+                    Sira = 8
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Teslimat süresi nasıl belirlenir?",
+                    Cevap = "Teslimat süresi ürünün mevcut ve gelecek stok durumuna, sipariş miktarına ve seçilen teslimat yöntemine göre belirlenir. Kesin planlama sipariş veya teklif aşamasında paylaşılır.",
+                    Sira = 9
+                },
+                new SikSorulanSoru
+                {
+                    Soru = "Kart bilgilerim sisteminizde saklanıyor mu?",
+                    Cevap = "Hayır. Kart bilgileri doğrudan ödeme sağlayıcısının güvenli altyapısına iletilir; Çevik Elektronik API'si kart numarası, son kullanma tarihi veya güvenlik kodunu almaz ve saklamaz.",
+                    Sira = 10
+                });
+        }
 
         await _context.SaveChangesAsync();
     }

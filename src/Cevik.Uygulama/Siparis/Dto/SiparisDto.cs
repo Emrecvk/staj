@@ -24,6 +24,7 @@ public class SiparisListelemeDto
 public class SiparisDetayDto : SiparisListelemeDto
 {
     public decimal AraToplam { get; set; }
+    public decimal IndirimTutari { get; set; }
     public decimal KdvTutari { get; set; }
     public decimal KargoUcreti { get; set; }
     public List<SiparisKalemDto> Kalemler { get; set; } = [];

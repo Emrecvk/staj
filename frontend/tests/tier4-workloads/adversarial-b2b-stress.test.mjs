@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   yukariYuvarla,
@@ -6,7 +6,6 @@ import {
   kademeSec,
   kademeUlasilabilirMi,
   hesaplaB2BFiyat,
-  paraBicimle,
 } from "../test-helpers.mjs";
 
 describe("Adversarial Domain Stress: B2B Pricing Rules & Extreme Boundary Hardening", () => {

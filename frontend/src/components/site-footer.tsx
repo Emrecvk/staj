@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Check, Mail, MapPin, Phone } from "lucide-react";
+import { ArrowUpRight, Check, Loader2, Mail, MapPin, Phone } from "lucide-react";
 
 const katalogBaglantilari = [
   ["Tüm ürünler", "/urunler"], ["Üreticiler", "/markalar"],
@@ -16,6 +16,7 @@ const hizmetBaglantilari = [
 const kurumsalBaglantilar = [
   ["Hakkımızda", "/hakkimizda"], ["Teknik kaynaklar", "/blog"],
   ["Component by Çevik", "/dergi"], ["Kurumsal hesap", "/kayit/kurumsal"],
+  ["İletişim", "/iletisim"],
 ] as const;
 
 function BaglantiGrubu({ baslik, baglantilar }: {
@@ -41,11 +42,38 @@ function BaglantiGrubu({ baslik, baglantilar }: {
 
 export function SiteFooter() {
   const [kaydedildi, setKaydedildi] = useState(false);
+  const [eposta, setEposta] = useState("");
+  const [gonderiliyor, setGonderiliyor] = useState(false);
+  const [hata, setHata] = useState<string | null>(null);
 
-  function bulteneKaydol(event: FormEvent<HTMLFormElement>) {
+  async function bulteneKaydol(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setKaydedildi(true);
-    event.currentTarget.reset();
+    setGonderiliyor(true);
+    setHata(null);
+
+    try {
+      const yanit = await fetch("/api/icerik/e-bulten", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eposta: eposta.trim() }),
+      });
+
+      if (!yanit.ok) {
+        setHata(
+          yanit.status === 400
+            ? "Geçerli bir e-posta adresi girin."
+            : "Kaydınız şu anda alınamadı. Lütfen tekrar deneyin.",
+        );
+        return;
+      }
+
+      setEposta("");
+      setKaydedildi(true);
+    } catch {
+      setHata("Bağlantı kurulamadı. Lütfen tekrar deneyin.");
+    } finally {
+      setGonderiliyor(false);
+    }
   }
 
   return (
@@ -61,10 +89,33 @@ export function SiteFooter() {
               <Check size={18} aria-hidden="true" /> E-posta adresiniz listeye kaydedildi.
             </div>
           ) : (
-            <form onSubmit={bulteneKaydol} className="flex min-w-0 gap-2">
+            <form onSubmit={bulteneKaydol} className="flex min-w-0 flex-wrap gap-2">
               <label htmlFor="footer-eposta" className="sr-only">E-posta adresiniz</label>
-              <input id="footer-eposta" type="email" placeholder="E-posta adresiniz" required className="min-w-0 flex-1 rounded-token-girdi border border-white/15 bg-white/8 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-navy-300 focus:border-cyan-300 focus:bg-white/10" />
-              <button type="submit" className="shrink-0 rounded-token-girdi bg-cyan-400 px-5 py-3 text-sm font-semibold text-navy-950 transition-[background-color,transform] duration-200 hover:bg-cyan-300 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200">Kaydol</button>
+              <input
+                id="footer-eposta"
+                type="email"
+                value={eposta}
+                onChange={(event) => setEposta(event.target.value)}
+                placeholder="E-posta adresiniz"
+                required
+                maxLength={256}
+                aria-invalid={Boolean(hata)}
+                aria-describedby={hata ? "footer-eposta-hata" : undefined}
+                className="min-w-0 flex-1 rounded-token-girdi border border-white/15 bg-white/8 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-navy-300 focus:border-cyan-300 focus:bg-white/10"
+              />
+              <button
+                type="submit"
+                disabled={gonderiliyor}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-token-girdi bg-cyan-400 px-5 py-3 text-sm font-semibold text-navy-950 transition-[background-color,transform] duration-200 hover:bg-cyan-300 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200 disabled:cursor-wait disabled:opacity-70"
+              >
+                {gonderiliyor && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+                {gonderiliyor ? "Kaydediliyor" : "Kaydol"}
+              </button>
+              {hata && (
+                <p id="footer-eposta-hata" role="alert" className="w-full text-xs text-red-200">
+                  {hata}
+                </p>
+              )}
             </form>
           )}
         </div>
@@ -98,9 +149,9 @@ export function SiteFooter() {
         <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-navy-400 sm:flex-row sm:items-center sm:justify-between lg:mt-16">
           <p>© 2026 Çevik Elektronik San. ve Tic. A.Ş.</p>
           <nav aria-label="Yasal bağlantılar" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/sozlesmeler/ozdisan-elektronik-kvkk-politikasi" className="transition-colors hover:text-white">KVKK ve gizlilik</Link>
+            <Link href="/sozlesmeler/cevik-elektronik-kvkk-politikasi" className="transition-colors hover:text-white">KVKK ve gizlilik</Link>
             <Link href="/sss" className="transition-colors hover:text-white">Yardım merkezi</Link>
-            <a href="mailto:destek@cevik.com.tr" className="transition-colors hover:text-white">İletişim</a>
+            <Link href="/iletisim" className="transition-colors hover:text-white">İletişim</Link>
           </nav>
         </div>
       </div>

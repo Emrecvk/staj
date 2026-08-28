@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 describe("Feature 15: Applied Filter Chips & URL Sync", () => {

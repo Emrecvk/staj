@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Loader2, Minus, Plus, Bell } from "lucide-react";
+import { ShoppingCart, Loader2, Minus, Plus, Bell, FileText } from "lucide-react";
 import { FavoriButonu, KarsilastirmaButonu } from "@/components/favori-karsilastirma-butonlari";
 import { UrunGorseli } from "@/components/urun-gorseli";
 import { addToCart } from "@/lib/cart-actions";
@@ -30,6 +30,12 @@ export function ProductCard({ product }: { product: ProductSummary }) {
 
   const stokVar = product.toplamStok > 0;
   const azStok = stokVar && product.toplamStok < 100;
+
+  // Özdisan katalogdaki 12.244 ürünün 7.442'si için fiyat yayımlamıyor.
+  // paraBicimle(undefined) bunları "₺0,00" diye basıyordu ve yanında çalışan
+  // bir "Sepete Ekle" butonu duruyordu; kullanıcı bedava sandığı ürüne tıklayıp
+  // 422 alıyordu. Fiyatı olmayan ürün satılık değil, TEKLİFLİK.
+  const fiyatVar = typeof product.baslangicFiyati === "number" && product.baslangicFiyati > 0;
 
   const varsayilanAmbalaj: PackagingOption | null =
     product.ambalajlarVeFiyatlar?.find((a) => a.varsayilanMi) ??
@@ -142,10 +148,16 @@ export function ProductCard({ product }: { product: ProductSummary }) {
 
         {/* Fiyat */}
         <div className="mb-3 border-t border-kenar pt-3">
-          <div className="text-[10px] text-metin-ucuncul">Başlangıç fiyatı</div>
-          <div className="font-mono text-lg font-bold tabular-nums text-metin">
-            {paraBicimle(product.baslangicFiyati, product.paraBirimi)}
+          <div className="text-[10px] text-metin-ucuncul">
+            {fiyatVar ? "Başlangıç fiyatı" : "Fiyat"}
           </div>
+          {fiyatVar ? (
+            <div className="font-mono text-lg font-bold tabular-nums text-metin">
+              {paraBicimle(product.baslangicFiyati, product.paraBirimi)}
+            </div>
+          ) : (
+            <div className="text-sm font-bold text-metin-ikincil">Teklife tabi</div>
+          )}
         </div>
 
         {/* Adet seçici + sepete ekle */}
@@ -171,23 +183,34 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={sepeteEkle}
-            disabled={mesgul}
-            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-token-girdi
-                       bg-vurgu px-3 text-xs font-bold text-white transition-[background-color,transform]
-                       duration-[var(--sure-basma)] ease-[var(--ease-cikis)]
-                       hover:bg-vurgu-guclu active:scale-[0.97] disabled:opacity-60"
-          >
-            {mesgul ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <>
-                <ShoppingCart size={14} /> Sepete Ekle
-              </>
-            )}
-          </button>
+          {fiyatVar ? (
+            <button
+              type="button"
+              onClick={sepeteEkle}
+              disabled={mesgul}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-token-girdi
+                         bg-vurgu px-3 text-xs font-bold text-white transition-[background-color,transform]
+                         duration-[var(--sure-basma)] ease-[var(--ease-cikis)]
+                         hover:bg-vurgu-guclu active:scale-[0.97] disabled:opacity-60"
+            >
+              {mesgul ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <>
+                  <ShoppingCart size={14} /> Sepete Ekle
+                </>
+              )}
+            </button>
+          ) : (
+            <Link
+              href={`/teklif-iste?urunId=${product.id}`}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-token-girdi
+                         border border-vurgu px-3 text-xs font-bold text-vurgu
+                         transition-colors hover:bg-vurgu hover:text-white"
+            >
+              <FileText size={14} /> Teklif İste
+            </Link>
+          )}
         </div>
       </div>
       <StokBildirimModal

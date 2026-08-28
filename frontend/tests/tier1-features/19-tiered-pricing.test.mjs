@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { MOCK_PRODUCTS, kademeSec, hesaplaB2BFiyat, paraBicimle } from "../test-helpers.mjs";
 
@@ -37,7 +37,6 @@ describe("Feature 19: Interactive Tiered Pricing Matrix", () => {
   });
 
   it("Test 19.4: High-volume inquiries trigger 'Özel Teklif İste' CTA for quantities exceeding largest tier", () => {
-    const packaging = MOCK_PRODUCTS[0].ambalajlarVeFiyatlar[0];
     const highVolumeQuantity = 10000;
     const isSpecialQuoteEligible = highVolumeQuantity >= 5000;
 

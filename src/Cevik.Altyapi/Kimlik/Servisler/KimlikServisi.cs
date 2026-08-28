@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Cevik.Alan.Kimlik;
 using Cevik.Alan.Ortak;
@@ -237,7 +238,7 @@ public class KimlikServisi : IKimlikServisi
 
         var token = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
         kullanici.SifreSifirlamaTokenHash = HashYarat(token);
-        kullanici.SifreSifirlamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddHours(24);
+        kullanici.SifreSifirlamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddMinutes(60);
         
         await _context.SaveChangesAsync();
         await _epostaServisi.EpostaGonderAsync(kullanici.Eposta, "Şifre Sıfırlama Talebi", $"Şifre sıfırlama kodunuz: {token}");
@@ -252,7 +253,7 @@ public class KimlikServisi : IKimlikServisi
         if (kullanici.SifreSifirlamaGecerlilikSuresi <= DateTimeOffset.UtcNow) return false;
 
         var tokenHash = HashYarat(dto.Token);
-        if (kullanici.SifreSifirlamaTokenHash != tokenHash) return false;
+        if (!HashlerEsit(kullanici.SifreSifirlamaTokenHash, tokenHash)) return false;
 
         kullanici.SifreHash = _parolaHesaplayici.HashPassword(null!, dto.YeniSifre);
         kullanici.SifreSifirlamaTokenHash = null;
@@ -280,7 +281,7 @@ public class KimlikServisi : IKimlikServisi
 
         var token = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
         kullanici.EpostaDogrulamaTokenHash = HashYarat(token);
-        kullanici.EpostaDogrulamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddHours(24);
+        kullanici.EpostaDogrulamaGecerlilikSuresi = DateTimeOffset.UtcNow.AddMinutes(60);
         
         await _context.SaveChangesAsync();
         await _epostaServisi.EpostaGonderAsync(kullanici.Eposta, "E-Posta Doğrulama", $"E-posta doğrulama kodunuz: {token}");
@@ -295,7 +296,7 @@ public class KimlikServisi : IKimlikServisi
         if (kullanici.EpostaDogrulamaGecerlilikSuresi <= DateTimeOffset.UtcNow) return false;
 
         var tokenHash = HashYarat(dto.Token);
-        if (kullanici.EpostaDogrulamaTokenHash != tokenHash) return false;
+        if (!HashlerEsit(kullanici.EpostaDogrulamaTokenHash, tokenHash)) return false;
 
         kullanici.EpostaDogrulandiMi = true;
         kullanici.EpostaDogrulamaTokenHash = null;
@@ -411,6 +412,14 @@ public class KimlikServisi : IKimlikServisi
         var bytes = Encoding.UTF8.GetBytes(token);
         var hash = sha.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
+    }
+
+    private static bool HashlerEsit(string beklenenHash, string adayHash)
+    {
+        var beklenen = Convert.FromBase64String(beklenenHash);
+        var aday = Convert.FromBase64String(adayHash);
+        return beklenen.Length == aday.Length
+               && CryptographicOperations.FixedTimeEquals(beklenen, aday);
     }
 
     /// <summary>

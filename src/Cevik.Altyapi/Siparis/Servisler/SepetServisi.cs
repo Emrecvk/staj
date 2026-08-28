@@ -12,8 +12,13 @@ namespace Cevik.Altyapi.Siparis.Servisler;
 public class SepetServisi : ISepetServisi
 {
     private readonly CevikDbContext _context;
+    private readonly IDovizKuruServisi _dovizKuruServisi;
 
-    public SepetServisi(CevikDbContext context) => _context = context;
+    public SepetServisi(CevikDbContext context, IDovizKuruServisi dovizKuruServisi)
+    {
+        _context = context;
+        _dovizKuruServisi = dovizKuruServisi;
+    }
 
     // -----------------------------------------------------------------------
     // Sepet bulma / oluşturma / birleştirme
@@ -148,6 +153,22 @@ public class SepetServisi : ISepetServisi
                     && i.HedefId == musteriGrubuId.Value))
             .ToListAsync();
 
+        // Sepet toplamı tek bir para biriminde anlamlıdır. Kalem başına kur
+        // sorgulamak yerine önce kullanılan para birimlerini toplar, her kur
+        // çiftini yalnızca bir kez çözeriz.
+        var hedefParaBirimi = ParaBirimiKodu.Coz(sepet.ParaBirimi);
+        var kaynakParaBirimleri = kalemler
+            .Select(k => FiyatKademesiSecici.Sec(
+                k.UrunAmbalaji.FiyatKademeleri, k.Miktar, musteriGrubuId)?.ParaBirimi)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => ParaBirimiKodu.Coz(p!))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var kurSozlugu = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kaynakParaBirimi in kaynakParaBirimleri)
+            kurSozlugu[kaynakParaBirimi] = await _dovizKuruServisi.KurGetirAsync(
+                kaynakParaBirimi, hedefParaBirimi);
+
         foreach (var kalem in kalemler)
         {
             var ambalaj = kalem.UrunAmbalaji;
@@ -158,7 +179,9 @@ public class SepetServisi : ISepetServisi
             // "MinMiktar <= miktar" olan sonuncuyu alıyordu; MaxMiktar,
             // müşteri grubu ve tarih alanları hiç okunmuyordu.
             var kademe = FiyatKademesiSecici.Sec(ambalaj.FiyatKademeleri, kalem.Miktar, musteriGrubuId);
-            var listeBirimFiyati = kademe?.BirimFiyat ?? 0m;
+            var kaynakParaBirimi = ParaBirimiKodu.Coz(kademe?.ParaBirimi ?? hedefParaBirimi);
+            var kur = kurSozlugu.GetValueOrDefault(kaynakParaBirimi, 1m);
+            var listeBirimFiyati = ParaHesabi.Donustur(kademe?.BirimFiyat ?? 0m, kur);
             var urunIndirimleri = etkinIndirimler.Where(i =>
                 (i.HedefTipi == IndirimHedefTipi.Urun && i.HedefId == ambalaj.UrunId)
                 || (i.HedefTipi == IndirimHedefTipi.Kategori && i.HedefId == ambalaj.Urun.KategoriId)
@@ -190,9 +213,6 @@ public class SepetServisi : ISepetServisi
             dto.AraToplam += ParaHesabi.Yuvarla(listeBirimFiyati * kalem.Miktar);
             dto.IndirimTutari += indirim.SatirIndirimTutari;
             dto.GenelToplam += satirToplami;
-
-            if (kademe is not null)
-                dto.ParaBirimi = kademe.ParaBirimi;
         }
 
         return dto;
@@ -270,6 +290,7 @@ public class SepetServisi : ISepetServisi
     {
         var ambalaj = await _context.UrunAmbalajlari
             .Include(a => a.Urun)
+            .Include(a => a.FiyatKademeleri)
             .FirstOrDefaultAsync(a => a.Id == dto.UrunAmbalajId)
             ?? throw new KeyNotFoundException("Ürün ambalajı bulunamadı.");
 
@@ -284,6 +305,7 @@ public class SepetServisi : ISepetServisi
         var hedefMiktar = (mevcutKalem?.Miktar ?? 0) + dto.Miktar;
 
         MiktarVeStokDogrula(hedefMiktar, ambalaj);
+        FiyatDogrula(hedefMiktar, ambalaj, await MusteriGrubuGetirAsync(kullaniciId));
 
         if (mevcutKalem is not null)
             mevcutKalem.Miktar = hedefMiktar;
@@ -377,5 +399,27 @@ public class SepetServisi : ISepetServisi
         if (ambalaj.StokMiktari < miktar)
             throw new IsKuraliIhlaliException(
                 $"Stokta yalnızca {ambalaj.StokMiktari} adet var. Daha fazlası için fiyat ve stok talebi oluşturabilirsiniz.");
+    }
+
+    /// <summary>
+    /// Fiyatı olmayan ürünün sepete girmesini engeller.
+    ///
+    /// <see cref="SiparisKurucu.KalemKurAsync"/> sıfır fiyatı zaten reddediyor,
+    /// ama YALNIZCA sipariş anında. Katalogda 12.244 üründen 7.442'sinin fiyat
+    /// kademesi yok (Özdisan bu SKU'lar için fiyat yayımlamıyor); kontrol
+    /// sepette olmadığı için kullanıcı sepeti ₺0,00 kalemlerle doldurup hatayı
+    /// ancak ödeme adımında görüyordu. Doğru yer sepet: ürün fiyatsızsa
+    /// kullanıcı teklif akışına yönlendirilmeli.
+    /// </summary>
+    private static void FiyatDogrula(
+        int miktar,
+        Cevik.Alan.Fiyatlama.UrunAmbalaji ambalaj,
+        int? musteriGrubuId)
+    {
+        var kademe = FiyatKademesiSecici.Sec(ambalaj.FiyatKademeleri, miktar, musteriGrubuId);
+        if (kademe is null || kademe.BirimFiyat <= 0m)
+            throw new IsKuraliIhlaliException(
+                $"{ambalaj.Urun.UreticiUrunKodu} için güncel fiyat bulunmuyor. " +
+                "Bu ürün yalnızca teklif üzerinden satılıyor; teklif talebi oluşturabilirsiniz.");
     }
 }

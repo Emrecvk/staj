@@ -80,3 +80,9 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Veritabani yedekleri — pg_dump ciktilari repoya girmemeli.
+# 3.5 MB'lik cevik-silme-oncesi.dump bir kez kok dizinde takipsiz kalmisti.
+*.dump
+*.sql.gz
+*.backup

@@ -49,6 +49,17 @@ public sealed class SiparisKurucu
         var yil = DateTimeOffset.UtcNow.Year;
         var onEk = $"SIP-{yil}-";
 
+        // PostgreSQL transaction-scoped advisory lock aynı yıl için iki
+        // siparişin aynı numarayı okumasını engeller. Her iki çağıran da bu
+        // metodu kendi sipariş transaction'ı içinde çalıştırır.
+        if (_context.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var kilitAnahtari = $"cevik-siparis-no-{yil}";
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT pg_advisory_xact_lock(hashtext({kilitAnahtari}))",
+                iptalJetonu);
+        }
+
         var sonNumara = await _context.Siparisler
             .IgnoreQueryFilters()
             .Where(s => s.SiparisNo.StartsWith(onEk))
@@ -123,8 +134,10 @@ public sealed class SiparisKurucu
         var indirimliAraToplam = Math.Max(0m, araToplam - indirimTutari);
         siparis.AraToplam = araToplam;
         siparis.IndirimTutari = indirimTutari;
-        siparis.KdvTutari = ParaHesabi.Yuvarla(indirimliAraToplam * (_ticari.KdvOrani / 100m));
         siparis.KargoUcreti = KargoUcretiHesapla(indirimliAraToplam, siparis.Kur);
+        // Kargo teslim hizmetidir ve mal bedeli gibi KDV matrahına dahildir.
+        siparis.KdvTutari = ParaHesabi.Yuvarla(
+            (indirimliAraToplam + siparis.KargoUcreti) * (_ticari.KdvOrani / 100m));
         siparis.GenelToplam = indirimliAraToplam + siparis.KdvTutari + siparis.KargoUcreti;
     }
 

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Cevik.Api.Controllers;
 
 /// <summary>
-/// Herkese açık CMS uçları. Yazma işlemleri <c>/api/yonetim</c> altındadır.
+/// Herkese açık CMS uçları ve e-bülten aboneliği.
 /// </summary>
 [ApiController]
 [AllowAnonymous]
@@ -54,4 +54,13 @@ public class IcerikController : ControllerBase
     [ProducesResponseType(typeof(List<PublicSssDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<PublicSssDto>>> Sss([FromQuery] int? kategoriId)
         => Ok(await _icerikServisi.SikSorulanSorulariGetirAsync(kategoriId));
+
+    [HttpPost("e-bulten")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> EBulteneAboneOl([FromBody] EBultenAbonelikIstekDto istek)
+    {
+        await _icerikServisi.EBulteneAboneOlAsync(istek.Eposta);
+        return NoContent();
+    }
 }

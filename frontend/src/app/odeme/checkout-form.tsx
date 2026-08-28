@@ -35,7 +35,7 @@ const SANDBOX_SENARYOLARI = [
   { jeton: "sandbox-saglayici-hatasi", ad: "Sağlayıcı hatası", aciklama: "Geçici hata, yeniden denenebilir." },
 ];
 
-export function CheckoutForm({ addresses, cart }: { addresses: Adres[]; cart: unknown }) {
+export function CheckoutForm({ addresses }: { addresses: Adres[] }) {
   const [faturaAdresiId, setFaturaAdresiId] = useState<number>(addresses[0]?.id || 0);
   const [teslimatAdresiId, setTeslimatAdresiId] = useState<number>(addresses[0]?.id || 0);
   const [musteriNotu, setMusteriNotu] = useState("");

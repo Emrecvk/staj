@@ -8,7 +8,6 @@ export type PriceTier = { minMiktar: number; maxMiktar: number | null; birimFiya
 export type PackagingOption = { ambalajId: number; ad: string; ambalajTipi: number; mpq: number; moq: number; katlamaMiktari: number; stokMiktari: number; gelecekStokMiktari: number; gelecekStokTarihi: string | null; fiyatlar: PriceTier[]; varsayilanMi: boolean };
 export type PublicPage = { slug: string; baslik: string; icerikHtml: string; seoBaslik?: string | null; seoAciklama?: string | null };
 export type PublicAnnouncement = { id: number; baslik: string; icerik: string; gorselUrl?: string | null; linkUrl?: string | null; sira: number };
-export type PublicBanner = { id: number; konum: string; gorselUrl: string; linkUrl?: string | null; sira: number };
 export type PublicFaq = { id: number; kategoriId: number | null; soru: string; cevap: string; sira: number };
 export type BlogOzet = {
   id: number;
@@ -153,10 +152,6 @@ export function getFaqs() {
 
 export function getDuyurular() {
   return safeFetch<PublicAnnouncement[]>("/icerik/duyurular", []);
-}
-
-export function getBannerlar(konum: string) {
-  return safeFetch<PublicBanner[]>(`/icerik/bannerlar?konum=${encodeURIComponent(konum)}`, []);
 }
 
 export function getBlogYazilari() {

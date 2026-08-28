@@ -56,9 +56,9 @@ export function PdpClient({
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* 2. Asimetrik satın alma düzeni: galeri / bilgi / alım */}
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12 xl:gap-6">
           {/* Sol: büyük ürün görseli ve sade stok özeti */}
-          <div className="min-w-0 space-y-5 lg:col-span-5">
+          <div className="min-w-0 space-y-5 xl:col-span-4">
             <PdpGallery
               images={product.gorselUrlleri}
               primaryImage={product.anaGorselUrl}
@@ -74,7 +74,7 @@ export function PdpClient({
           </div>
 
           {/* Orta: üretici, parça kodu ve teknik doküman */}
-          <div className="min-w-0 space-y-5 lg:col-span-3">
+          <div className="min-w-0 space-y-5 xl:col-span-4">
             <PdpSummaryHeader
               product={product}
               onOpenStockModal={() => setStockModalOpen(true)}
@@ -110,7 +110,7 @@ export function PdpClient({
           </div>
 
           {/* Sağ: ambalaj, kademeli fiyat ve alım kontrolleri */}
-          <div className="min-w-0 space-y-5 lg:col-span-4">
+          <div className="min-w-0 space-y-5 xl:col-span-4">
             {selectedPkg && selectedAmbalajId !== null ? (
               <PdpAmbalajVeSatinAlma
                 product={product}

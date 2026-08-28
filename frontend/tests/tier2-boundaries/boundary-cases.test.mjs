@@ -1,9 +1,7 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   miktariDogrula,
-  yukariYuvarla,
-  kademeSec,
   createComparisonStore,
   parseCsvBom,
   MOCK_PRODUCTS,
