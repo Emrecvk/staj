@@ -37,28 +37,46 @@ public class StokBildirimIsleyiciBackgroundService : BackgroundService
                     .Where(sb => !sb.BildirildiMi && sb.UrunAmbalaji.StokMiktari > 0)
                     .ToListAsync(stoppingToken);
 
+                var gonderilecekler = new List<(StokBildirimi Bildirim, string Kime, string Konu, string Icerik)>();
+
                 foreach (var bildirim in bekleyenBildirimler)
                 {
                     // Urun stoğu istenen miktarı karşılıyor mu? (Eğer istenen miktar 0'sa sadece stoğa girmesi yeterli)
                     if (bildirim.UrunAmbalaji.StokMiktari >= bildirim.IstenenMiktar)
                     {
                         var kime = bildirim.Eposta ?? (bildirim.KullaniciId.HasValue ? await GetKullaniciEposta(dbContext, bildirim.KullaniciId.Value) : null);
-                        
-                        if (!string.IsNullOrEmpty(kime))
-                        {
-                            var konu = $"Stok Bildirimi: {bildirim.UrunAmbalaji.Urun.UreticiUrunKodu}";
-                            var icerik = $"Beklediğiniz ürün stoklarımıza girmiştir. Mevcut stok: {bildirim.UrunAmbalaji.StokMiktari}";
-                            
-                            await bildirimServisi.EpostaGonderAsync(kime, konu, icerik);
-                        }
+                        if (string.IsNullOrEmpty(kime))
+                            continue;
 
                         bildirim.BildirildiMi = true;
+                        gonderilecekler.Add((
+                            bildirim,
+                            kime,
+                            $"Stok Bildirimi: {bildirim.UrunAmbalaji.Urun.UreticiUrunKodu}",
+                            $"Beklediğiniz ürün stoklarımıza girmiştir. Mevcut stok: {bildirim.UrunAmbalaji.StokMiktari}"));
                     }
                 }
 
-                if (bekleyenBildirimler.Any())
-                {
+                // Önce kalıcı olarak sahiplen, sonra dış dünyaya e-posta gönder.
+                // Böylece SaveChanges başarısızken kullanıcıya gönderilmiş ama
+                // hâlâ bekliyor görünen bir kayıt oluşmaz.
+                if (gonderilecekler.Count > 0)
                     await dbContext.SaveChangesAsync(stoppingToken);
+
+                foreach (var gonderim in gonderilecekler)
+                {
+                    try
+                    {
+                        await bildirimServisi.EpostaGonderAsync(
+                            gonderim.Kime, gonderim.Konu, gonderim.Icerik);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Gönderim başarısızsa sonraki tur yeniden deneyebilsin.
+                        gonderim.Bildirim.BildirildiMi = false;
+                        await dbContext.SaveChangesAsync(stoppingToken);
+                        _logger.LogError(ex, "Stok bildirimi e-postası gönderilemedi. BildirimId: {BildirimId}", gonderim.Bildirim.Id);
+                    }
                 }
             }
             catch (Exception ex)

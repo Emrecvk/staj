@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { parseCsvBom, MOCK_PRODUCTS, hesaplaB2BFiyat } from "../test-helpers.mjs";
 
@@ -55,6 +55,9 @@ describe("Tier 4: Real-World B2B Workload - High-Volume BOM Parsing & Matching",
 
     assert.ok(totalBasketUsd > 10000, `Total basket USD: ${totalBasketUsd}`);
     assert.ok(totalPieces > 50000, `Total pieces: ${totalPieces}`);
+    // MPQ yuvarlamasi her satirda devreye girmeli: fixture'daki hicbir ambalaj
+    // 200'un katlariyla tam bolunmuyor. Sayac olculdu, uydurulmadi (150/150).
+    assert.equal(roundedCount, 150, `MPQ rounding applied to ${roundedCount}/150 lines`);
     assert.ok(executionDurationMs < 100, `Batch resolution took ${executionDurationMs.toFixed(2)}ms (should be < 100ms)`);
   });
 });

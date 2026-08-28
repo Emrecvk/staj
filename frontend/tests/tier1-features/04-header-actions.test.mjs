@@ -1,5 +1,6 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 describe("Feature 4: Header Action Center & Badges", () => {
   it("Test 4.1: RFQ counter badge reflects active quote request item count", () => {
@@ -59,5 +60,26 @@ describe("Feature 4: Header Action Center & Badges", () => {
     assert.equal(cart.kalemler.length, 2);
     assert.equal(totalItems, 2590);
     assert.equal(subtotal, (90 * 11.20) + (2500 * 0.12)); // 1008 + 300 = 1308
+  });
+
+  it("Test 4.6: Boş sepet seçili site para birimini kullanır", () => {
+    const storeSource = readFileSync(
+      new URL("../../src/lib/stores/header-state.ts", import.meta.url),
+      "utf8",
+    );
+    const headerSource = readFileSync(
+      new URL("../../src/components/site-header.tsx", import.meta.url),
+      "utf8",
+    );
+    const promosSource = readFileSync(
+      new URL("../../src/components/home/alt-promos.tsx", import.meta.url),
+      "utf8",
+    );
+
+    assert.ok(storeSource.includes('useHeaderCart(varsayilanParaBirimi: SiteParaBirimi = "TRY")'));
+    assert.ok(storeSource.includes("bosSepetDurumu(varsayilanParaBirimi)"));
+    assert.ok(headerSource.includes("useHeaderCart(initialCurrency)"));
+    assert.ok(promosSource.includes("useHeaderCart(siteParaBirimi)"));
+    assert.ok(!storeSource.includes('paraBirimi: "USD"'));
   });
 });

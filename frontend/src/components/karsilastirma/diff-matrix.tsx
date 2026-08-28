@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeftRight,
   Copy,
@@ -14,10 +13,8 @@ import {
   FileText,
   X,
   Pin,
-  ExternalLink,
   Plus,
   Loader2,
-  AlertTriangle,
 } from "lucide-react";
 import { useComparisonStore, type ComparisonItem } from "@/lib/stores/comparison-store";
 import { addProductToCart } from "@/lib/cart-actions";
@@ -60,15 +57,19 @@ function kategoriBelirle(anahtar: string): "Elektriksel" | "Fiziksel" | "Çevres
 }
 
 export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
-  const router = useRouter();
   const { items: storeItems, removeItem, clear } = useComparisonStore();
   const [sadeceFarklar, setSadeceFarklar] = useState(false);
   const [kopyalananMpn, setKopyalananMpn] = useState<string | null>(null);
   const [sepeteEkleniyorId, setSepeteEkleniyorId] = useState<number | null>(null);
   const [sabitlenenId, setSabitlenenId] = useState<number | null>(null);
 
-  // Use store items if available, fallback to initialProducts
-  const products = storeItems.length > 0 ? storeItems : (initialProducts || []);
+  // Store doluysa o, değilse sunucudan gelen liste kullanılır.
+  // useMemo şart: koşulun `[]` dalı her render'da yeni bir dizi üretiyordu ve
+  // aşağıdaki spec-diff/sıralama memo'ları bu yüzden hiç önbelleğe girmiyordu.
+  const products = useMemo(
+    () => (storeItems.length > 0 ? storeItems : (initialProducts ?? [])),
+    [storeItems, initialProducts],
+  );
 
   // MPN Kopyalama
   const mpnKopyala = (mpn: string) => {
@@ -145,7 +146,7 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
   };
 
   // Spec Diff Analizi
-  const { groupedSpecs, diffCount, totalSpecsCount } = useMemo(() => {
+  const { groupedSpecs, diffCount } = useMemo(() => {
     const allKeys = new Set<string>();
     products.forEach((p) => {
       Object.keys(p.ozellikler || {}).forEach((k) => allKeys.add(k));
@@ -350,6 +351,8 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
                       {/* Ürün Görseli */}
                       <div className="relative mb-3 flex h-24 w-full items-center justify-center rounded bg-yuzey border border-kenar overflow-hidden">
                         {product.anaGorselUrl ? (
+                          // Panelden girilen dış host; next/image 400 döner.
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={product.anaGorselUrl}
                             alt={product.ureticiUrunKodu}
@@ -470,9 +473,13 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
                 </td>
               ))}
             </tr>
+          </tbody>
 
-            {/* Parametrik Gruplar */}
-            {(["Elektriksel", "Fiziksel", "Çevresel", "Diğer"] as const).map((grupAdi) => {
+          {/* Parametrik Gruplar — her grup KENDİ <tbody>'si olur. Bunlar daha
+              önce dış <tbody>'nin içine yuvalanıyordu; iç içe tbody geçersiz
+              HTML ve React hidrasyon hatası veriyordu. Bir tablo birden çok
+              kardeş tbody alabilir, grup başına divide-y de böyle korunur. */}
+          {(["Elektriksel", "Fiziksel", "Çevresel", "Diğer"] as const).map((grupAdi) => {
               const itemsInGroup = groupedSpecs[grupAdi] || [];
               const visibleItems = sadeceFarklar ? itemsInGroup.filter((i) => i.isDifferent) : itemsInGroup;
 
@@ -522,7 +529,6 @@ export function DiffMatrix({ initialProducts }: DiffMatrixProps) {
                 </tbody>
               );
             })}
-          </tbody>
         </table>
       </div>
     </div>

@@ -234,7 +234,7 @@ export function MobilMenu({
                   <div className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-metin-ucuncul">Kurumsal</div>
                   <div className="mt-1 grid grid-cols-2 gap-2 px-2 text-xs text-metin-ikincil">
                     <Link href="/hakkimizda" onClick={handleClose} className="hover:text-vurgu">Hakkımızda</Link>
-                    <a href="mailto:destek@cevik.com.tr" onClick={handleClose} className="hover:text-vurgu">İletişim</a>
+                    <Link href="/iletisim" onClick={handleClose} className="hover:text-vurgu">İletişim</Link>
                     <Link href="/kayit/kurumsal" onClick={handleClose} className="hover:text-vurgu">Kurumsal Üyelik</Link>
                     <Link href="/sss" onClick={handleClose} className="hover:text-vurgu">S.S.S.</Link>
                   </div>

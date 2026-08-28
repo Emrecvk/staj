@@ -15,7 +15,7 @@ export default async function ProfileLayout({ children }: { children: ReactNode 
   const userCookie = cookieStore.get("user")?.value;
   let user = { ad: "Kullanıcı", firmaMi: false, firmaId: null };
   if (userCookie) {
-    try { user = JSON.parse(userCookie); } catch (e) {}
+    try { user = JSON.parse(userCookie); } catch {}
   }
 
   const menuItems = [

@@ -1,6 +1,6 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { MOCK_PRODUCTS, kademeSec, paraBicimle } from "../test-helpers.mjs";
+import { MOCK_PRODUCTS, kademeSec } from "../test-helpers.mjs";
 
 describe("Feature 26: B2B Quick Add Line & Cart Upgrades", () => {
   it("Test 26.1: Rapid MPN + Quantity entry bar parses input and prepares cart item payload", () => {

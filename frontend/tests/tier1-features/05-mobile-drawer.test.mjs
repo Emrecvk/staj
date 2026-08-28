@@ -1,6 +1,5 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { MOCK_CATEGORIES } from "../test-helpers.mjs";
 
 describe("Feature 5: Mobile Navigation Drawer", () => {
   it("Test 5.1: Mobile drawer toggle transitions drawer state between open and closed", () => {

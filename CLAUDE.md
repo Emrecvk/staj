@@ -20,8 +20,8 @@ Note the encoding hazard: several files have suffered mojibake on Turkish charac
 
 ```bash
 dotnet build Cevik.slnx -c Release
-dotnet test tests/Cevik.BirimTestleri              # 79 unit tests, no dependencies
-dotnet test tests/Cevik.EntegrasyonTestleri        # 89 integration tests, REQUIRES Docker
+dotnet test tests/Cevik.BirimTestleri              # 97 unit tests, no dependencies
+dotnet test tests/Cevik.EntegrasyonTestleri        # 120 integration tests, REQUIRES Docker
 dotnet test Cevik.slnx                             # everything
 ```
 
@@ -127,7 +127,7 @@ Brand tokens and logos live in `docs/marka/` (navy `#0F2740`, cyan `#00B4D8`).
 
 ## State of the tree
 
-Backend builds clean; 79 unit + 89 integration tests pass. Frontend `npm run build` and `npm run lint` are both clean.
+Backend builds clean (0 warnings); 97 unit + 120 integration tests pass. Frontend `npm run build` and `npm run lint` are both clean; `npm test` passes 215 cases across 37 suites.
 
 CI has two jobs: backend (restore, Release build, unit tests, Testcontainers integration tests, Docker image) and frontend (lint, build, Docker image). Integration tests start their own Postgres **and** Redis containers, so CI needs no service definitions — but it does need Docker, which `ubuntu-latest` provides.
 

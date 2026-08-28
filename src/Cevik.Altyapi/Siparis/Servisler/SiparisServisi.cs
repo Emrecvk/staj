@@ -166,6 +166,7 @@ public class SiparisServisi : ISiparisServisi
             ParaBirimi = siparis.ParaBirimi,
             Tarih = siparis.GuncellemeTarihi ?? siparis.OlusturmaTarihi,
             AraToplam = siparis.AraToplam,
+            IndirimTutari = siparis.IndirimTutari,
             KdvTutari = siparis.KdvTutari,
             KargoUcreti = siparis.KargoUcreti,
             // Snapshot alanlarından okuyoruz: ürün sonradan silinse bile

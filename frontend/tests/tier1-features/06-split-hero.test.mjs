@@ -1,5 +1,6 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { parseCsvBom } from "../test-helpers.mjs";
 
 describe("Feature 6: Split B2B Hero Section", () => {
@@ -74,5 +75,43 @@ describe("Feature 6: Split B2B Hero Section", () => {
     const decoded = JSON.parse(decodeURIComponent(encodedState));
     assert.equal(decoded.length, 2);
     assert.equal(decoded[0].mpn, "STM32F407VGT6");
+  });
+
+  it("Test 6.6: Ana sayfa vitrini referanstaki beş aileyi ve kademeli kategori panelini kullanır", () => {
+    const heroSource = readFileSync(
+      new URL("../../src/components/home/hero-b2b.tsx", import.meta.url),
+      "utf8",
+    );
+    const kategoriAgaciSource = readFileSync(
+      new URL("../../src/components/home/vitrin-kategori-agaci.ts", import.meta.url),
+      "utf8",
+    );
+
+    for (const kategoriAdi of [
+      "Elektronik Komponentler",
+      "LED & Aydınlatma Ürünleri",
+      "Maker & IoT Ürünleri",
+      "Üretim Ekipmanları",
+      "Otomasyon Ürünleri",
+    ]) {
+      assert.ok(kategoriAgaciSource.includes(kategoriAdi));
+    }
+
+    assert.ok(heroSource.includes("vitrinKategoriAgaciniKur(categories)"));
+    assert.ok(heroSource.includes('data-testid="kademeli-kategori-paneli"'));
+    assert.ok(heroSource.includes("useState<number | null>(null)"));
+    assert.ok(heroSource.includes("setAktifIkinciDal(index)"));
+    assert.ok(heroSource.includes("setAktifUcuncuDal(index)"));
+    assert.ok(heroSource.includes("h-[46rem] w-[clamp(13rem,18vw,20rem)]"));
+    assert.ok(!heroSource.includes("overflow-y-auto"));
+    assert.ok(!heroSource.includes("Tümünü görüntüle"));
+    assert.ok(heroSource.includes("stoklu ürün çeşidi"));
+    assert.ok(kategoriAgaciSource.includes("Diyaklar ve Sidaklar"));
+    assert.ok(kategoriAgaciSource.includes("Diyaklar"));
+    assert.ok(kategoriAgaciSource.includes("Sidaklar"));
+    assert.ok(!heroSource.includes("categories.slice("));
+    assert.ok(!heroSource.includes("26. sayısı yayında"));
+    assert.ok(heroSource.includes('href: "/urunler"'));
+    assert.ok(heroSource.includes("{slide.eylem}"));
   });
 });

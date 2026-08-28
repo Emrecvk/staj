@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
@@ -81,9 +80,12 @@ export default async function KarsilastirmaPage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        <Suspense fallback={<div className="p-12 text-center text-metin-ucuncul">Yükleniyor...</div>}>
-          <DiffMatrix initialProducts={initialProducts} />
-        </Suspense>
+        {/* Suspense YOK: DiffMatrix bir istemci bileşeni ve hiçbir şeyde
+            askıya alınmıyor — ihtiyacı olan her şey yukarıda zaten await
+            edildi. Gereksiz boundary, çocukları hiç takas edilmeyen bir
+            <template> içine kilitliyor ve sayfa kalıcı "Yükleniyor..."da
+            kalıyordu. */}
+        <DiffMatrix initialProducts={initialProducts} />
       </main>
 
       <SiteFooter />

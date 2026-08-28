@@ -232,6 +232,9 @@ function TabloSatiri({
           onMouseLeave={() => setZoomGoster(false)}
         >
           {urun.anaGorselUrl ? (
+            // Katalog görselleri panelden girilen dış host'lardan gelir;
+            // next/image yapılandırılmamış host'ta 400 döner. Düz <img> şart.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={urun.anaGorselUrl}
               alt={urun.ureticiUrunKodu}
@@ -249,6 +252,7 @@ function TabloSatiri({
             <div className="pointer-events-none absolute left-12 top-1/2 z-50 -translate-y-1/2 rounded-token-kart border border-kenar-guclu bg-yuzey-kart p-3 shadow-token-katman w-48 text-left">
               <div className="mb-2 flex aspect-square items-center justify-center rounded border border-kenar bg-yuzey-gomulu p-2">
                 {urun.anaGorselUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={urun.anaGorselUrl}
                     alt={urun.ureticiUrunKodu}
@@ -303,6 +307,7 @@ function TabloSatiri({
       <td className="px-3 py-3">
         <div className="flex items-center gap-1.5">
           {urun.ureticiLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={urun.ureticiLogoUrl}
               alt={urun.ureticiAd}

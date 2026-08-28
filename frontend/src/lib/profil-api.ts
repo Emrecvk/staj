@@ -143,7 +143,7 @@ export async function siparisleriGetir() {
 }
 
 export async function siparisDetayGetir(id: number) {
-  return istek<SiparisOzeti & { araToplam: number; kdvTutari: number; kargoUcreti: number }>(
+  return istek<SiparisOzeti & { araToplam: number; indirimTutari: number; kdvTutari: number; kargoUcreti: number }>(
     `/Siparis/${id}`);
 }
 

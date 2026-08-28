@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   MOCK_CATEGORIES,
@@ -6,9 +6,7 @@ import {
   createComparisonStore,
   generateComparisonMatrix,
   hesaplaB2BFiyat,
-  kademeSec,
   parseCsvBom,
-  paraBicimle,
 } from "../test-helpers.mjs";
 
 describe("Tier 3: Cross-Feature Interactions & End-to-End User Journeys", () => {

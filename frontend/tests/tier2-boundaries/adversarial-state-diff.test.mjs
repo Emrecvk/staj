@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 // ============================================================================
@@ -50,7 +50,7 @@ class MockEventTarget {
       listeners.forEach((listener) => {
         try {
           listener(event);
-        } catch (e) {
+        } catch {
           // ignore
         }
       });
@@ -310,7 +310,6 @@ function createAdversarialHeaderEnvironment() {
   const mockWindow = new MockEventTarget();
   let mockCookie = "";
 
-  const CART_EVENT = "cevik_cart_updated";
   const RFQ_EVENT = "cevik_rfq_updated";
   const FAVORITES_EVENT = "cevik_favorites_updated";
 

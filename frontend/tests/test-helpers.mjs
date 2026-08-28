@@ -5,7 +5,6 @@
  * and DOM/URL simulation helpers for Tiers 1-4 tests.
  */
 
-import assert from "node:assert/strict";
 
 // ============================================================================
 // 1. BRAND DESIGN SYSTEM CONSTANTS & TOKENS

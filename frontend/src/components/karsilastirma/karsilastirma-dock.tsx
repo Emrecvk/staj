@@ -4,14 +4,6 @@ import Link from "next/link";
 import { ArrowLeftRight, X, Trash2, ArrowRight } from "lucide-react";
 import { useComparisonStore, type ComparisonItem } from "@/lib/stores/comparison-store";
 
-function fiyatBicimle(deger: number, paraBirimi: string = "USD") {
-  return new Intl.NumberFormat("tr-TR", {
-    style: "currency",
-    currency: paraBirimi,
-    maximumFractionDigits: 4,
-  }).format(deger);
-}
-
 export function KarsilastirmaDock() {
   const { items, removeItem, clear } = useComparisonStore();
 
@@ -74,6 +66,8 @@ export function KarsilastirmaDock() {
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-yuzey-kart border border-kenar overflow-hidden text-[9px] font-mono text-metin-ucuncul font-bold text-center">
                       {item.anaGorselUrl ? (
+                        // Panelden girilen dış host; next/image 400 döner.
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={item.anaGorselUrl}
                           alt={item.ureticiUrunKodu}

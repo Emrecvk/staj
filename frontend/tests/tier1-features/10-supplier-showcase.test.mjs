@@ -1,4 +1,4 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 describe("Feature 10: Authorized Supplier Showcase", () => {
@@ -34,7 +34,6 @@ describe("Feature 10: Authorized Supplier Showcase", () => {
   });
 
   it("Test 10.4: Brand card link routes directly to catalog filtered by selected manufacturer", () => {
-    const supplierId = 1;
     const brandName = "STMicroelectronics";
     const brandCatalogUrl = `/urunler?marka=${encodeURIComponent(brandName)}`;
 

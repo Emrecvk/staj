@@ -10,4 +10,5 @@ public interface IPublicIcerikServisi
     Task<List<PublicBannerDto>> BannerlariGetirAsync(string? konum = null);
     Task<PublicSayfaDto?> SayfaGetirAsync(string slug, string? dil = null);
     Task<List<PublicSssDto>> SikSorulanSorulariGetirAsync(int? kategoriId = null);
+    Task EBulteneAboneOlAsync(string eposta);
 }

@@ -14,8 +14,6 @@ import {
   ToggleRight,
   type LucideIcon,
 } from "lucide-react";
-import { VITRIN_KATEGORI_AGACI } from "@/components/home/vitrin-kategori-verisi";
-import { kategoriBaglantisiniKur } from "@/lib/kategori-baglantisi";
 import type { Category } from "@/lib/api";
 
 interface MegaMenuProps {
@@ -30,12 +28,26 @@ const KATEGORI_IKONLARI: LucideIcon[] = [
   Boxes,
 ];
 
+/**
+ * Menü GERÇEK katalog ağacını gösterir.
+ *
+ * Önceki sürüm Özdisan'ın kamuya açık ağacını sabit kodlayan
+ * `VITRIN_KATEGORI_AGACI`'nı kullanıyordu: 783 yaprak kategori, ama bunların
+ * yalnızca 9'unun Çevik katalogunda karşılığı vardı. Kalan 774'ü ada göre
+ * eşleşemediği için arama bağlantısına düşüyor ve kullanıcıyı "Eşleşen ürün
+ * bulunamadı" ekranına götürüyordu ("Diyaklar" bunlardan biriydi).
+ *
+ * `categories` API'den gelen ağaçtır ve sunucu tarafında zaten YALNIZCA ürünü
+ * olan dalları içerir; bağlantılar da ada göre değil id ile kurulur. Bu
+ * ikisiyle birlikte menüde ölü bağlantı kalması yapısal olarak imkânsız hâle
+ * gelir.
+ */
 export function MegaMenu({ categories = [] }: MegaMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [aktifKategori, setAktifKategori] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const kategori = VITRIN_KATEGORI_AGACI[aktifKategori] ?? VITRIN_KATEGORI_AGACI[0];
+  const kategori = categories[aktifKategori] ?? categories[0];
 
   useEffect(() => {
     const disariTiklamayiKapat = (olay: MouseEvent) => {
@@ -61,7 +73,8 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
     hoverTimeoutRef.current = setTimeout(() => setAktifKategori(index), 120);
   };
 
-  const baglanti = (ad: string) => kategoriBaglantisiniKur(categories, ad);
+  // Ada göre eşleştirme YOK: id doğrudan katalogdan geliyor.
+  const baglanti = (kategoriId: number) => `/urunler?kategoriId=${kategoriId}`;
   const menuyuKapat = () => setIsOpen(false);
 
   return (
@@ -105,13 +118,13 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
                 Ana Ürün Aileleri
               </div>
               <nav className="space-y-0.5" aria-label="Ana kategoriler">
-                {VITRIN_KATEGORI_AGACI.map((dal, index) => {
+                {categories.map((dal, index) => {
                   const Icon = KATEGORI_IKONLARI[index] ?? Boxes;
                   const aktif = index === aktifKategori;
                   return (
                     <Link
-                      key={dal.ad}
-                      href={baglanti(dal.ad)}
+                      key={dal.id}
+                      href={baglanti(dal.id)}
                       onMouseEnter={() => kategoriUzerineGel(index)}
                       onClick={menuyuKapat}
                       className={`group flex w-full items-center justify-between rounded-r-[var(--radius-girdi)] px-3.5 py-2.5 text-left text-xs font-semibold transition-all ${
@@ -139,7 +152,7 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
               <div className="mb-5 flex items-center justify-between border-b border-kenar pb-3">
                 <h3 className="text-lg font-bold text-metin-marka">{kategori.ad}</h3>
                 <Link
-                  href={baglanti(kategori.ad)}
+                  href={baglanti(kategori.id)}
                   onClick={menuyuKapat}
                   className="inline-flex items-center gap-1 text-xs font-bold text-vurgu transition-colors hover:text-vurgu-guclu"
                 >
@@ -148,17 +161,17 @@ export function MegaMenu({ categories = [] }: MegaMenuProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                {kategori.altlar.map((altKategori) => (
+                {(kategori.altKategoriler ?? []).map((altKategori) => (
                   <Link
-                    key={altKategori.ad}
-                    href={baglanti(altKategori.ad)}
+                    key={altKategori.id}
+                    href={baglanti(altKategori.id)}
                     onClick={menuyuKapat}
                     className="group flex items-center justify-between border-b border-kenar/70 py-2.5 text-xs text-metin-ikincil transition-colors hover:border-vurgu hover:text-vurgu"
                   >
                     <span className="min-w-0 pr-3 font-semibold group-hover:underline group-hover:underline-offset-2">
                       {altKategori.ad}
                     </span>
-                    {altKategori.altlar.length > 0 && <ChevronRight size={14} aria-hidden="true" />}
+                    {(altKategori.altKategoriler?.length ?? 0) > 0 && <ChevronRight size={14} aria-hidden="true" />}
                   </Link>
                 ))}
               </div>

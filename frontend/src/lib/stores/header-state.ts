@@ -45,16 +45,22 @@ export interface CartSummaryState {
   yukleniyor: boolean;
 }
 
-const defaultCartState: CartSummaryState = {
-  itemCount: 0,
-  toplamTutar: 0,
-  paraBirimi: "USD",
-  kalemler: [],
-  yukleniyor: false,
-};
+type SiteParaBirimi = "TRY" | "USD";
 
-export function useHeaderCart() {
-  const [cartState, setCartState] = useState<CartSummaryState>(defaultCartState);
+function bosSepetDurumu(paraBirimi: SiteParaBirimi): CartSummaryState {
+  return {
+    itemCount: 0,
+    toplamTutar: 0,
+    paraBirimi,
+    kalemler: [],
+    yukleniyor: false,
+  };
+}
+
+export function useHeaderCart(varsayilanParaBirimi: SiteParaBirimi = "TRY") {
+  const [cartState, setCartState] = useState<CartSummaryState>(() =>
+    bosSepetDurumu(varsayilanParaBirimi),
+  );
 
   useEffect(() => {
     let active = true;
@@ -74,21 +80,21 @@ export function useHeaderCart() {
             miktar: item.miktar,
             birimFiyat: item.birimFiyat,
             toplamFiyat: item.toplamFiyat,
-            paraBirimi: sepet.paraBirimi || "USD",
+            paraBirimi: sepet.paraBirimi || varsayilanParaBirimi,
           }));
           setCartState({
             itemCount,
             toplamTutar: sepet.genelToplam || 0,
-            paraBirimi: sepet.paraBirimi || "USD",
+            paraBirimi: sepet.paraBirimi || varsayilanParaBirimi,
             kalemler,
             yukleniyor: false,
           });
         } else {
-          setCartState(defaultCartState);
+          setCartState(bosSepetDurumu(varsayilanParaBirimi));
         }
       } catch {
         if (active) {
-          setCartState(defaultCartState);
+          setCartState(bosSepetDurumu(varsayilanParaBirimi));
         }
       }
     };
@@ -99,7 +105,7 @@ export function useHeaderCart() {
       active = false;
       window.removeEventListener(CART_EVENT, fetchCart);
     };
-  }, []);
+  }, [varsayilanParaBirimi]);
 
   return cartState;
 }

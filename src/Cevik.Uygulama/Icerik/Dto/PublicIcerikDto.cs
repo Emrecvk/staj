@@ -1,5 +1,10 @@
 namespace Cevik.Uygulama.Icerik.Dto;
 
+public class EBultenAbonelikIstekDto
+{
+    public required string Eposta { get; set; }
+}
+
 public class PublicBlogOzetDto
 {
     public int Id { get; set; }

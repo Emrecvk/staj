@@ -39,7 +39,7 @@ export default async function CheckoutPage() {
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-2/3">
-            <CheckoutForm addresses={addresses} cart={cart} />
+            <CheckoutForm addresses={addresses} />
           </div>
           
           <div className="w-full lg:w-1/3">

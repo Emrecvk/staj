@@ -25,9 +25,18 @@ public static class OzdisanKatalogu
         var katalog = JsonSerializer.Deserialize<OzdisanKatalogVerisi>(gzip)
             ?? throw new InvalidOperationException("Özdisan katalog anlık görüntüsü okunamadı.");
 
-        if (katalog.UrunSayisi != katalog.Urunler.Count || katalog.UrunSayisi != 12_000)
+        // Sayaç ile listenin tutarlılığı bozulmuş anlık görüntüyü yakalar.
+        // Sabit 12.000 beklentisi KALDIRILDI: tools/bos-kategorileri-doldur.mjs
+        // boş kategorileri doldurmak için mevcut anlık görüntüye ürün EKLİYOR,
+        // eşitlik koşulu her eklemede uygulamayı açılışta düşürüyordu. Alt
+        // sınır kırpılmış veya yarım inen dosyayı yine de yakalar.
+        if (katalog.UrunSayisi != katalog.Urunler.Count)
             throw new InvalidOperationException(
-                $"Özdisan katalog ürün sayısı geçersiz: beklenen 12000, bulunan {katalog.Urunler.Count}.");
+                $"Özdisan katalog sayacı listeyle uyuşmuyor: {katalog.UrunSayisi} beyan, {katalog.Urunler.Count} kayıt.");
+
+        if (katalog.UrunSayisi < 12_000)
+            throw new InvalidOperationException(
+                $"Özdisan katalogu eksik görünüyor: en az 12000 ürün beklenir, bulunan {katalog.Urunler.Count}.");
 
         if (katalog.UreticiSayisi < 50 || katalog.Urunler.Select(u => u.UreticiAd).Distinct().Count() < 50)
             throw new InvalidOperationException("Özdisan katalogunda en az 50 üretici bulunmalıdır.");

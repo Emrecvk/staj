@@ -1,10 +1,11 @@
-import test, { describe, it } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { MOCK_PRODUCTS } from "../test-helpers.mjs";
 
 describe("Feature 17: PDP Layout & Summary Header", () => {
   const clientSource = readFileSync(new URL("../../src/app/urunler/[id]/client.tsx", import.meta.url), "utf8");
+  const pdpSource = readFileSync(new URL("../../src/app/urunler/[id]/pdp-bilesenleri.tsx", import.meta.url), "utf8");
   it("Test 17.1: Breadcrumb hierarchy renders full ancestral category path down to active MPN", () => {
     const product = MOCK_PRODUCTS[0];
     const breadcrumbItems = [
@@ -38,15 +39,13 @@ describe("Feature 17: PDP Layout & Summary Header", () => {
     assert.equal(activeStatus.text, "text-basari-600");
   });
 
-  it("Test 17.4: Environmental compliance badges display RoHS and REACH compliance status", () => {
-    const product = MOCK_PRODUCTS[0];
-    const complianceBadges = [
-      { type: "RoHS", status: product.rohsDurumu, compliant: product.rohsDurumu === "Belgeli" },
-      { type: "REACH", status: "Uyumlu", compliant: true },
-    ];
-
-    assert.equal(complianceBadges[0].compliant, true);
-    assert.equal(complianceBadges[1].compliant, true);
+  it("Test 17.4: Uyumluluk rozetleri yalnızca katalogdaki gerçek durumu gösterir", () => {
+    assert.ok(pdpSource.includes('rohsDurumu === "Belgeli"'));
+    assert.ok(pdpSource.includes('rohsDurumu === "Belgesiz"'));
+    assert.ok(pdpSource.includes("reachOzelligi &&"));
+    assert.ok(!pdpSource.includes("REACH Uyumlu"));
+    assert.ok(!pdpSource.includes("Sertifika: Standart"));
+    assert.ok(!pdpSource.includes("Stokta Var"));
   });
 
   it("Test 17.5: High-resolution image gallery contains primary image and thumbnail list with B2B disclaimer", () => {
@@ -56,10 +55,9 @@ describe("Feature 17: PDP Layout & Summary Header", () => {
     assert.equal(typeof product.gorselTemsiliMi, "boolean");
   });
 
-  it("Test 17.6: Desktop PDP columns fit the 12-column grid without wrapping", () => {
-    assert.match(clientSource, /lg:col-span-5/);
-    assert.match(clientSource, /lg:col-span-3/);
-    assert.match(clientSource, /lg:col-span-4/);
-    assert.doesNotMatch(clientSource, /lg:col-span-6[\s\S]*lg:col-span-4[\s\S]*lg:col-span-4/);
+  it("Test 17.6: Wide desktop PDP uses three balanced columns without squeezing product details", () => {
+    assert.match(clientSource, /xl:grid-cols-12/);
+    assert.equal(clientSource.match(/xl:col-span-4/g)?.length, 3);
+    assert.doesNotMatch(clientSource, /(?:^|\s)lg:grid-cols-12(?:\s|")/);
   });
 });

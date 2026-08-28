@@ -29,6 +29,29 @@ public class TcmbIstemcisiTestleri
         kurlar["USD"].Satis.Should().Be(48.5678m);
     }
 
+    [Fact]
+    public async Task BirimYuzOlanKur_BirParaBirimiIcinNormalizeEdilir()
+    {
+        const string xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Tarih_Date>
+              <Currency CurrencyCode="JPY">
+                <Unit>100</Unit>
+                <ForexBuying>32.5000</ForexBuying>
+                <ForexSelling>33.0000</ForexSelling>
+              </Currency>
+            </Tarih_Date>
+            """;
+
+        using var httpClient = new HttpClient(new SabitYanitIsleyicisi(xml));
+        var istemci = new TcmbIstemcisi(httpClient, NullLogger<TcmbIstemcisi>.Instance);
+
+        var kurlar = await istemci.KurlariGetirAsync();
+
+        kurlar["JPY"].Alis.Should().Be(0.325m);
+        kurlar["JPY"].Satis.Should().Be(0.33m);
+    }
+
     private sealed class SabitYanitIsleyicisi(string icerik) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(

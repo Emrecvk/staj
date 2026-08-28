@@ -47,7 +47,7 @@ services:
     container_name: cevik-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EPOSTA:-admin@cevik.local}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EPOSTA:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PAROLA:?.env dosyasinda PGADMIN_PAROLA tanimlayin}
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
@@ -67,6 +67,7 @@ services:
     environment:
       # ASP.NET Core yapılandırma anahtarları: bölüm ayracı "__"
       ASPNETCORE_ENVIRONMENT: Production
+      HttpsRedirection__Etkin: "false"
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=cevik;Username=cevik;Password=${POSTGRES_PASSWORD:?.env dosyasinda POSTGRES_PASSWORD tanimlayin}"
       ConnectionStrings__Redis: "redis:6379"
       # Jwt:Key en az 32 karakter olmalı — kısa anahtarda uygulama açılışta durur.
