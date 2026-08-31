@@ -63,7 +63,7 @@ public class ArkaPlanIsleriTestleri
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // Aynı e-postayla ikinci kayıt reddedilmeli.
-        // 409 değil 422: CLAUDE.md'deki eşleme 409'u DbUpdateConcurrencyException'a
+        // 409 değil 422: AGENTS.md'deki eşleme 409'u DbUpdateConcurrencyException'a
         // ayırıyor, "zaten bekleyen talebiniz var" ise bir iş kuralı ihlali.
         var tekrarYaniti = await client.PostAsJsonAsync("/api/katalog/urunler/ambalajlar/1/stok-bildirimi", dto);
         tekrarYaniti.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);

@@ -1,6 +1,6 @@
 # Çevik - B2B E-Ticaret ve RFQ Platformu
 
-Bu proje, gelişmiş katalog yönetimi, B2B sipariş süreçleri ve teklif/RFQ modülüne sahip kapsamlı bir Full Stack E-Ticaret uygulamasıdır. Backend .NET 10 ile, Frontend ise Next.js 15+ ve React 19 ile geliştirilmiştir.
+Bu proje, gelişmiş katalog yönetimi, B2B sipariş süreçleri ve teklif/RFQ modülüne sahip kapsamlı bir Full Stack E-Ticaret uygulamasıdır. Backend .NET 10 ile, Frontend ise Next.js 16 ve React 19 ile geliştirilmiştir.
 
 ## 🚀 Proje Bileşenleri
 
@@ -67,11 +67,12 @@ Kod kalitesi denetimi ve üretim derlemesi (production build) doğrulaması içi
 cd frontend
 npm run lint
 npm run build
+npm test
 ```
 
 ## 🔐 Yönetim Paneli
 
-Yönetim ekranlarına `/yonetim` adresi üzerinden erişilebilir. Yönetim ekranları; Admin yetkisine sahip hesaplar ile giriş yapıldığında ürün ekleme/düzenleme, sipariş durumu takibi, kurumsal firma başvuru onayı ve gelen teklif taleplerini fiyatlandırma özelliklerini içerir. Rotalar Next.js Middleware (`proxy.ts`) ile korunmaktadır.
+Yönetim ekranlarına `/yonetim` adresi üzerinden erişilebilir. Yönetim ekranları; Admin yetkisine sahip hesaplar ile giriş yapıldığında ürün ekleme/düzenleme, sipariş durumu takibi, kurumsal firma başvuru onayı ve gelen teklif taleplerini fiyatlandırma özelliklerini içerir. Frontend yönlendirmesi `proxy.ts` ile yapılır; gerçek yetkilendirme API politikaları tarafından uygulanır.
 
 ## 📦 Son Sürüm Notları
 Projenin uçtan uca B2B satın alma akışı (Katalog -> Sepet -> Teslimat/Fatura Adresi -> Sipariş Tamamlama / Teklif İsteme) tamamlanmış, Docker Compose üzerinden dağıtıma (delivery) hazır hale getirilmiştir.

@@ -77,6 +77,14 @@ yarn-error.log*
 .fleet/
 *.sln.docstates
 
+# Gecici yapay zeka ajan oturumlari ve yerel calisma taslaklari
+.agents/
+prompt_draft.md
+
+# Veri aktarma araclarinin yeniden uretebildigi yerel raporlar
+docs/BOS_KATEGORI_DOLDURMA_RAPORU.md
+docs/OZDISAN_KATALOG_AKTARIM_RAPORU.md
+
 .DS_Store
 Thumbs.db
 desktop.ini

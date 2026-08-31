@@ -301,7 +301,7 @@ builder.Services.AddRateLimiter(options =>
             //
             // Frontend, tüm sayfa render'ları için API'ye SUNUCU TARAFINDAN
             // (Next.js SSR) istek atıyor; forwarded header güveni kurulmadığı
-            // için (bkz. CLAUDE.md — ileri header'lara körü körüne güvenilmez)
+            // için (bkz. AGENTS.md — ileri header'lara körü körüne güvenilmez)
             // context.Connection.RemoteIpAddress her zaman frontend
             // container'ının TEK docker-network adresidir. Yani bu limit
             // "ziyaretçi başına" değil, SİTE GENELİNDE ortak bir kovadır: bir
